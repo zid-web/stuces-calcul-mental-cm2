@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Astuces Calcul Mental &amp; Géométrie</title>
+<meta name="theme-color" content="#5B4FE8">
+<meta name="description" content="Astuces de calcul mental et quiz de géométrie pour CM2 et 6ème">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+  :root {
+    --purple: #5B4FE8; --purple-dark: #3C3489;
+    --bg: #F6F5FF; --card: #FFFFFF; --text: #232134; --text-secondary: #6B6880;
+    --success: #1D9E75; --success-bg: #E1F5EE;
+    --danger: #D85A30; --danger-bg: #FAECE7;
+    --warning: #BA7517; --warning-bg: #FAEEDA;
+    --border: #E4E2F1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+  #app { min-height: 100vh; min-height: 100dvh; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); display: flex; flex-direction: column; }
+  .screen { flex: 1; display: flex; flex-direction: column; padding: 1.25rem 1rem 2rem; max-width: 480px; margin: 0 auto; width: 100%; }
+
+  h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.2rem; }
+
+  .level-switch { display: flex; gap: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 1.5rem; }
+  .level-btn { flex: 1; padding: 0.6rem; border: none; border-radius: 9px; background: transparent; font-weight: 600; font-size: 0.9rem; cursor: pointer; color: var(--text-secondary); }
+  .level-btn.active { background: var(--purple); color: white; }
+
+  .mode-card { display: flex; align-items: center; gap: 1rem; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.2rem; margin-bottom: 12px; cursor: pointer; }
+  .mode-card:active { transform: scale(0.98); }
+  .mode-emoji { font-size: 2.2rem; }
+  .mode-info { flex: 1; }
+  .mode-title { font-weight: 700; font-size: 1.05rem; margin-bottom: 2px; }
+  .mode-desc { font-size: 0.82rem; color: var(--text-secondary); }
+  .mode-arrow { font-size: 1.3rem; color: var(--purple); }
+
+  .trick-card { display: flex; align-items: center; gap: 1rem; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 0.9rem 1rem; margin-bottom: 10px; cursor: pointer; }
+  .trick-card:active { transform: scale(0.98); }
+  .trick-emoji { font-size: 1.7rem; }
+  .trick-info { flex: 1; }
+  .trick-title { font-weight: 600; font-size: 0.95rem; }
+  .trick-progress { font-size: 0.75rem; color: var(--success); font-weight: 600; margin-top: 2px; }
+
+  .btn { padding: 1rem; border-radius: 14px; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--purple); color: white; }
+  .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  .btn-back { background: transparent; border: none; color: var(--purple); font-weight: 600; font-size: 0.95rem; padding: 0.5rem 0; margin-bottom: 0.3rem; align-self: flex-start; cursor: pointer; }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row .btn { flex: 1; }
+  .btn-stack { display: flex; flex-direction: column; gap: 10px; }
+
+  .lesson-hero { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 1.8rem 1.4rem; text-align: center; margin-bottom: 1.2rem; }
+  .lesson-emoji { font-size: 2.6rem; margin-bottom: 0.6rem; }
+  .lesson-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.6rem; }
+  .lesson-explanation { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; }
+
+  .section-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 0.7rem; }
+
+  .step-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 0.9rem; margin-bottom: 10px; }
+  .step-formula { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .step-breakdown { font-size: 0.85rem; color: var(--text-secondary); background: var(--bg); padding: 0.5rem 0.7rem; border-radius: 8px; margin-bottom: 0.4rem; }
+  .step-result { font-size: 1.1rem; font-weight: 700; color: var(--purple); }
+
+  .quiz-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .quiz-progress { font-size: 0.82rem; color: var(--text-secondary); font-weight: 600; }
+  .quiz-score { font-size: 1.1rem; font-weight: 700; }
+
+  .timer-wrap { margin-bottom: 1.2rem; }
+  .timer-bar-bg { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
+  .timer-bar-fill { height: 100%; background: var(--purple); border-radius: 4px; transition: width 0.9s linear, background-color 0.3s; }
+  .timer-bar-fill.low { background: var(--danger); }
+  .timer-num { font-size: 0.78rem; color: var(--text-secondary); text-align: right; }
+
+  .question-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 1.6rem 1.2rem; text-align: center; margin-bottom: 1.2rem; }
+  .question-label { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.8rem; }
+  .question-formula { font-size: 2.1rem; font-weight: 700; }
+  .question-shape { display: flex; justify-content: center; margin: 0.8rem 0; }
+  .question-shape svg { max-width: 100%; height: auto; }
+
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .option-btn { padding: 1rem; font-size: 1.05rem; font-weight: 700; border-radius: 14px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; }
+  .option-btn.correct { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+  .option-btn.wrong { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+
+  .results-emoji { font-size: 3.5rem; text-align: center; margin: 1rem 0; }
+  .results-title { font-size: 1.5rem; font-weight: 700; text-align: center; margin-bottom: 1.2rem; }
+  .results-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 1.6rem; text-align: center; margin-bottom: 1rem; }
+  .results-score { font-size: 2.2rem; font-weight: 700; color: var(--purple); margin: 0.3rem 0; }
+  .results-meta { font-size: 0.85rem; color: var(--text-secondary); }
+  .verdict-box { padding: 1rem; border-radius: 14px; margin-bottom: 1rem; font-size: 0.9rem; line-height: 1.4; }
+  .verdict-good { background: var(--success-bg); color: var(--success); }
+  .verdict-mid { background: var(--warning-bg); color: var(--warning); }
+  .verdict-low { background: var(--danger-bg); color: var(--danger); }
+  .breakdown-list { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 0.9rem 1rem; margin-bottom: 1.2rem; }
+  .breakdown-row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.88rem; border-bottom: 1px solid var(--border); }
+  .breakdown-row:last-child { border-bottom: none; }
+
+  .install-banner { position: fixed; bottom: 0; left: 0; right: 0; background: var(--purple); color: white; padding: 1rem 1.2rem; padding-bottom: calc(1rem + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 1rem; z-index: 100; }
+  .install-banner button { padding: 0.6rem 1rem; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; }
+  .install-banner .install-btn { background: white; color: var(--purple); }
+  .install-banner .dismiss-btn { background: transparent; color: white; opacity: 0.8; }
+  .install-text { flex: 1; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ---------- Utils ---------- */
+function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function rndMultiple(minMult, maxMult, step) { return rnd(minMult, maxMult) * step; }
+function shuffle(arr) { return arr.map(v => [Math.random(), v]).sort((a, b) => a[0] - b[0]).map(v => v[1]); }
+function formatNum(n) {
+  const r = Math.round(n * 100) / 100;
+  return (r % 1 === 0 ? String(r) : String(r).replace('.', ',').replace(/0$/, '').replace(/,$/, ''));
+}
+function numericOptions(answer, decimals) {
+  const opts = new Set([answer]);
+  let guard = 0;
+  while (opts.size < 4 && guard < 30) {
+    guard++;
+    const delta = decimals > 0 ? (Math.random() < 0.5 ? -1 : 1) * (Math.round((Math.random() * 3 + 0.5) * 10) / 10) : (Math.random() < 0.5 ? -1 : 1) * rnd(1, 8);
+    let v = decimals > 0 ? Math.round((answer + delta) * 10) / 10 : Math.round(answer + delta);
+    if (v > 0) opts.add(v);
+  }
+  return shuffle([...opts]);
+}
+function loadStore() { try { return JSON.parse(localStorage.getItem('cm_store') || '{}'); } catch { return {}; } }
+function saveStore(obj) { localStorage.setItem('cm_store', JSON.stringify(obj)); }
+function saveBest(key, pct) { const s = loadStore(); s[key] = Math.max(s[key] || 0, pct); saveStore(s); }
+function getBest(key) { return loadStore()[key]; }
+
+/* ---------- Astuces de calcul mental (générateurs) ---------- */
+const TRICKS = [
+  { id: 'mult10', emoji: '🔟', title: 'Multiplier par 10', levels: ['cm2', 'sixieme'],
+    explanation: "Pour multiplier par 10, ajoute un zéro (ou décale la virgule d'un rang pour un nombre décimal).",
+    gen(level) {
+      if (level === 'sixieme' && Math.random() < 0.4) {
+        const a = Math.round((Math.random() * 9 + 0.5) * 10) / 10;
+        const result = Math.round(a * 10 * 10) / 10;
+        return { formula: `${formatNum(a)} × 10`, breakdown: `On décale la virgule d'un rang : ${formatNum(a)} → ${formatNum(result)}`, result };
+      }
+      const a = rnd(2, 99); const result = a * 10;
+      return { formula: `${a} × 10`, breakdown: `On ajoute un zéro : ${a} → ${result}`, result };
+    } },
+  { id: 'mult100', emoji: '💯', title: 'Multiplier par 100', levels: ['sixieme'],
+    explanation: "Pour multiplier par 100, ajoute deux zéros (ou décale la virgule de deux rangs).",
+    gen() { const a = rnd(2, 99); const result = a * 100; return { formula: `${a} × 100`, breakdown: `On ajoute deux zéros : ${a} → ${result}`, result }; } },
+  { id: 'mult11', emoji: '🔁', title: 'Multiplier par 11', levels: ['cm2', 'sixieme'],
+    explanation: "Pour un nombre à deux chiffres : sépare-les et ajoute leur somme entre eux.",
+    gen() {
+      let a; do { a = rnd(10, 89); } while ((Math.floor(a / 10) + a % 10) >= 10);
+      const d1 = Math.floor(a / 10), d2 = a % 10, result = a * 11;
+      return { formula: `${a} × 11`, breakdown: `${d1} + ${d2} = ${d1 + d2} → on place ${d1 + d2} entre ${d1} et ${d2}`, result };
+    } },
+  { id: 'mult5', emoji: '✋', title: 'Multiplier par 5', levels: ['cm2', 'sixieme'],
+    explanation: "Multiplie par 10, puis divise par 2.",
+    gen() { const a = rnd(2, 60); const step = a * 10; const result = step / 2; return { formula: `${a} × 5`, breakdown: `${a} × 10 = ${step}, puis ÷ 2`, result }; } },
+  { id: 'add-dizaine', emoji: '➕', title: 'Additionner en découpant', levels: ['cm2', 'sixieme'],
+    explanation: "Additionne d'abord les dizaines, puis les unités.",
+    gen() {
+      const a = rnd(11, 69), b = rnd(11, 39), result = a + b;
+      const da = Math.floor(a / 10) * 10, db = Math.floor(b / 10) * 10, ua = a % 10, ub = b % 10;
+      return { formula: `${a} + ${b}`, breakdown: `(${da}+${db}) + (${ua}+${ub}) = ${da + db} + ${ua + ub}`, result };
+    } },
+  { id: 'sub-complement', emoji: '➖', title: 'Soustraire avec le complément', levels: ['cm2', 'sixieme'],
+    explanation: "Compte la distance entre les deux nombres au lieu de soustraire.",
+    gen() {
+      const a = rnd(30, 90), b = rnd(5, a - 5), result = a - b;
+      const round = Math.ceil(b / 10) * 10, step1 = round - b, step2 = a - round;
+      return { formula: `${a} - ${b}`, breakdown: `${b} → ${round} (+${step1}), puis ${round} → ${a} (+${step2})`, result };
+    } },
+  { id: 'mult3', emoji: '🔺', title: 'Multiplier par 3', levels: ['cm2', 'sixieme'],
+    explanation: "Double le nombre, puis ajoute le nombre de départ.",
+    gen() { const a = rnd(2, 40); const result = a * 3; return { formula: `${a} × 3`, breakdown: `(${a} × 2) + ${a} = ${a * 2} + ${a}`, result }; } },
+  { id: 'mult4', emoji: '🍀', title: 'Multiplier par 4', levels: ['cm2', 'sixieme'],
+    explanation: "Double le nombre, puis double le résultat.",
+    gen() { const a = rnd(2, 30); const result = a * 4; return { formula: `${a} × 4`, breakdown: `${a} × 2 = ${a * 2}, puis × 2`, result }; } },
+  { id: 'mult9', emoji: '✨', title: 'Multiplier par 9', levels: ['cm2', 'sixieme'],
+    explanation: "Multiplie par 10, puis retire le nombre de départ.",
+    gen() { const a = rnd(2, 30); const result = a * 9; return { formula: `${a} × 9`, breakdown: `${a} × 10 = ${a * 10}, puis − ${a}`, result }; } },
+  { id: 'mult25', emoji: '🎯', title: 'Multiplier par 25', levels: ['sixieme'],
+    explanation: "Divise par 4, puis multiplie par 100.",
+    gen() { const a = rndMultiple(1, 10, 4); const result = a * 25; return { formula: `${a} × 25`, breakdown: `${a} ÷ 4 = ${a / 4}, puis × 100`, result }; } },
+  { id: 'carre5', emoji: '🧮', title: 'Carré des nombres finissant par 5', levels: ['sixieme'],
+    explanation: "Multiplie le chiffre des dizaines par (lui-même + 1), puis colle 25.",
+    gen() { const opts = [15, 25, 35, 45, 55, 65, 75, 85, 95]; const a = opts[rnd(0, opts.length - 1)]; const d = Math.floor(a / 10); const result = a * a; return { formula: `${a} × ${a}`, breakdown: `${d} × ${d + 1} = ${d * (d + 1)}, puis on colle 25`, result }; } },
+  { id: 'pct10', emoji: '📊', title: 'Trouver 10 % d\'un nombre', levels: ['sixieme'],
+    explanation: "10 % d'un nombre, c'est le nombre divisé par 10.",
+    gen() { const a = rndMultiple(2, 50, 10); const result = a / 10; return { formula: `10 % de ${a}`, breakdown: `${a} ÷ 10`, result }; } },
+  { id: 'pct50', emoji: '📈', title: 'Trouver 50 % d\'un nombre', levels: ['sixieme'],
+    explanation: "50 % d'un nombre, c'est sa moitié.",
+    gen() { const a = rndMultiple(2, 100, 2); const result = a / 2; return { formula: `50 % de ${a}`, breakdown: `${a} ÷ 2`, result }; } }
+];
+function tricksForLevel(level) { return TRICKS.filter(t => t.levels.includes(level)); }
+function getTrick(id) { return TRICKS.find(t => t.id === id); }
+
+/* ---------- Géométrie (générateurs + SVG) ---------- */
+function svgWrap(inner) { return `<svg viewBox="0 0 220 180" style="width:200px;height:auto;">${inner}</svg>`; }
+function svgSquare(a) {
+  return svgWrap(`<rect x="50" y="30" width="120" height="120" fill="none" stroke="#5B4FE8" stroke-width="4"/>
+    <text x="110" y="20" text-anchor="middle" font-size="15" fill="#232134">${formatNum(a)} cm</text>`);
+}
+function svgRectangle(L, l) {
+  const w = Math.min(170, Math.max(70, L * 9)), h = Math.min(120, Math.max(40, l * 9));
+  const x = (220 - w) / 2, y = (170 - h) / 2;
+  return svgWrap(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#5B4FE8" stroke-width="4"/>
+    <text x="110" y="${y - 8}" text-anchor="middle" font-size="14" fill="#232134">${formatNum(L)} cm</text>
+    <text x="${x + w + 30}" y="${y + h / 2}" text-anchor="middle" font-size="14" fill="#232134">${formatNum(l)} cm</text>`);
+}
+function svgTriangleRight(base, hauteur) {
+  const bw = Math.min(150, Math.max(70, base * 8)), bh = Math.min(120, Math.max(50, hauteur * 8));
+  const x0 = (220 - bw) / 2, y0 = 150;
+  return svgWrap(`<polygon points="${x0},${y0} ${x0 + bw},${y0} ${x0},${y0 - bh}" fill="none" stroke="#0F6E56" stroke-width="4"/>
+    <text x="${x0 + bw / 2}" y="${y0 + 18}" text-anchor="middle" font-size="14" fill="#232134">${formatNum(base)} cm</text>
+    <text x="${x0 - 12}" y="${y0 - bh / 2}" text-anchor="end" font-size="14" fill="#232134">${formatNum(hauteur)} cm</text>`);
+}
+function svgCircle(r) {
+  const px = Math.min(70, Math.max(35, r * 6));
+  return svgWrap(`<circle cx="110" cy="95" r="${px}" fill="none" stroke="#993C1D" stroke-width="4"/>
+    <line x1="110" y1="95" x2="${110 + px}" y2="95" stroke="#993C1D" stroke-width="2"/>
+    <text x="${110 + px / 2}" y="88" text-anchor="middle" font-size="13" fill="#232134">${formatNum(r)} cm</text>`);
+}
+function svgAngle(deg) {
+  const vx = 60, vy = 150, ray = 110, rad = deg * Math.PI / 180;
+  const x2 = vx + ray * Math.cos(rad), y2 = vy - ray * Math.sin(rad);
+  return svgWrap(`<line x1="${vx}" y1="${vy}" x2="${vx + ray}" y2="${vy}" stroke="#534AB7" stroke-width="4"/>
+    <line x1="${vx}" y1="${vy}" x2="${x2}" y2="${y2}" stroke="#534AB7" stroke-width="4"/>
+    <path d="M ${vx + 26} ${vy} A 26 26 0 0 0 ${vx + 26 * Math.cos(rad)} ${vy - 26 * Math.sin(rad)}" fill="none" stroke="#D85A30" stroke-width="2"/>`);
+}
+function svgPolygon(n) {
+  const cx = 110, cy = 95, R = 65; let pts = [];
+  for (let i = 0; i < n; i++) { const a = -Math.PI / 2 + i * 2 * Math.PI / n; pts.push(`${cx + R * Math.cos(a)},${cy + R * Math.sin(a)}`); }
+  return svgWrap(`<polygon points="${pts.join(' ')}" fill="none" stroke="#185FA5" stroke-width="4"/>`);
+}
+const GEO_CATS = { cm2: ['carre', 'rectangle', 'angle', 'cotes'], sixieme: ['carre', 'rectangle', 'angle', 'cotes', 'triangle', 'cercle'] };
+function genGeoQuestion(level) {
+  const cat = GEO_CATS[level][rnd(0, GEO_CATS[level].length - 1)];
+  if (cat === 'carre') {
+    const a = level === 'sixieme' ? Math.round((rnd(20, 120) / 10) * 10) / 10 : rnd(2, 12);
+    const askAire = Math.random() < 0.5;
+    const result = askAire ? Math.round(a * a * 100) / 100 : Math.round(4 * a * 100) / 100;
+    return { category: 'Carré', prompt: askAire ? "Quelle est l'aire de ce carré ?" : 'Quel est le périmètre de ce carré ?', unit: askAire ? 'cm²' : 'cm', svg: svgSquare(a), answer: formatNum(result), options: numericOptions(result, a % 1 !== 0 ? 1 : 0).map(formatNum), limit: 22 };
+  }
+  if (cat === 'rectangle') {
+    const L = rnd(4, 15), l = rnd(2, L - 1);
+    const askAire = Math.random() < 0.5;
+    const result = askAire ? L * l : 2 * (L + l);
+    return { category: 'Rectangle', prompt: askAire ? "Quelle est l'aire de ce rectangle ?" : 'Quel est le périmètre de ce rectangle ?', unit: askAire ? 'cm²' : 'cm', svg: svgRectangle(L, l), answer: formatNum(result), options: numericOptions(result, 0).map(formatNum), limit: 22 };
+  }
+  if (cat === 'triangle') {
+    const base = rnd(4, 16), hauteur = rnd(3, 12);
+    const result = Math.round((base * hauteur / 2) * 100) / 100;
+    return { category: 'Triangle', prompt: "Quelle est l'aire de ce triangle ?", unit: 'cm²', svg: svgTriangleRight(base, hauteur), answer: formatNum(result), options: numericOptions(result, result % 1 !== 0 ? 1 : 0).map(formatNum), limit: 25 };
+  }
+  if (cat === 'cercle') {
+    const r = rnd(2, 10), askAire = Math.random() < 0.5;
+    const result = askAire ? Math.round(3.14 * r * r * 100) / 100 : Math.round(2 * 3.14 * r * 100) / 100;
+    return { category: 'Cercle', prompt: (askAire ? "Quelle est l'aire de ce cercle ?" : 'Quel est le périmètre de ce cercle ?') + ' (π ≈ 3,14)', unit: askAire ? 'cm²' : 'cm', svg: svgCircle(r), answer: formatNum(result), options: numericOptions(result, 1).map(formatNum), limit: 25 };
+  }
+  if (cat === 'angle') {
+    let deg = rnd(10, 170); if (Math.random() < 0.15) deg = 90;
+    const answer = deg < 90 ? 'Aigu' : deg === 90 ? 'Droit' : 'Obtus';
+    return { category: 'Angle', prompt: "Quel est ce type d'angle ?", unit: '', svg: svgAngle(deg), answer, options: shuffle(['Aigu', 'Droit', 'Obtus']), limit: 15 };
+  }
+  // cotes
+  const shapes = level === 'sixieme' ? [{ n: 3, name: 'Triangle' }, { n: 4, name: 'Carré' }, { n: 5, name: 'Pentagone' }, { n: 6, name: 'Hexagone' }] : [{ n: 3, name: 'Triangle' }, { n: 4, name: 'Carré' }, { n: 5, name: 'Pentagone' }];
+  const s = shapes[rnd(0, shapes.length - 1)];
+  const askName = level === 'sixieme' && Math.random() < 0.5;
+  if (askName) return { category: 'Figures', prompt: "Comment s'appelle cette figure ?", unit: '', svg: svgPolygon(s.n), answer: s.name, options: shuffle(shapes.map(x => x.name)), limit: 15 };
+  return { category: 'Figures', prompt: 'Combien de côtés a cette figure ?', unit: '', svg: svgPolygon(s.n), answer: String(s.n), options: shuffle(shapes.map(x => String(x.n))), limit: 15 };
+}
+
+/* ---------- État global ---------- */
+const state = {
+  screen: 'home', level: loadStore().level || 'cm2',
+  mentalTrickId: null,
+  quiz: null // { kind, index, score, questions, answered, timeLeft, timerHandle, times, catStats }
+};
+
+function setLevel(lvl) { state.level = lvl; const s = loadStore(); s.level = lvl; saveStore(s); render(); }
+
+function clearTimer() { if (state.quiz && state.quiz.timerHandle) { clearInterval(state.quiz.timerHandle); state.quiz.timerHandle = null; } }
+
+/* ---------- Construction des quiz ---------- */
+function buildMentalQuiz(trickId, count) {
+  const trick = getTrick(trickId);
+  const qs = [];
+  for (let i = 0; i < count; i++) {
+    const ex = trick.gen(state.level);
+    const decimals = ex.result % 1 !== 0 ? 1 : 0;
+    qs.push({ category: trick.title, prompt: 'Utilise l\'astuce !', unit: '', svg: null, formula: ex.formula, answer: formatNum(ex.result), options: numericOptions(ex.result, decimals).map(formatNum), limit: 15 });
+  }
+  return qs;
+}
+function buildGeoQuiz(count) {
+  const qs = [];
+  for (let i = 0; i < count; i++) qs.push(genGeoQuestion(state.level));
+  return qs;
+}
+function startQuiz(kind, questions) {
+  clearTimer();
+  state.quiz = { kind, index: 0, score: 0, questions, answered: false, timeLeft: questions[0].limit, timerHandle: null, times: [], catStats: {} };
+  state.screen = 'quiz';
+  render();
+  runTimer();
+}
+function runTimer() {
+  clearTimer();
+  state.quiz.timerHandle = setInterval(() => {
+    if (!state.quiz || state.quiz.answered) return;
+    state.quiz.timeLeft--;
+    if (state.quiz.timeLeft <= 0) { clearTimer(); answerQuiz(null); }
+    else render();
+  }, 1000);
+}
+function answerQuiz(chosen) {
+  const q = state.quiz.questions[state.quiz.index];
+  if (state.quiz.answered) return;
+  state.quiz.answered = true;
+  clearTimer();
+  const correct = chosen !== null && chosen === q.answer;
+  const timeUsed = q.limit - state.quiz.timeLeft;
+  state.quiz.times.push(timeUsed);
+  if (!state.quiz.catStats[q.category]) state.quiz.catStats[q.category] = { correct: 0, total: 0 };
+  state.quiz.catStats[q.category].total++;
+  if (correct) { state.quiz.score++; state.quiz.catStats[q.category].correct++; }
+  render();
+  setTimeout(() => {
+    if (state.quiz.index < state.quiz.questions.length - 1) {
+      state.quiz.index++; state.quiz.answered = false; state.quiz.timeLeft = state.quiz.questions[state.quiz.index].limit;
+      render(); runTimer();
+    } else {
+      const total = state.quiz.questions.length;
+      const pct = Math.round((state.quiz.score / total) * 100);
+      if (state.quiz.kind === 'mental') saveBest('mental-' + state.mentalTrickId + '-' + state.level, pct);
+      else saveBest('geo-' + state.level, pct);
+      state.screen = 'quizResults';
+      render();
+    }
+  }, 1100);
+}
+
+/* ---------- Rendu ---------- */
+function render() {
+  const app = document.getElementById('app');
+  if (state.screen === 'home') app.innerHTML = renderHome();
+  else if (state.screen === 'mentalMenu') app.innerHTML = renderMentalMenu();
+  else if (state.screen === 'mentalLesson') app.innerHTML = renderMentalLesson();
+  else if (state.screen === 'quiz') app.innerHTML = renderQuiz();
+  else if (state.screen === 'quizResults') app.innerHTML = renderQuizResults();
+  attachListeners();
+}
+function attachListeners() { document.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction)); }
+
+function renderHome() {
+  return `
+    <div class="screen">
+      <h1>🧠 Maths Malin</h1>
+      <p class="subtitle">Astuces de calcul mental et géométrie</p>
+      <div class="level-switch">
+        <button class="level-btn ${state.level === 'cm2' ? 'active' : ''}" data-action="set-level" data-level="cm2">CM2</button>
+        <button class="level-btn ${state.level === 'sixieme' ? 'active' : ''}" data-action="set-level" data-level="sixieme">6ème</button>
+      </div>
+      <div class="mode-card" data-action="go-mental">
+        <div class="mode-emoji">🧠</div>
+        <div class="mode-info"><div class="mode-title">Astuces calcul mental</div><div class="mode-desc">Des exercices générés à l'infini</div></div>
+        <div class="mode-arrow">→</div>
+      </div>
+      <div class="mode-card" data-action="go-geo">
+        <div class="mode-emoji">📐</div>
+        <div class="mode-info"><div class="mode-title">Quiz géométrie chronométré</div><div class="mode-desc">8 questions, un temps limité, une évaluation</div></div>
+        <div class="mode-arrow">→</div>
+      </div>
+    </div>`;
+}
+
+function renderMentalMenu() {
+  const list = tricksForLevel(state.level);
+  const cards = list.map(t => {
+    const best = getBest('mental-' + t.id + '-' + state.level);
+    return `<div class="trick-card" data-action="open-trick" data-id="${t.id}">
+      <div class="trick-emoji">${t.emoji}</div>
+      <div class="trick-info"><div class="trick-title">${t.title}</div>${best !== undefined ? `<div class="trick-progress">✓ Meilleur score : ${best}%</div>` : ''}</div>
+      <div class="mode-arrow">→</div>
+    </div>`;
+  }).join('');
+  return `<div class="screen">
+    <button class="btn-back" data-action="go-home">← Retour</button>
+    <h1>🧠 Astuces</h1>
+    <p class="subtitle">Niveau ${state.level === 'cm2' ? 'CM2' : '6ème'} — choisis une astuce</p>
+    ${cards}
+  </div>`;
+}
+
+function renderMentalLesson() {
+  const t = getTrick(state.mentalTrickId);
+  const ex1 = t.gen(state.level), ex2 = t.gen(state.level);
+  return `<div class="screen">
+    <button class="btn-back" data-action="go-mental">← Retour</button>
+    <div class="lesson-hero">
+      <div class="lesson-emoji">${t.emoji}</div>
+      <div class="lesson-title">${t.title}</div>
+      <div class="lesson-explanation">${t.explanation}</div>
+    </div>
+    <div class="section-label">Exemples</div>
+    ${[ex1, ex2].map(ex => `<div class="step-card">
+      <div class="step-formula">${ex.formula}</div>
+      <div class="step-breakdown">${ex.breakdown}</div>
+      <div class="step-result">= ${formatNum(ex.result)}</div>
+    </div>`).join('')}
+    <div class="btn-stack" style="margin-top:0.5rem;">
+      <button class="btn btn-secondary" data-action="regen-lesson">🔀 De nouveaux exemples</button>
+      <button class="btn btn-primary" data-action="start-mental-quiz">✨ Pratiquer (8 questions, chrono)</button>
+    </div>
+  </div>`;
+}
+
+function renderQuiz() {
+  const q = state.quiz.questions[state.quiz.index];
+  const total = state.quiz.questions.length;
+  const pctLeft = Math.max(0, Math.round((state.quiz.timeLeft / q.limit) * 100));
+  const low = state.quiz.timeLeft <= Math.ceil(q.limit * 0.3);
+  const promptText = q.formula ? q.formula : q.prompt;
+  const optionsHtml = q.options.map(opt => {
+    let cls = 'option-btn';
+    if (state.quiz.answered) {
+      if (opt === q.answer) cls += ' correct';
+      else if (opt === state.quiz.lastChosen) cls += ' wrong';
+    }
+    return `<button class="${cls}" data-action="answer-quiz" data-value="${opt}" ${state.quiz.answered ? 'disabled' : ''}>${opt}</button>`;
+  }).join('');
+  return `<div class="screen">
+    <div class="quiz-topbar">
+      <div class="quiz-progress">${state.quiz.kind === 'geo' ? q.category + ' · ' : ''}${state.quiz.index + 1}/${total}</div>
+      <div class="quiz-score">⭐ ${state.quiz.score}</div>
+    </div>
+    <div class="timer-wrap">
+      <div class="timer-bar-bg"><div class="timer-bar-fill ${low ? 'low' : ''}" style="width:${pctLeft}%"></div></div>
+      <div class="timer-num">${Math.max(0, state.quiz.timeLeft)} s</div>
+    </div>
+    <div class="question-card">
+      ${q.formula ? `<div class="question-label">Utilise l'astuce !</div><div class="question-formula">${promptText}</div>` : `<div class="question-label">${q.prompt}</div>${q.svg ? `<div class="question-shape">${q.svg}</div>` : ''}${q.unit ? `<div style="font-size:0.8rem;color:var(--text-secondary);">Réponse en ${q.unit}</div>` : ''}`}
+    </div>
+    <div class="options-grid">${optionsHtml}</div>
+  </div>`;
+}
+
+function renderQuizResults() {
+  const total = state.quiz.questions.length;
+  const pct = Math.round((state.quiz.score / total) * 100);
+  const avgTime = Math.round((state.quiz.times.reduce((a, b) => a + b, 0) / total) * 10) / 10;
+  const emoji = pct === 100 ? '🏆' : pct >= 80 ? '🌟' : pct >= 50 ? '👍' : '💪';
+  const title = pct === 100 ? 'Parfait !' : pct >= 80 ? 'Excellent !' : pct >= 50 ? 'Bien joué !' : 'Continue à t\'entraîner';
+  let verdictClass = 'verdict-good', verdictText = 'Niveau maîtrisé pour cette série. Essaie une autre astuce ou monte de niveau !';
+  if (pct < 50) { verdictClass = 'verdict-low'; verdictText = 'Cette notion mérite d\'être revue calmement. Relis la leçon puis réessaie.'; }
+  else if (pct < 80) { verdictClass = 'verdict-mid'; verdictText = 'Bonne base ! Encore un peu de pratique pour bien maîtriser.'; }
+
+  let breakdownHtml = '';
+  const cats = Object.keys(state.quiz.catStats);
+  if (cats.length > 1) {
+    const rows = cats.map(c => {
+      const s = state.quiz.catStats[c];
+      return `<div class="breakdown-row"><span>${c}</span><span>${s.correct}/${s.total}</span></div>`;
+    }).join('');
+    breakdownHtml = `<div class="breakdown-list">${rows}</div>`;
+  }
+
+  return `<div class="screen">
+    <div class="results-emoji">${emoji}</div>
+    <div class="results-title">${title}</div>
+    <div class="results-card">
+      <div class="results-score">${state.quiz.score} / ${total}</div>
+      <div class="results-meta">${pct}% de réussite · ${avgTime}s en moyenne par question</div>
+    </div>
+    ${breakdownHtml}
+    <div class="verdict-box ${verdictClass}">${verdictText}</div>
+    <div class="btn-stack">
+      <button class="btn btn-primary" data-action="retry-quiz">🔄 Rejouer</button>
+      <button class="btn btn-secondary" data-action="go-home">← Retour à l'accueil</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- Actions ---------- */
+function onAction(e) {
+  const a = e.currentTarget.dataset.action;
+  if (a === 'set-level') { setLevel(e.currentTarget.dataset.level); }
+  else if (a === 'go-home') { clearTimer(); state.screen = 'home'; state.quiz = null; render(); }
+  else if (a === 'go-mental') { state.screen = 'mentalMenu'; render(); }
+  else if (a === 'open-trick') { state.mentalTrickId = e.currentTarget.dataset.id; state.screen = 'mentalLesson'; render(); }
+  else if (a === 'regen-lesson') { render(); }
+  else if (a === 'start-mental-quiz') { startQuiz('mental', buildMentalQuiz(state.mentalTrickId, 8)); }
+  else if (a === 'go-geo') { startQuiz('geo', buildGeoQuiz(8)); }
+  else if (a === 'answer-quiz') { state.quiz.lastChosen = e.currentTarget.dataset.value; answerQuiz(e.currentTarget.dataset.value); }
+  else if (a === 'retry-quiz') {
+    if (state.quiz.kind === 'mental') startQuiz('mental', buildMentalQuiz(state.mentalTrickId, 8));
+    else startQuiz('geo', buildGeoQuiz(8));
+  }
+}
+
+render();
+
+/* ---------- PWA install ---------- */
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; showInstallBanner(); });
+function showInstallBanner() {
+  if (document.getElementById('install-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'install-banner'; banner.className = 'install-banner';
+  banner.innerHTML = `<div class="install-text">📲 Installe l'appli sur ton téléphone !</div><button class="install-btn">Installer</button><button class="dismiss-btn">✕</button>`;
+  document.body.appendChild(banner);
+  banner.querySelector('.install-btn').addEventListener('click', async () => { banner.remove(); if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; } });
+  banner.querySelector('.dismiss-btn').addEventListener('click', () => banner.remove());
+}
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); }); }
+</script>
+</body>
+</html>
