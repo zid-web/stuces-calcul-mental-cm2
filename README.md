@@ -1,6 +1,20 @@
-# Maths Malin — CM2, 6ème & Singapour (PWA)
+# Révise Malin — CM2 & 6ème (PWA)
 
-Application de révision de maths pour le CM2 et la 6ème : calcul mental, nombres, fractions, décimaux, mesures et géométrie. Fonctionne hors-ligne une fois installée.
+Application de révision pour le CM2 et la 6ème : **maths**, **histoire**, **géographie** et **dictée**. Fonctionne hors-ligne une fois installée.
+
+### Histoire et géographie
+
+Chaque chapitre commence par une leçon à lire, avec ses repères à retenir, puis un quiz de 8 questions tirées d'une banque écrite à la main (10 à 12 questions par chapitre). Quatre chapitres d'histoire et quatre de géographie en CM2, trois et quatre en 6ème.
+
+### Dictée
+
+Une rubrique à part, en CM2 et en 6ème. Le texte est lu à voix haute par l'appareil, phrase par phrase ou en entier, à vitesse lente ou normale. L'enfant écrit, puis l'application corrige mot à mot et affiche la copie annotée : mots justes, mots mal écrits avec la bonne orthographe, oublis et mots en trop.
+
+La correction compte les **accents et les majuscules**, mais tolère la **ponctuation**. Le seuil des jetons s'applique aussi : une dictée réussie à 80 % rapporte un jeton chaton.
+
+**Dicter soi-même.** Un bouton « Afficher le texte (parent) » dévoile le texte sur l'écran, découpé en phrases numérotées, avec la phrase en cours mise en avant. Le parent peut ainsi faire la dictée de sa propre voix, dans le même découpage que les boutons d'écoute. Le texte se remasque d'un bouton, et repart toujours caché quand on ouvre une dictée.
+
+⚠️ La lecture à voix haute utilise la synthèse vocale du navigateur. Elle demande qu'une **voix française soit installée sur l'appareil** — c'est le cas de la plupart des téléphones Android et des iPhone. Si aucune voix française n'est trouvée, l'application le signale clairement et le texte reste caché : un adulte peut alors faire la dictée à la place.
 
 ### Chrono et récompenses
 
@@ -44,6 +58,6 @@ Chaque envoi sur la branche `main` redéploie automatiquement le site.
 - `icons/icon-192.png`, `icons/icon-512.png` — icônes de l'application (hamster)
 
 ## Personnalisation
-Les leçons et exercices sont définis dans les données en haut du `<script>` d'`index.html`. Tu peux en ajouter d'autres en suivant le même format.
+Les leçons et exercices sont définis dans les données en haut du `<script>` d'`index.html` : `TRICKS` pour les astuces, `DOMAINS` pour les matières, `DICTEES` pour les textes de dictée. Tu peux en ajouter d'autres en suivant le même format.
 
-Après chaque modification des fichiers, pense à incrémenter `CACHE_NAME` dans `sw.js` (`calcul-cm2-v5` → `v6`, etc.) pour que les appareils déjà installés récupèrent bien la nouvelle version.
+Après chaque modification des fichiers, pense à incrémenter `CACHE_NAME` dans `sw.js` (`calcul-cm2-v6` → `v7`, etc.) pour que les appareils déjà installés récupèrent bien la nouvelle version.
