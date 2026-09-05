@@ -66,6 +66,13 @@
   .dictee-saisie { width: 100%; border: 1px solid var(--border); border-radius: 14px; padding: 0.9rem; font-size: 1rem; line-height: 1.5; font-family: inherit; color: var(--text); background: var(--card); resize: vertical; }
   .dictee-saisie:focus { outline: 2px solid var(--purple); outline-offset: -1px; }
 
+  .zone-parent { border: 1px dashed var(--purple); border-radius: 14px; padding: 0.9rem; margin-bottom: 1.1rem; background: var(--card); }
+  .zone-parent-titre { font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--purple); margin-bottom: 0.6rem; }
+  .phrase-lire { display: flex; gap: 8px; padding: 0.45rem 0; font-size: 0.95rem; line-height: 1.5; border-bottom: 1px solid var(--border); }
+  .phrase-lire:last-child { border-bottom: none; }
+  .phrase-lire.courante { background: var(--bg); border-radius: 8px; padding-left: 0.5rem; padding-right: 0.5rem; }
+  .phrase-num { font-weight: 700; color: var(--purple); flex-shrink: 0; }
+  .btn-parent { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); font-weight: 600; font-size: 0.8rem; border-radius: 10px; padding: 0.5rem 0.8rem; cursor: pointer; width: 100%; }
   .copie { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; line-height: 2; font-size: 0.98rem; margin-bottom: 0.7rem; }
   .mot { padding: 1px 3px; border-radius: 5px; }
   .mot.ok { color: var(--text); }
@@ -1365,8 +1372,14 @@ function renderDictee() {
         <button class="vitesse-btn ${lente ? 'active' : ''}" data-action="vitesse-lente">Lente</button>
         <button class="vitesse-btn ${lente ? '' : 'active'}" data-action="vitesse-normale">Normale</button>
       </div>
-      ${dispo ? '' : `<div class="voix-alerte" style="margin-top:0.8rem;">🔇 Aucune voix française sur cet appareil : demande à un adulte de te lire le texte.</div>`}
+      ${dispo ? '' : `<div class="voix-alerte" style="margin-top:0.8rem;">🔇 Aucune voix française sur cet appareil. Un parent peut dicter le texte : bouton « Afficher le texte » juste en dessous.</div>`}
     </div>
+
+    ${state.dictee.texteVisible ? `<div class="zone-parent">
+      <div class="zone-parent-titre">👀 Texte à dicter — à ne pas montrer à l'enfant</div>
+      ${phrases.map((ph, k) => `<div class="phrase-lire ${k === i ? 'courante' : ''}"><span class="phrase-num">${k + 1}.</span><span>${ph}</span></div>`).join('')}
+      <div class="btn-stack" style="margin-top:0.7rem;"><button class="btn-parent" data-action="cacher-texte">Masquer le texte</button></div>
+    </div>` : `<div class="btn-stack" style="margin-bottom:1.1rem;"><button class="btn-parent" data-action="afficher-texte">👀 Afficher le texte (parent) — pour dicter soi-même</button></div>`}
 
     <div class="section-label">Ta dictée</div>
     <textarea id="dictee-saisie" class="dictee-saisie" rows="7" placeholder="Écris ici ce que tu entends…" spellcheck="false" autocorrect="off" autocapitalize="off">${state.dictee.saisi.replace(/</g, '&lt;')}</textarea>
@@ -1420,7 +1433,7 @@ function getDictee(id) { return DICTEES.find(d => d.id === id); }
 
 function ouvrirDictee(id) {
   stopperVoix();
-  state.dictee = { id, phrase: 0, vitesse: 0.75, saisi: '', resultat: null, gain: null };
+  state.dictee = { id, phrase: 0, vitesse: 0.75, saisi: '', resultat: null, gain: null, texteVisible: false };
   state.screen = 'dictee'; render();
 }
 function corrigerEtAfficher() {
@@ -1598,6 +1611,8 @@ function onAction(e) {
   else if (a === 'phrase-precedente') { stopperVoix(); state.dictee.phrase--; render(); }
   else if (a === 'vitesse-lente') { state.dictee.vitesse = 0.75; render(); }
   else if (a === 'vitesse-normale') { state.dictee.vitesse = 0.95; render(); }
+  else if (a === 'afficher-texte') { state.dictee.texteVisible = true; render(); }
+  else if (a === 'cacher-texte') { state.dictee.texteVisible = false; render(); }
   else if (a === 'corriger-dictee') corrigerEtAfficher();
   else if (a === 'refaire-dictee') ouvrirDictee(state.dictee.id);
   else if (a === 'back-to-list') { state.screen = 'skillList'; render(); }

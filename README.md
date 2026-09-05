@@ -12,6 +12,8 @@ Une rubrique à part, en CM2 et en 6ème. Le texte est lu à voix haute par l'ap
 
 La correction compte les **accents et les majuscules**, mais tolère la **ponctuation**. Le seuil des jetons s'applique aussi : une dictée réussie à 80 % rapporte un jeton chaton.
 
+**Dicter soi-même.** Un bouton « Afficher le texte (parent) » dévoile le texte sur l'écran, découpé en phrases numérotées, avec la phrase en cours mise en avant. Le parent peut ainsi faire la dictée de sa propre voix, dans le même découpage que les boutons d'écoute. Le texte se remasque d'un bouton, et repart toujours caché quand on ouvre une dictée.
+
 ⚠️ La lecture à voix haute utilise la synthèse vocale du navigateur. Elle demande qu'une **voix française soit installée sur l'appareil** — c'est le cas de la plupart des téléphones Android et des iPhone. Si aucune voix française n'est trouvée, l'application le signale clairement et le texte reste caché : un adulte peut alors faire la dictée à la place.
 
 ### Chrono et récompenses
