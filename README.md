@@ -1,6 +1,8 @@
-# Maths Malin — CM2 & 6ème (PWA)
+# Maths Malin — CM2, 6ème & Singapour (PWA)
 
 Application de révision de maths pour le CM2 et la 6ème : calcul mental, nombres, fractions, décimaux, mesures et géométrie. Fonctionne hors-ligne une fois installée.
+
+Trois niveaux au choix : **CM2**, **6ème** et **Singapour**. Ce dernier suit le programme de Primary 6 (11-12 ans) et ajoute les notions propres à la méthode : modèles en barres, rapports, vitesse, cercle, algèbre, volume et diagrammes circulaires. Les niveaux CM2 et 6ème ne sont pas modifiés par cet ajout.
 
 Les fichiers de l'app sont à la racine du dépôt. C'est ce que tous les hébergeurs attendent par défaut : aucun réglage de « dossier source » n'est nécessaire.
 
@@ -38,4 +40,4 @@ Chaque envoi sur la branche `main` redéploie automatiquement le site.
 ## Personnalisation
 Les leçons et exercices sont définis dans les données en haut du `<script>` d'`index.html`. Tu peux en ajouter d'autres en suivant le même format.
 
-Après chaque modification des fichiers, pense à incrémenter `CACHE_NAME` dans `sw.js` (`calcul-cm2-v3` → `v4`, etc.) pour que les appareils déjà installés récupèrent bien la nouvelle version.
+Après chaque modification des fichiers, pense à incrémenter `CACHE_NAME` dans `sw.js` (`calcul-cm2-v4` → `v5`, etc.) pour que les appareils déjà installés récupèrent bien la nouvelle version.

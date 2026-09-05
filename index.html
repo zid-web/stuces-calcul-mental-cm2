@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Maths Malin — CM2 &amp; 6ème</title>
 <meta name="theme-color" content="#5B4FE8">
-<meta name="description" content="Programme complet de maths pour CM2 et 6ème : nombres, fractions, décimaux, mesures, géométrie">
+<meta name="description" content="Programme complet de maths pour CM2, 6ème et méthode de Singapour : nombres, fractions, décimaux, mesures, géométrie, modèles en barres">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -209,9 +209,88 @@ const SYMMETRY_SHAPES = [
   { svg: svgWrap(`<polygon points="30,90 130,40 190,90 130,140" fill="none" stroke="#5B4FE8" stroke-width="4"/><line x1="110" y1="15" x2="110" y2="150" stroke="#D85A30" stroke-width="2" stroke-dasharray="6,4"/>`), symmetric: false }
 ];
 
+/* ---------- Dessins de la méthode de Singapour ---------- */
+function svgWide(inner, h) { return `<svg viewBox="0 0 300 ${h}" style="width:100%;max-width:280px;height:auto;">${inner}</svg>`; }
+
+/* Le modèle en barres : une barre par personne, découpée en parts égales.
+   `extra` ajoute un bloc distinct pour un écart (« 12 de plus »). */
+function svgBarModel(rows, total) {
+  const maxU = Math.max(...rows.map(r => r.units + (r.extra ? 1 : 0)));
+  const x0 = 56, W = 172, u = W / maxU, bh = 24, gap = 12;
+  let out = '', y = 12;
+  rows.forEach(r => {
+    out += `<text x="${x0 - 8}" y="${y + 17}" text-anchor="end" font-size="12" fill="#6B6880">${r.name}</text>`;
+    for (let i = 0; i < r.units; i++) out += `<rect x="${x0 + i * u}" y="${y}" width="${u}" height="${bh}" fill="#EDEBFF" stroke="#5B4FE8" stroke-width="2"/>`;
+    if (r.extra) out += `<rect x="${x0 + r.units * u}" y="${y}" width="${u}" height="${bh}" fill="#FAEEDA" stroke="#BA7517" stroke-width="2"/><text x="${x0 + (r.units + 0.5) * u}" y="${y + 17}" text-anchor="middle" font-size="11" font-weight="700" fill="#8A5510">${r.extra}</text>`;
+    if (r.label) out += `<text x="${x0 + (r.units + (r.extra ? 1 : 0)) * u + 7}" y="${y + 17}" font-size="12" font-weight="700" fill="#5B4FE8">${r.label}</text>`;
+    y += bh + gap;
+  });
+  if (total) {
+    const tw = x0 + maxU * u;
+    out += `<path d="M ${x0} ${y} L ${x0} ${y + 7} L ${tw} ${y + 7} L ${tw} ${y}" fill="none" stroke="#6B6880" stroke-width="2"/><text x="${(x0 + tw) / 2}" y="${y + 23}" text-anchor="middle" font-size="12" font-weight="700" fill="#232134">${total}</text>`;
+    y += 28;
+  }
+  return svgWide(out, y + 4);
+}
+
+/* Cercle avec son rayon ou son diamètre tracé et légendé. */
+function svgCircleLabeled(value, kind) {
+  const R = 62, cx = 150, cy = 78;
+  const trait = kind === 'diamètre'
+    ? `<line x1="${cx - R}" y1="${cy}" x2="${cx + R}" y2="${cy}" stroke="#D85A30" stroke-width="3"/>`
+    : `<line x1="${cx}" y1="${cy}" x2="${cx + R}" y2="${cy}" stroke="#D85A30" stroke-width="3"/>`;
+  const tx = kind === 'diamètre' ? cx : cx + R / 2;
+  return svgWide(`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#5B4FE8" stroke-width="4"/>${trait}<circle cx="${cx}" cy="${cy}" r="3" fill="#5B4FE8"/><text x="${tx}" y="${cy - 8}" text-anchor="middle" font-size="13" font-weight="700" fill="#232134">${value} cm</text>`, 156);
+}
+
+/* Pavé droit en perspective, chaque dimension légendée. */
+function svgCuboid(L, l, h) {
+  const x = 62, y = 44, w = 130, ht = 62, d = 30;
+  return svgWide(`<polygon points="${x},${y + d} ${x + w},${y + d} ${x + w},${y + d + ht} ${x},${y + d + ht}" fill="#EDEBFF" stroke="#5B4FE8" stroke-width="3"/>
+    <polygon points="${x},${y + d} ${x + d},${y} ${x + w + d},${y} ${x + w},${y + d}" fill="#DEDAFF" stroke="#5B4FE8" stroke-width="3"/>
+    <polygon points="${x + w},${y + d} ${x + w + d},${y} ${x + w + d},${y + ht} ${x + w},${y + d + ht}" fill="#CFC9FF" stroke="#5B4FE8" stroke-width="3"/>
+    <text x="${x + w / 2}" y="${y + d + ht + 18}" text-anchor="middle" font-size="12" fill="#232134">${L} cm</text>
+    <text x="${x - 6}" y="${y + d + ht / 2 + 4}" text-anchor="end" font-size="12" fill="#232134">${h} cm</text>
+    <text x="${x + w + d + 6}" y="${y + 14}" font-size="12" fill="#232134">${l} cm</text>`, 166);
+}
+
+/* Diagramme circulaire : parts = [{ label, frac }], fractions cumulant 1. */
+function svgPie(parts) {
+  const cx = 118, cy = 78, R = 62, teintes = ['#5B4FE8', '#1D9E75', '#D85A30', '#BA7517', '#8E86F0'];
+  let a0 = -Math.PI / 2, out = '', ly = 26;
+  parts.forEach((p, i) => {
+    const a1 = a0 + p.frac * 2 * Math.PI, large = p.frac > 0.5 ? 1 : 0;
+    const x0 = cx + R * Math.cos(a0), y0 = cy + R * Math.sin(a0), x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
+    out += `<path d="M ${cx} ${cy} L ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1} Z" fill="${teintes[i % teintes.length]}" stroke="#FFFFFF" stroke-width="2"/>`;
+    out += `<rect x="196" y="${ly - 9}" width="11" height="11" fill="${teintes[i % teintes.length]}"/><text x="213" y="${ly}" font-size="11" fill="#232134">${p.label}</text>`;
+    a0 = a1; ly += 19;
+  });
+  return svgWide(out, Math.max(156, ly + 6));
+}
+
+/* Des distracteurs proportionnels à la réponse : sur de grands nombres, un
+   écart d'une ou deux unités rendrait le bon choix trop évident. */
+function spreadOptions(answer, decimals) {
+  const arrondi = (v) => decimals > 0 ? Math.round(v * 10) / 10 : Math.round(v);
+  const pas = Math.max(decimals > 0 ? 0.5 : 1, arrondi(Math.abs(answer) * 0.12));
+  const cible = arrondi(answer), opts = new Set([cible]);
+  for (const d of shuffle([pas, -pas, 2 * pas, -2 * pas, 3 * pas])) {
+    if (opts.size >= 4) break;
+    const v = arrondi(answer + d);
+    if (v > 0 && v !== cible) opts.add(v);
+  }
+  let k = 3; while (opts.size < 4) { opts.add(arrondi(answer + pas * ++k)); }
+  return shuffle([...opts]).map(formatNum);
+}
+
+const SG_NOMS = ['Aya', 'Ben', 'Chloé', 'Diego', 'Emma', 'Farid', 'Gaby', 'Hugo', 'Inès', 'Jonas'];
+const SG_OBJETS = ['billes', 'autocollants', 'cartes', 'timbres', 'perles'];
+function sgDeuxNoms() { const s = shuffle(SG_NOMS); return [s[0], s[1]]; }
+function sgObjet() { return SG_OBJETS[rnd(0, SG_OBJETS.length - 1)]; }
+
 /* ================= Astuces de calcul mental (domaine spécial) ================= */
 const TRICKS = [
-  { id: 'mult10', emoji: '🔟', title: 'Multiplier par 10', levels: ['cm2', 'sixieme'],
+  { id: 'mult10', emoji: '🔟', title: 'Multiplier par 10', levels: ['cm2', 'sixieme', 'singapour'],
     explanation: "Pour multiplier par 10, ajoute un zéro (ou décale la virgule d'un rang pour un nombre décimal).",
     gen(level) {
       if (level === 'sixieme' && Math.random() < 0.4) {
@@ -222,40 +301,40 @@ const TRICKS = [
       const a = rnd(2, 99); const result = a * 10;
       return { formula: `${a} × 10`, breakdown: `On ajoute un zéro : ${a} → ${result}`, result };
     } },
-  { id: 'mult100', emoji: '💯', title: 'Multiplier par 100', levels: ['sixieme'],
+  { id: 'mult100', emoji: '💯', title: 'Multiplier par 100', levels: ['sixieme', 'singapour'],
     explanation: "Pour multiplier par 100, ajoute deux zéros.",
     gen() { const a = rnd(2, 99); const result = a * 100; return { formula: `${a} × 100`, breakdown: `On ajoute deux zéros : ${a} → ${result}`, result }; } },
-  { id: 'mult11', emoji: '🔁', title: 'Multiplier par 11', levels: ['cm2', 'sixieme'],
+  { id: 'mult11', emoji: '🔁', title: 'Multiplier par 11', levels: ['cm2', 'sixieme', 'singapour'],
     explanation: "Pour un nombre à deux chiffres : sépare-les et ajoute leur somme entre eux.",
     gen() { let a; do { a = rnd(10, 89); } while ((Math.floor(a / 10) + a % 10) >= 10); const d1 = Math.floor(a / 10), d2 = a % 10, result = a * 11; return { formula: `${a} × 11`, breakdown: `${d1} + ${d2} = ${d1 + d2} → on place ${d1 + d2} entre ${d1} et ${d2}`, result }; } },
-  { id: 'mult5', emoji: '✋', title: 'Multiplier par 5', levels: ['cm2', 'sixieme'],
+  { id: 'mult5', emoji: '✋', title: 'Multiplier par 5', levels: ['cm2', 'sixieme', 'singapour'],
     explanation: "Multiplie par 10, puis divise par 2.",
     gen() { const a = rnd(2, 60); const step = a * 10; const result = step / 2; return { formula: `${a} × 5`, breakdown: `${a} × 10 = ${step}, puis ÷ 2`, result }; } },
-  { id: 'add-dizaine', emoji: '➕', title: 'Additionner en découpant', levels: ['cm2', 'sixieme'],
+  { id: 'add-dizaine', emoji: '➕', title: 'Additionner en découpant', levels: ['cm2', 'sixieme', 'singapour'],
     explanation: "Additionne d'abord les dizaines, puis les unités.",
     gen() { const a = rnd(11, 69), b = rnd(11, 39), result = a + b; const da = Math.floor(a / 10) * 10, db = Math.floor(b / 10) * 10, ua = a % 10, ub = b % 10; return { formula: `${a} + ${b}`, breakdown: `(${da}+${db}) + (${ua}+${ub}) = ${da + db} + ${ua + ub}`, result }; } },
-  { id: 'sub-complement', emoji: '➖', title: 'Soustraire avec le complément', levels: ['cm2', 'sixieme'],
+  { id: 'sub-complement', emoji: '➖', title: 'Soustraire avec le complément', levels: ['cm2', 'sixieme', 'singapour'],
     explanation: "Compte la distance entre les deux nombres au lieu de soustraire.",
     gen() { const a = rnd(30, 90), b = rnd(5, a - 5), result = a - b; const round = Math.ceil(b / 10) * 10, step1 = round - b, step2 = a - round; return { formula: `${a} - ${b}`, breakdown: `${b} → ${round} (+${step1}), puis ${round} → ${a} (+${step2})`, result }; } },
-  { id: 'mult3', emoji: '🔺', title: 'Multiplier par 3', levels: ['cm2', 'sixieme'],
+  { id: 'mult3', emoji: '🔺', title: 'Multiplier par 3', levels: ['cm2', 'sixieme', 'singapour'],
     explanation: "Double le nombre, puis ajoute le nombre de départ.",
     gen() { const a = rnd(2, 40); const result = a * 3; return { formula: `${a} × 3`, breakdown: `(${a} × 2) + ${a} = ${a * 2} + ${a}`, result }; } },
-  { id: 'mult4', emoji: '🍀', title: 'Multiplier par 4', levels: ['cm2', 'sixieme'],
+  { id: 'mult4', emoji: '🍀', title: 'Multiplier par 4', levels: ['cm2', 'sixieme', 'singapour'],
     explanation: "Double le nombre, puis double le résultat.",
     gen() { const a = rnd(2, 30); const result = a * 4; return { formula: `${a} × 4`, breakdown: `${a} × 2 = ${a * 2}, puis × 2`, result }; } },
-  { id: 'mult9', emoji: '✨', title: 'Multiplier par 9', levels: ['cm2', 'sixieme'],
+  { id: 'mult9', emoji: '✨', title: 'Multiplier par 9', levels: ['cm2', 'sixieme', 'singapour'],
     explanation: "Multiplie par 10, puis retire le nombre de départ.",
     gen() { const a = rnd(2, 30); const result = a * 9; return { formula: `${a} × 9`, breakdown: `${a} × 10 = ${a * 10}, puis − ${a}`, result }; } },
-  { id: 'mult25', emoji: '🎯', title: 'Multiplier par 25', levels: ['sixieme'],
+  { id: 'mult25', emoji: '🎯', title: 'Multiplier par 25', levels: ['sixieme', 'singapour'],
     explanation: "Divise par 4, puis multiplie par 100.",
     gen() { const a = rndMultiple(1, 10, 4); const result = a * 25; return { formula: `${a} × 25`, breakdown: `${a} ÷ 4 = ${a / 4}, puis × 100`, result }; } },
-  { id: 'carre5', emoji: '🧮', title: 'Carré des nombres finissant par 5', levels: ['sixieme'],
+  { id: 'carre5', emoji: '🧮', title: 'Carré des nombres finissant par 5', levels: ['sixieme', 'singapour'],
     explanation: "Multiplie le chiffre des dizaines par (lui-même + 1), puis colle 25.",
     gen() { const opts = [15, 25, 35, 45, 55, 65, 75, 85, 95]; const a = opts[rnd(0, opts.length - 1)]; const d = Math.floor(a / 10); const result = a * a; return { formula: `${a} × ${a}`, breakdown: `${d} × ${d + 1} = ${d * (d + 1)}, puis on colle 25`, result }; } },
-  { id: 'pct10', emoji: '📊', title: 'Trouver 10 % d\'un nombre', levels: ['sixieme'],
+  { id: 'pct10', emoji: '📊', title: 'Trouver 10 % d\'un nombre', levels: ['sixieme', 'singapour'],
     explanation: "10 % d'un nombre, c'est le nombre divisé par 10.",
     gen() { const a = rndMultiple(2, 50, 10); const result = a / 10; return { formula: `10 % de ${a}`, breakdown: `${a} ÷ 10`, result }; } },
-  { id: 'pct50', emoji: '📈', title: 'Trouver 50 % d\'un nombre', levels: ['sixieme'],
+  { id: 'pct50', emoji: '📈', title: 'Trouver 50 % d\'un nombre', levels: ['sixieme', 'singapour'],
     explanation: "50 % d'un nombre, c'est sa moitié.",
     gen() { const a = rndMultiple(2, 100, 2); const result = a / 2; return { formula: `50 % de ${a}`, breakdown: `${a} ÷ 2`, result }; } }
 ];
@@ -267,19 +346,19 @@ function q(obj) { return Object.assign({ unit: '', svg: null, limit: 18 }, obj);
 
 const DOMAINS = [
   { id: 'nombres', emoji: '🔢', title: 'Nombres entiers', skills: [
-    { id: 'decompo', title: 'Décomposer un nombre', explanation: "Chaque chiffre d'un nombre a une valeur selon sa position (unités, dizaines, centaines...).", levels: ['cm2', 'sixieme'],
+    { id: 'decompo', title: 'Décomposer un nombre', explanation: "Chaque chiffre d'un nombre a une valeur selon sa position (unités, dizaines, centaines...).", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) { const N = level === 'sixieme' ? rnd(10000, 999999) : rnd(1000, 9999); const digits = String(N).split('').reverse(); const names = ['unités', 'dizaines', 'centaines', 'milliers', 'dizaines de mille', 'centaines de mille']; const pos = rnd(0, digits.length - 1); const correct = digits[pos]; return q({ category: 'Décomposer', prompt: `Dans le nombre ${N}, quel est le chiffre des ${names[pos]} ?`, answer: correct, options: mkOptions(correct, [String(rnd(0, 9)), String(rnd(0, 9)), String(rnd(0, 9))]), limit: 15 }); } },
-    { id: 'comparer', title: 'Comparer des nombres', explanation: "Compare deux nombres en observant leurs chiffres de gauche à droite.", levels: ['cm2', 'sixieme'],
+    { id: 'comparer', title: 'Comparer des nombres', explanation: "Compare deux nombres en observant leurs chiffres de gauche à droite.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) { const max = level === 'sixieme' ? 999999 : 9999; let a = rnd(1, max), b = rnd(1, max); if (Math.random() < 0.1) b = a; const correct = a < b ? '<' : a > b ? '>' : '='; return q({ category: 'Comparer', prompt: `${a} ... ${b}`, answer: correct, options: ['<', '>', '='], limit: 12 }); } },
-    { id: 'arrondir', title: 'Arrondir un nombre', explanation: "Regarde le chiffre juste après le rang demandé pour savoir si on arrondit au-dessus ou en dessous.", levels: ['cm2', 'sixieme'],
+    { id: 'arrondir', title: 'Arrondir un nombre', explanation: "Regarde le chiffre juste après le rang demandé pour savoir si on arrondit au-dessus ou en dessous.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) { const N = level === 'sixieme' ? rnd(100, 99999) : rnd(10, 9999); const roundTo = level === 'sixieme' ? [10, 100, 1000][rnd(0, 2)] : [10, 100][rnd(0, 1)]; const correct = Math.round(N / roundTo) * roundTo; const label = roundTo === 10 ? 'la dizaine' : roundTo === 100 ? 'la centaine' : "l'unité de mille"; return q({ category: 'Arrondir', prompt: `Arrondis ${N} à ${label} près.`, answer: formatNum(correct), options: numericOptions(correct, 0).map(formatNum), limit: 15 }); } },
-    { id: 'multiples', title: 'Les multiples d\'un nombre', explanation: "Un multiple de N s'obtient en multipliant N par un nombre entier.", levels: ['cm2', 'sixieme'],
+    { id: 'multiples', title: 'Les multiples d\'un nombre', explanation: "Un multiple de N s'obtient en multipliant N par un nombre entier.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) { const N = rnd(2, level === 'sixieme' ? 15 : 10); const correct = N * rnd(2, 9); return q({ category: 'Multiples', prompt: `Lequel de ces nombres est un multiple de ${N} ?`, answer: String(correct), options: mkOptions(String(correct), [String(correct + 1), String(Math.max(1, correct - 1)), String(correct + 2)]), limit: 15 }); } },
-    { id: 'diviseurs', title: 'Les diviseurs d\'un nombre', explanation: "Un diviseur de N divise N sans laisser de reste.", levels: ['cm2', 'sixieme'],
+    { id: 'diviseurs', title: 'Les diviseurs d\'un nombre', explanation: "Un diviseur de N divise N sans laisser de reste.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) { const N = rnd(level === 'sixieme' ? 20 : 12, level === 'sixieme' ? 100 : 60); const divs = []; for (let i = 1; i <= N; i++) if (N % i === 0) divs.push(i); const correct = divs[rnd(0, divs.length - 1)]; const distract = []; let guard = 0; while (distract.length < 3 && guard < 60) { guard++; const c = rnd(2, N - 1); if (N % c !== 0 && !distract.includes(c) && c !== correct) distract.push(c); } return q({ category: 'Diviseurs', prompt: `Lequel de ces nombres est un diviseur de ${N} ?`, answer: String(correct), options: mkOptions(String(correct), distract.map(String)), limit: 18 }); } },
-    { id: 'pair-impair', title: 'Nombres pairs et impairs', explanation: "Un nombre pair se termine par 0, 2, 4, 6 ou 8.", levels: ['cm2', 'sixieme'],
+    { id: 'pair-impair', title: 'Nombres pairs et impairs', explanation: "Un nombre pair se termine par 0, 2, 4, 6 ou 8.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) { const N = rnd(1, level === 'sixieme' ? 9999 : 999); const correct = N % 2 === 0 ? 'Pair' : 'Impair'; return q({ category: 'Pair/Impair', prompt: `Le nombre ${N} est-il...`, answer: correct, options: ['Pair', 'Impair'], limit: 10 }); } },
-    { id: 'premiers', title: 'Nombres premiers', explanation: "Un nombre premier n'a que deux diviseurs : 1 et lui-même.", levels: ['cm2', 'sixieme'],
+    { id: 'premiers', title: 'Nombres premiers', explanation: "Un nombre premier n'a que deux diviseurs : 1 et lui-même.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) { const N = rnd(2, level === 'sixieme' ? 97 : 50); const correct = isPrime(N) ? 'Oui' : 'Non'; return q({ category: 'Premiers', prompt: `${N} est-il un nombre premier ?`, answer: correct, options: ['Oui', 'Non'], limit: 15 }); } },
     { id: 'pgcd', title: 'PGCD de deux nombres', explanation: "Le PGCD est le plus grand nombre qui divise à la fois les deux nombres.", levels: ['sixieme'],
       question() { const a = rnd(12, 60), b = rnd(12, 60); const correct = gcd(a, b); return q({ category: 'PGCD', prompt: `Quel est le PGCD de ${a} et ${b} ?`, answer: String(correct), options: mkOptions(String(correct), [String(correct + 1), String(Math.max(1, correct - 1)), String(correct + 2)]), limit: 25 }); } },
@@ -287,55 +366,55 @@ const DOMAINS = [
       question() { const a = rnd(4, 15), b = rnd(4, 15); const correct = (a * b) / gcd(a, b); return q({ category: 'PPCM', prompt: `Quel est le PPCM de ${a} et ${b} ?`, answer: String(correct), options: mkOptions(String(correct), [String(correct + a), String(Math.max(1, correct - b)), String(correct * 2)]), limit: 25 }); } }
   ] },
   { id: 'suites', emoji: '🔗', title: 'Suites de nombres', skills: [
-    { id: 'suite-arith', title: 'Suite arithmétique', explanation: "On passe d'un terme au suivant en ajoutant toujours le même nombre.", levels: ['cm2', 'sixieme'],
+    { id: 'suite-arith', title: 'Suite arithmétique', explanation: "On passe d'un terme au suivant en ajoutant toujours le même nombre.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) { const start = rnd(1, 30), diff = rnd(2, level === 'sixieme' ? 15 : 9) * (Math.random() < 0.3 ? -1 : 1); const terms = [start, start + diff, start + 2 * diff, start + 3 * diff]; const correct = start + 4 * diff; return q({ category: 'Suite arithmétique', prompt: `${terms.join(' , ')} , ... ?`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 20 }); } },
     { id: 'suite-geom', title: 'Suite géométrique', explanation: "On passe d'un terme au suivant en multipliant toujours par le même nombre.", levels: ['sixieme'],
       question() { const start = rnd(1, 5), ratio = rnd(2, 3); const terms = [0, 1, 2, 3].map(i => start * Math.pow(ratio, i)); const correct = start * Math.pow(ratio, 4); return q({ category: 'Suite géométrique', prompt: `${terms.join(' , ')} , ... ?`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 22 }); } }
   ] },
   { id: 'multiplication', emoji: '✖️', title: 'Multiplication', skills: [
-    { id: 'tables', title: 'Tables de multiplication', explanation: "Connaître ses tables par cœur, c'est la base du calcul rapide.", levels: ['cm2', 'sixieme'],
+    { id: 'tables', title: 'Tables de multiplication', explanation: "Connaître ses tables par cœur, c'est la base du calcul rapide.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const a = rnd(2, 9), b = rnd(2, 9), correct = a * b; return q({ category: 'Tables', prompt: `${a} × ${b}`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 10 }); } },
-    { id: 'facteur-manquant', title: 'Trouver le facteur manquant', explanation: "Utilise la division pour retrouver le nombre manquant.", levels: ['cm2', 'sixieme'],
+    { id: 'facteur-manquant', title: 'Trouver le facteur manquant', explanation: "Utilise la division pour retrouver le nombre manquant.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const a = rnd(2, 12), b = rnd(2, 12), product = a * b; return q({ category: 'Facteur manquant', prompt: `${a} × ? = ${product}`, answer: String(b), options: numericOptions(b, 0).map(String), limit: 15 }); } },
-    { id: 'mult-1chiffre', title: 'Multiplier par un nombre à 1 chiffre', explanation: "Pose l'opération dans ta tête, chiffre par chiffre.", levels: ['cm2', 'sixieme'],
+    { id: 'mult-1chiffre', title: 'Multiplier par un nombre à 1 chiffre', explanation: "Pose l'opération dans ta tête, chiffre par chiffre.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const a = rnd(11, 99), b = rnd(2, 9), correct = a * b; return q({ category: 'Multiplication', prompt: `${a} × ${b}`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 20 }); } },
-    { id: 'mult-2chiffres', title: 'Multiplier par un nombre à 2 chiffres', explanation: "Décompose le calcul en deux étapes (dizaines puis unités).", levels: ['sixieme'],
+    { id: 'mult-2chiffres', title: 'Multiplier par un nombre à 2 chiffres', explanation: "Décompose le calcul en deux étapes (dizaines puis unités).", levels: ['sixieme', 'singapour'],
       question() { const a = rnd(11, 49), b = rnd(11, 29), correct = a * b; return q({ category: 'Multiplication', prompt: `${a} × ${b}`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 30 }); } },
-    { id: 'mult-puissance10', title: 'Multiplier par 10, 100 ou 1000', explanation: "Ajoute autant de zéros que la puissance de 10.", levels: ['cm2', 'sixieme'],
+    { id: 'mult-puissance10', title: 'Multiplier par 10, 100 ou 1000', explanation: "Ajoute autant de zéros que la puissance de 10.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) { const a = rnd(2, 99); const p = level === 'sixieme' ? [10, 100, 1000][rnd(0, 2)] : [10, 100][rnd(0, 1)]; const correct = a * p; return q({ category: 'Puissances de 10', prompt: `${a} × ${p}`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 15 }); } }
   ] },
   { id: 'division', emoji: '➗', title: 'Division', skills: [
-    { id: 'div-sans-reste', title: 'Division sans reste', explanation: "Cherche combien de fois le diviseur rentre exactement dans le nombre.", levels: ['cm2', 'sixieme'],
+    { id: 'div-sans-reste', title: 'Division sans reste', explanation: "Cherche combien de fois le diviseur rentre exactement dans le nombre.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) { const b = rnd(2, 12), qte = rnd(2, level === 'sixieme' ? 50 : 20), a = b * qte; return q({ category: 'Division', prompt: `${a} ÷ ${b}`, answer: String(qte), options: numericOptions(qte, 0).map(String), limit: 20 }); } },
-    { id: 'div-avec-reste', title: 'Division avec reste', explanation: "Le reste est ce qu'il manque pour compléter une fois de plus le diviseur.", levels: ['cm2', 'sixieme'],
+    { id: 'div-avec-reste', title: 'Division avec reste', explanation: "Le reste est ce qu'il manque pour compléter une fois de plus le diviseur.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const b = rnd(2, 9), qte = rnd(2, 15), r = rnd(1, b - 1), a = b * qte + r; return q({ category: 'Division avec reste', prompt: `Quel est le reste de ${a} ÷ ${b} ?`, answer: String(r), options: mkOptions(String(r), [String((r + 1) % b), String(Math.max(0, r - 1)), String((r + 2) % b)]), limit: 20 }); } },
-    { id: 'div-relation-mult', title: 'Multiplication et division', explanation: "Une division défait une multiplication.", levels: ['cm2', 'sixieme'],
+    { id: 'div-relation-mult', title: 'Multiplication et division', explanation: "Une division défait une multiplication.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const b = rnd(2, 12), qte = rnd(2, 12), product = b * qte; return q({ category: 'Multiplication / division', prompt: `Sachant que ${b} × ${qte} = ${product}, combien fait ${product} ÷ ${b} ?`, answer: String(qte), options: numericOptions(qte, 0).map(String), limit: 15 }); } }
   ] },
   { id: 'fractions', emoji: '🍰', title: 'Fractions', skills: [
-    { id: 'lire-fraction', title: 'Lire une fraction', explanation: "Compte les parts coloriées sur le nombre total de parts.", levels: ['cm2', 'sixieme'],
+    { id: 'lire-fraction', title: 'Lire une fraction', explanation: "Compte les parts coloriées sur le nombre total de parts.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const n = rnd(3, 8), m = rnd(1, n - 1); const correct = `${m}/${n}`; const distract = [`${Math.min(n - 1, m + 1)}/${n}`, `${n - m}/${n}`, `${m}/${n + 1}`]; return q({ category: 'Lire une fraction', prompt: 'Quelle fraction est représentée ?', svg: svgFractionBar(n, m), answer: correct, options: mkOptions(correct, distract), limit: 18 }); } },
-    { id: 'comparer-fractions', title: 'Comparer des fractions', explanation: "Compare en multipliant en croix : a/b et c/d, compare a×d et c×b.", levels: ['cm2', 'sixieme'],
+    { id: 'comparer-fractions', title: 'Comparer des fractions', explanation: "Compare en multipliant en croix : a/b et c/d, compare a×d et c×b.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const denoms = [2, 3, 4, 5, 6, 8, 10]; let a, b, c, d, guard = 0; do { b = denoms[rnd(0, denoms.length - 1)]; d = denoms[rnd(0, denoms.length - 1)]; a = rnd(1, b - 1); c = rnd(1, d - 1); guard++; } while (a * d === c * b && guard < 20); if (a * d === c * b) { c = c === 1 ? 2 : c - 1; } const fa = `${a}/${b}`, fc = `${c}/${d}`; const correct = (a * d > c * b) ? fa : fc; return q({ category: 'Comparer fractions', prompt: `Quelle est la fraction la plus grande : ${fa} ou ${fc} ?`, answer: correct, options: [fa, fc], limit: 22 }); } },
-    { id: 'simplifier-fraction', title: 'Simplifier une fraction', explanation: "Divise le numérateur et le dénominateur par un même nombre.", levels: ['sixieme'],
+    { id: 'simplifier-fraction', title: 'Simplifier une fraction', explanation: "Divise le numérateur et le dénominateur par un même nombre.", levels: ['sixieme', 'singapour'],
       question() { const denomsReduits = [2, 3, 4, 5]; const qd = denomsReduits[rnd(0, denomsReduits.length - 1)]; const p = rnd(1, qd - 1); const f = rnd(2, 5); const m = p * f, n = qd * f; const correct = `${p}/${qd}`; return q({ category: 'Simplifier', prompt: `Simplifie la fraction ${m}/${n}`, answer: correct, options: mkOptions(correct, [`${m}/${qd}`, `${p}/${n}`, `${p + 1}/${qd}`]), limit: 25 }); } },
-    { id: 'fractions-equiv', title: 'Fractions équivalentes', explanation: "Multiplie le numérateur et le dénominateur par le même nombre.", levels: ['cm2', 'sixieme'],
+    { id: 'fractions-equiv', title: 'Fractions équivalentes', explanation: "Multiplie le numérateur et le dénominateur par le même nombre.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const q0 = rnd(2, 6), p0 = rnd(1, q0 - 1), f = rnd(2, 4); const correct = `${p0 * f}/${q0 * f}`; return q({ category: 'Fractions équivalentes', prompt: `Quelle fraction est équivalente à ${p0}/${q0} ?`, answer: correct, options: mkOptions(correct, [`${p0 * f + 1}/${q0 * f}`, `${p0}/${q0 * f}`, `${p0 * f}/${q0 * f + 1}`]), limit: 22 }); } }
   ] },
   { id: 'decimaux', emoji: '🔟', title: 'Nombres décimaux', skills: [
-    { id: 'valeur-chiffre', title: 'Valeur d\'un chiffre', explanation: "Après la virgule : dixièmes, centièmes, millièmes.", levels: ['cm2', 'sixieme'],
+    { id: 'valeur-chiffre', title: 'Valeur d\'un chiffre', explanation: "Après la virgule : dixièmes, centièmes, millièmes.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const intPart = rnd(1, 99); const dec = rnd(100, 999); const N = `${intPart},${dec}`; const names = ['dixièmes', 'centièmes', 'millièmes']; const pos = rnd(0, 2); const correct = String(dec)[pos]; return q({ category: 'Valeur d\'un chiffre', prompt: `Dans ${N}, quel est le chiffre des ${names[pos]} ?`, answer: correct, options: mkOptions(correct, [String(rnd(0, 9)), String(rnd(0, 9)), String(rnd(0, 9))]), limit: 18 }); } },
-    { id: 'comparer-decimaux', title: 'Comparer des décimaux', explanation: "Compare d'abord la partie entière, puis les dixièmes, puis les centièmes.", levels: ['cm2', 'sixieme'],
+    { id: 'comparer-decimaux', title: 'Comparer des décimaux', explanation: "Compare d'abord la partie entière, puis les dixièmes, puis les centièmes.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const a = Math.round((rnd(1, 200) / 10) * 10) / 10, b = Math.round((rnd(1, 200) / 10) * 10) / 10; const correct = a < b ? '<' : a > b ? '>' : '='; return q({ category: 'Comparer décimaux', prompt: `${formatNum(a)} ... ${formatNum(b)}`, answer: correct, options: ['<', '>', '='], limit: 15 }); } },
-    { id: 'arrondir-decimaux', title: 'Arrondir un décimal', explanation: "Regarde le chiffre suivant pour savoir si on monte ou pas.", levels: ['cm2', 'sixieme'],
+    { id: 'arrondir-decimaux', title: 'Arrondir un décimal', explanation: "Regarde le chiffre suivant pour savoir si on monte ou pas.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const N = Math.round((rnd(100, 9999) / 100) * 100) / 100; const correct = Math.round(N); return q({ category: 'Arrondir décimal', prompt: `Arrondis ${formatNum(N)} à l'unité près.`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 18 }); } },
-    { id: 'add-sub-decimaux', title: 'Additionner / soustraire des décimaux', explanation: "Aligne bien les virgules avant de calculer.", levels: ['cm2', 'sixieme'],
+    { id: 'add-sub-decimaux', title: 'Additionner / soustraire des décimaux', explanation: "Aligne bien les virgules avant de calculer.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { let a = Math.round((rnd(10, 500) / 10) * 10) / 10, b = Math.round((rnd(10, 300) / 10) * 10) / 10; if (b > a) [a, b] = [b, a]; const op = Math.random() < 0.5 ? '+' : '-'; const correct = Math.round((op === '+' ? a + b : a - b) * 10) / 10; return q({ category: 'Add/Sous décimaux', prompt: `${formatNum(a)} ${op} ${formatNum(b)}`, answer: formatNum(correct), options: numericOptions(correct, 1).map(formatNum), limit: 22 }); } },
-    { id: 'mult-decimaux-10', title: 'Multiplier un décimal par 10, 100...', explanation: "Décale la virgule vers la droite d'autant de rangs que de zéros.", levels: ['sixieme'],
+    { id: 'mult-decimaux-10', title: 'Multiplier un décimal par 10, 100...', explanation: "Décale la virgule vers la droite d'autant de rangs que de zéros.", levels: ['sixieme', 'singapour'],
       question() { const a = Math.round((rnd(10, 999) / 10) * 10) / 10; const p = [10, 100][rnd(0, 1)]; const correct = Math.round(a * p * 10) / 10; return q({ category: 'Décimaux × 10', prompt: `${formatNum(a)} × ${p}`, answer: formatNum(correct), options: numericOptions(correct, correct % 1 !== 0 ? 1 : 0).map(formatNum), limit: 18 }); } }
   ] },
   { id: 'calculs', emoji: '🧮', title: 'Calculs et priorités', skills: [
-    { id: 'priorites', title: 'Priorités opératoires', explanation: "On effectue d'abord les parenthèses, puis les multiplications/divisions, puis les additions/soustractions.", levels: ['cm2', 'sixieme'],
+    { id: 'priorites', title: 'Priorités opératoires', explanation: "On effectue d'abord les parenthèses, puis les multiplications/divisions, puis les additions/soustractions.", levels: ['cm2', 'sixieme', 'singapour'],
       question() {
         const a = rnd(2, 9), b = rnd(2, 9), c = rnd(2, 9);
         const patterns = [
@@ -350,15 +429,15 @@ const DOMAINS = [
       } }
   ] },
   { id: 'pourcentages', emoji: '📊', title: 'Pourcentages', skills: [
-    { id: 'calc-pourcentage', title: 'Calculer un pourcentage', explanation: "X % d'un nombre, c'est ce nombre multiplié par X puis divisé par 100.", levels: ['cm2', 'sixieme'],
+    { id: 'calc-pourcentage', title: 'Calculer un pourcentage', explanation: "X % d'un nombre, c'est ce nombre multiplié par X puis divisé par 100.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) { const pcts = level === 'sixieme' ? [10, 15, 20, 25, 50, 75] : [10, 20, 25, 50]; const pct = pcts[rnd(0, pcts.length - 1)]; const N = rnd(20, 400); const correct = Math.round(N * pct / 100); return q({ category: 'Pourcentage', prompt: `${pct} % de ${N}`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 20 }); } },
-    { id: 'convert-pct', title: 'Convertir fraction / pourcentage', explanation: "Transforme la fraction pour obtenir un dénominateur de 100.", levels: ['sixieme'],
+    { id: 'convert-pct', title: 'Convertir fraction / pourcentage', explanation: "Transforme la fraction pour obtenir un dénominateur de 100.", levels: ['sixieme', 'singapour'],
       question() { const denoms = [2, 4, 5, 10, 20, 25, 50]; const denom = denoms[rnd(0, denoms.length - 1)]; const num = rnd(1, denom - 1); const correct = Math.round(num / denom * 100); return q({ category: 'Fraction → %', prompt: `Quel pourcentage représente la fraction ${num}/${denom} ?`, answer: `${correct} %`, options: numericOptions(correct, 0).map(v => `${v} %`), limit: 22 }); } }
   ] },
   { id: 'mesures', emoji: '📏', title: 'Grandeurs et mesures', skills: [
-    { id: 'convert-longueurs', title: 'Convertir des longueurs', explanation: "1 m = 100 cm = 1000 mm. 1 km = 1000 m.", levels: ['cm2', 'sixieme'],
+    { id: 'convert-longueurs', title: 'Convertir des longueurs', explanation: "1 m = 100 cm = 1000 mm. 1 km = 1000 m.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) { const units = level === 'sixieme' ? { mm: 0.001, cm: 0.01, m: 1, km: 1000 } : { mm: 0.001, cm: 0.01, m: 1 }; const keys = Object.keys(units); let from = keys[rnd(0, keys.length - 1)], to = keys[rnd(0, keys.length - 1)]; while (to === from) to = keys[rnd(0, keys.length - 1)]; const value = rnd(1, 50); const correctRaw = value * units[from] / units[to]; const decimals = correctRaw % 1 !== 0 ? 2 : 0; const correct = Math.round(correctRaw * 100) / 100; return q({ category: 'Longueurs', prompt: `${value} ${from} = ? ${to}`, answer: formatNum(correct), options: numericOptions(correct, decimals).map(formatNum), limit: 20 }); } },
-    { id: 'perimetre', title: 'Calculer un périmètre', explanation: "Le périmètre est la somme des longueurs de tous les côtés.", levels: ['cm2', 'sixieme'],
+    { id: 'perimetre', title: 'Calculer un périmètre', explanation: "Le périmètre est la somme des longueurs de tous les côtés.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) {
         const shapes = level === 'sixieme' ? ['carre', 'rectangle', 'triangle', 'cercle'] : ['carre', 'rectangle'];
         const shape = shapes[rnd(0, shapes.length - 1)];
@@ -367,7 +446,7 @@ const DOMAINS = [
         if (shape === 'triangle') { const a = rnd(3, 10), b = rnd(3, 10), c = rnd(3, 10); const correct = a + b + c; return q({ category: 'Périmètre', prompt: 'Quel est le périmètre de ce triangle ?', unit: 'cm', svg: svgTrianglePerim(a, b, c), answer: formatNum(correct), options: numericOptions(correct, 0).map(formatNum), limit: 22 }); }
         const r = rnd(2, 10); const correct = Math.round(2 * 3.14 * r * 100) / 100; return q({ category: 'Périmètre', prompt: 'Quel est le périmètre de ce cercle ? (π ≈ 3,14)', unit: 'cm', svg: svgCircle(r), answer: formatNum(correct), options: numericOptions(correct, 1).map(formatNum), limit: 25 });
       } },
-    { id: 'aire', title: 'Calculer une aire', explanation: "L'aire se calcule différemment pour chaque figure.", levels: ['cm2', 'sixieme'],
+    { id: 'aire', title: 'Calculer une aire', explanation: "L'aire se calcule différemment pour chaque figure.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) {
         const shapes = level === 'sixieme' ? ['carre', 'rectangle', 'triangle', 'cercle'] : ['carre', 'rectangle'];
         const shape = shapes[rnd(0, shapes.length - 1)];
@@ -376,41 +455,222 @@ const DOMAINS = [
         if (shape === 'triangle') { const base = rnd(4, 16), hauteur = rnd(3, 12); const correct = Math.round((base * hauteur / 2) * 100) / 100; return q({ category: 'Aire', prompt: "Quelle est l'aire de ce triangle ?", unit: 'cm²', svg: svgTriangleRight(base, hauteur), answer: formatNum(correct), options: numericOptions(correct, correct % 1 !== 0 ? 1 : 0).map(formatNum), limit: 25 }); }
         const r = rnd(2, 10); const correct = Math.round(3.14 * r * r * 100) / 100; return q({ category: 'Aire', prompt: "Quelle est l'aire de ce cercle ? (π ≈ 3,14)", unit: 'cm²', svg: svgCircle(r), answer: formatNum(correct), options: numericOptions(correct, 1).map(formatNum), limit: 25 });
       } },
-    { id: 'convert-masses', title: 'Convertir des masses', explanation: "1 kg = 1000 g. 1 tonne = 1000 kg.", levels: ['cm2', 'sixieme'],
+    { id: 'convert-masses', title: 'Convertir des masses', explanation: "1 kg = 1000 g. 1 tonne = 1000 kg.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) { const units = level === 'sixieme' ? { g: 1, kg: 1000, t: 1000000 } : { g: 1, kg: 1000 }; const keys = Object.keys(units); let from = keys[rnd(0, keys.length - 1)], to = keys[rnd(0, keys.length - 1)]; while (to === from) to = keys[rnd(0, keys.length - 1)]; const value = rnd(1, 20); const correctRaw = value * units[from] / units[to]; const decimals = correctRaw % 1 !== 0 ? 2 : 0; const correct = Math.round(correctRaw * 100) / 100; return q({ category: 'Masses', prompt: `${value} ${from} = ? ${to}`, answer: formatNum(correct), options: numericOptions(correct, decimals).map(formatNum), limit: 20 }); } },
-    { id: 'convert-durees', title: 'Convertir des durées', explanation: "1 min = 60 s. 1 h = 60 min.", levels: ['cm2', 'sixieme'],
+    { id: 'convert-durees', title: 'Convertir des durées', explanation: "1 min = 60 s. 1 h = 60 min.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const units = { s: 1, min: 60, h: 3600 }; const keys = Object.keys(units); let from = keys[rnd(0, keys.length - 1)], to = keys[rnd(0, keys.length - 1)]; while (to === from) to = keys[rnd(0, keys.length - 1)]; const value = rnd(1, 10); const correctRaw = value * units[from] / units[to]; const decimals = correctRaw % 1 !== 0 ? 2 : 0; const correct = Math.round(correctRaw * 100) / 100; return q({ category: 'Durées', prompt: `${value} ${from} = ? ${to}`, answer: formatNum(correct), options: numericOptions(correct, decimals).map(formatNum), limit: 20 }); } },
-    { id: 'convert-volumes', title: 'Comparer des contenances', explanation: "1 L = 100 cL = 1000 mL.", levels: ['cm2', 'sixieme'],
+    { id: 'convert-volumes', title: 'Comparer des contenances', explanation: "1 L = 100 cL = 1000 mL.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const a = rnd(1, 9), b = rnd(1, 9); const unitsA = ['mL', 'cL', 'L'][rnd(0, 2)], unitsB = ['mL', 'cL', 'L'][rnd(0, 2)]; const factor = { mL: 1, cL: 10, L: 1000 }; const va = a * factor[unitsA], vb = b * factor[unitsB]; if (va === vb) return q({ category: 'Contenances', prompt: `Quel volume est le plus grand : ${a} ${unitsA} ou ${b + 1} ${unitsB} ?`, answer: `${b + 1} ${unitsB}`, options: [`${a} ${unitsA}`, `${b + 1} ${unitsB}`], limit: 20 }); const labelA = `${a} ${unitsA}`, labelB = `${b} ${unitsB}`; const correct = va > vb ? labelA : labelB; return q({ category: 'Contenances', prompt: `Quel volume est le plus grand : ${labelA} ou ${labelB} ?`, answer: correct, options: [labelA, labelB], limit: 20 }); } }
   ] },
   { id: 'angles', emoji: '📐', title: 'Les angles', skills: [
-    { id: 'type-angle', title: 'Reconnaître un type d\'angle', explanation: "Aigu : moins de 90°. Droit : exactement 90°. Obtus : plus de 90°.", levels: ['cm2', 'sixieme'],
+    { id: 'type-angle', title: 'Reconnaître un type d\'angle', explanation: "Aigu : moins de 90°. Droit : exactement 90°. Obtus : plus de 90°.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) { let deg = rnd(10, 170); if (Math.random() < 0.15) deg = 90; const correct = deg < 90 ? 'Aigu' : deg === 90 ? 'Droit' : 'Obtus'; return q({ category: 'Type d\'angle', prompt: "Quel est ce type d'angle ?", svg: svgAngle(deg), answer: correct, options: ['Aigu', 'Droit', 'Obtus'], limit: 15 }); } },
-    { id: 'mesure-angle', title: 'Estimer une mesure d\'angle', explanation: "Compare l'angle dessiné à un angle droit (90°) pour estimer sa mesure.", levels: ['sixieme'],
+    { id: 'mesure-angle', title: 'Estimer une mesure d\'angle', explanation: "Compare l'angle dessiné à un angle droit (90°) pour estimer sa mesure.", levels: ['sixieme', 'singapour'],
       question() { const deg = rnd(2, 34) * 5; const correct = `${deg}°`; const distract = [`${deg + 10}°`, `${Math.max(5, deg - 10)}°`, `${deg + 20}°`]; return q({ category: 'Mesure d\'angle', prompt: 'Quelle est la mesure approximative de cet angle ?', svg: svgAngle(deg), answer: correct, options: mkOptions(correct, distract), limit: 20 }); } }
   ] },
   { id: 'espace', emoji: '🗺️', title: 'Espace et géométrie', skills: [
-    { id: 'coordonnees', title: 'Coordonnées dans un repère', explanation: "Le premier nombre indique l'abscisse (horizontal), le second l'ordonnée (vertical).", levels: ['cm2', 'sixieme'],
+    { id: 'coordonnees', title: 'Coordonnées dans un repère', explanation: "Le premier nombre indique l'abscisse (horizontal), le second l'ordonnée (vertical).", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const size = 5, x = rnd(0, size), y = rnd(0, size); const correct = `(${x} ; ${y})`; const distract = [`(${y} ; ${x})`, `(${Math.min(size, x + 1)} ; ${y})`, `(${x} ; ${Math.min(size, y + 1)})`]; return q({ category: 'Coordonnées', prompt: 'Quelles sont les coordonnées du point ?', svg: svgGridPoint(x, y, size), answer: correct, options: mkOptions(correct, distract), limit: 20 }); } },
-    { id: 'symetrie', title: 'Axe de symétrie', explanation: "Une figure a un axe de symétrie si on peut la plier en deux parts identiques le long de cette ligne.", levels: ['cm2', 'sixieme'],
+    { id: 'symetrie', title: 'Axe de symétrie', explanation: "Une figure a un axe de symétrie si on peut la plier en deux parts identiques le long de cette ligne.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const s = SYMMETRY_SHAPES[rnd(0, SYMMETRY_SHAPES.length - 1)]; const correct = s.symmetric ? 'Oui' : 'Non'; return q({ category: 'Symétrie', prompt: 'La ligne pointillée est-elle un axe de symétrie ?', svg: s.svg, answer: correct, options: ['Oui', 'Non'], limit: 18 }); } },
-    { id: 'droites', title: 'Droites parallèles, perpendiculaires, sécantes', explanation: "Parallèles : ne se croisent jamais. Perpendiculaires : se croisent à angle droit. Sécantes : se croisent ailleurs.", levels: ['cm2', 'sixieme'],
+    { id: 'droites', title: 'Droites parallèles, perpendiculaires, sécantes', explanation: "Parallèles : ne se croisent jamais. Perpendiculaires : se croisent à angle droit. Sécantes : se croisent ailleurs.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const kind = ['Parallèles', 'Perpendiculaires', 'Sécantes'][rnd(0, 2)]; return q({ category: 'Droites', prompt: 'Comment sont ces deux droites ?', svg: svgTwoLines(kind), answer: kind, options: ['Parallèles', 'Perpendiculaires', 'Sécantes'], limit: 15 }); } },
-    { id: 'figures-planes', title: 'Reconnaître une figure', explanation: "Compte les côtés pour identifier le nom de la figure.", levels: ['cm2', 'sixieme'],
+    { id: 'figures-planes', title: 'Reconnaître une figure', explanation: "Compte les côtés pour identifier le nom de la figure.", levels: ['cm2', 'sixieme', 'singapour'],
       question(level) { const shapes = level === 'sixieme' ? [{ n: 3, name: 'Triangle' }, { n: 4, name: 'Carré' }, { n: 5, name: 'Pentagone' }, { n: 6, name: 'Hexagone' }, { n: 0, name: 'Cercle' }] : [{ n: 3, name: 'Triangle' }, { n: 4, name: 'Carré' }, { n: 5, name: 'Pentagone' }]; const s = shapes[rnd(0, shapes.length - 1)]; const svg = s.n === 0 ? svgCircleShape() : svgPolygon(s.n); return q({ category: 'Figures planes', prompt: 'Quel est le nom de cette figure ?', svg, answer: s.name, options: shuffle(shapes.map(x => x.name)), limit: 15 }); } },
-    { id: 'solides', title: 'Sommets, arêtes et faces des solides', explanation: "Un solide a des sommets (pointes), des arêtes (bords) et des faces (surfaces plates).", levels: ['cm2', 'sixieme'],
+    { id: 'solides', title: 'Sommets, arêtes et faces des solides', explanation: "Un solide a des sommets (pointes), des arêtes (bords) et des faces (surfaces plates).", levels: ['cm2', 'sixieme', 'singapour'],
       question() {
         const SOLIDS = [{ name: 'Cube', icon: '🧊', sommets: 8, aretes: 12, faces: 6 }, { name: 'Pavé droit', icon: '📦', sommets: 8, aretes: 12, faces: 6 }, { name: 'Pyramide à base carrée', icon: '🔺', sommets: 5, aretes: 8, faces: 5 }, { name: 'Prisme triangulaire', icon: '🔷', sommets: 6, aretes: 9, faces: 5 }];
         const s = SOLIDS[rnd(0, SOLIDS.length - 1)]; const attrs = ['sommets', 'arêtes', 'faces']; const attr = attrs[rnd(0, 2)]; const key = attr === 'arêtes' ? 'aretes' : attr; const correct = s[key];
         return q({ category: 'Solides', prompt: `${s.icon} Combien de ${attr} a un(e) ${s.name} ?`, answer: String(correct), options: mkOptions(String(correct), [String(correct + 1), String(Math.max(0, correct - 1)), String(correct + 2)]), limit: 18 });
       } }
-  ] }
-];
+  ] },
+
+  /* ========== Méthode de Singapour — Primary 6 (11-12 ans) ========== */
+  { id: 'barres', emoji: '🧱', title: 'Modèles en barres', skills: [
+    { id: 'barres-total', title: 'Deux parts et un total', explanation: "Dessine une barre par personne. Compte le nombre total de parts égales, puis divise le total par ce nombre : tu obtiens la valeur d'une part.", levels: ['singapour'],
+      question() {
+        const [n1, n2] = sgDeuxNoms(), obj = sgObjet();
+        const a = rnd(1, 3), b = a + rnd(1, 3), part = rnd(2, 12) * 5, total = (a + b) * part;
+        const cherche = Math.random() < 0.5;
+        const qui = cherche ? n1 : n2, rep = (cherche ? a : b) * part;
+        return q({ category: 'Parts et total', prompt: `${n1} et ${n2} ont ${total} ${obj} en tout. ${n1} en a ${a} part${a > 1 ? 's' : ''}, ${n2} en a ${b}. Combien ${qui} en a-t-il ?`,
+          svg: svgBarModel([{ name: n1, units: a, label: cherche ? '?' : '' }, { name: n2, units: b, label: cherche ? '' : '?' }], `${total} ${obj}`),
+          answer: formatNum(rep), options: spreadOptions(rep, 0), limit: 30 });
+      } },
+    { id: 'barres-comparaison', title: 'Un écart entre deux parts', explanation: "Retire d'abord l'écart du total. Ce qui reste se partage en deux parts égales : c'est la plus petite des deux quantités.", levels: ['singapour'],
+      question() {
+        const [n1, n2] = sgDeuxNoms(), obj = sgObjet();
+        const petit = rnd(5, 60), ecart = rnd(2, 30), total = 2 * petit + ecart;
+        return q({ category: 'Écart', prompt: `${n1} et ${n2} ont ${total} ${obj} en tout. ${n2} en a ${ecart} de plus que ${n1}. Combien ${n1} en a-t-il ?`,
+          svg: svgBarModel([{ name: n1, units: 1, label: '?' }, { name: n2, units: 1, extra: `${ecart}` }], `${total} ${obj}`),
+          answer: formatNum(petit), options: spreadOptions(petit, 0), limit: 30 });
+      } },
+    { id: 'barres-fraction', title: "Une fraction d'une quantité", explanation: "Partage la barre en autant de parts que le dénominateur. Une part vaut le total divisé par le dénominateur. Multiplie ensuite par le numérateur.", levels: ['singapour'],
+      question() {
+        const den = rnd(2, 6), num = rnd(1, den - 1), part = rnd(3, 20), total = den * part, rep = num * part;
+        const [n1] = sgDeuxNoms(), obj = sgObjet();
+        return q({ category: 'Fraction du tout', prompt: `${n1} a ${total} ${obj}. Il en donne les ${num}/${den}. Combien en donne-t-il ?`,
+          svg: svgFractionBar(den, num), answer: formatNum(rep), options: spreadOptions(rep, 0), limit: 25 });
+      } },
+    { id: 'barres-reste', title: 'Retrouver le tout à partir du reste', explanation: "Si on enlève une fraction, le reste correspond aux parts qui n'ont pas été prises. Divise le reste par ce nombre de parts pour trouver une part, puis remonte au total.", levels: ['singapour'],
+      question() {
+        const den = rnd(2, 5), num = rnd(1, den - 1), part = rnd(3, 20), total = den * part, reste = (den - num) * part;
+        const [n1] = sgDeuxNoms();
+        return q({ category: 'Retour au tout', prompt: `${n1} dépense les ${num}/${den} de son argent. Il lui reste ${reste} €. Combien avait-il au départ ?`,
+          svg: svgBarModel([{ name: 'Départ', units: den, label: '?' }, { name: 'Reste', units: den - num, label: `${reste} €` }], null),
+          answer: formatNum(total), options: spreadOptions(total, 0), limit: 30 });
+      } }
+  ] },
+
+  { id: 'rapports', emoji: '⚖️', title: 'Rapports', skills: [
+    { id: 'ratio-simplifier', title: 'Simplifier un rapport', explanation: "Divise les deux termes du rapport par leur plus grand diviseur commun, exactement comme pour une fraction.", levels: ['singapour'],
+      question() {
+        const paires = [[1, 2], [1, 3], [2, 3], [3, 4], [2, 5], [3, 5], [4, 5], [5, 6], [3, 7], [5, 8]];
+        const [p, r] = paires[rnd(0, paires.length - 1)], g = rnd(2, 9);
+        const rep = `${p} : ${r}`;
+        return q({ category: 'Simplifier', prompt: `Simplifie le rapport ${p * g} : ${r * g}`, answer: rep,
+          options: mkOptions(rep, [`${r} : ${p}`, `${p + 1} : ${r}`, `${p} : ${r + 1}`, `${p * 2} : ${r}`]), limit: 20 });
+      } },
+    { id: 'ratio-equivalent', title: 'Compléter un rapport égal', explanation: "Cherche par combien on multiplie le premier terme. Applique ensuite le même multiplicateur au second.", levels: ['singapour'],
+      question() {
+        const p = rnd(2, 7), r = rnd(2, 9), k = rnd(2, 8), rep = r * k;
+        return q({ category: 'Rapport égal', prompt: `Complète : ${p} : ${r} = ${p * k} : ?`, answer: formatNum(rep), options: spreadOptions(rep, 0), limit: 20 });
+      } },
+    { id: 'ratio-partage', title: 'Partager selon un rapport', explanation: "Additionne les termes du rapport : c'est le nombre de parts. Divise le total par ce nombre, puis multiplie par le terme cherché.", levels: ['singapour'],
+      question() {
+        const p = rnd(1, 5), r = rnd(1, 5) + p, part = rnd(2, 15) * 2, total = (p + r) * part;
+        const grande = Math.random() < 0.5, rep = (grande ? r : p) * part;
+        return q({ category: 'Partage', prompt: `Partage ${total} € selon le rapport ${p} : ${r}. Quelle est la ${grande ? 'plus grande' : 'plus petite'} part ?`,
+          svg: svgBarModel([{ name: 'Part 1', units: p, label: grande ? '' : '?' }, { name: 'Part 2', units: r, label: grande ? '?' : '' }], `${total} €`),
+          answer: formatNum(rep), options: spreadOptions(rep, 0), limit: 30 });
+      } },
+    { id: 'ratio-fraction', title: 'Du rapport à la fraction', explanation: "Le rapport compare deux groupes entre eux. Pour la fraction du tout, mets le groupe cherché au numérateur et la somme des deux au dénominateur.", levels: ['singapour'],
+      question() {
+        const p = rnd(1, 5), r = rnd(1, 5), tot = p + r, g = gcd(p, tot);
+        const rep = `${p / g}/${tot / g}`;
+        return q({ category: 'Rapport et fraction', prompt: `Dans une classe, le rapport garçons : filles est ${p} : ${r}. Quelle fraction de la classe sont les garçons ?`,
+          answer: rep, options: mkOptions(rep, [`${p}/${r}`, `${r}/${tot}`, `${r}/${p}`, `${p}/${tot + 1}`]), limit: 25 });
+      } }
+  ] },
+
+  { id: 'vitesse', emoji: '🚗', title: 'Vitesse', skills: [
+    { id: 'vitesse-calcul', title: 'Calculer une vitesse', explanation: "La vitesse est la distance divisée par le temps. En 3 heures pour 150 km : 150 ÷ 3 = 50 km/h.", levels: ['singapour'],
+      question() { const v = rnd(4, 20) * 5, tps = rnd(2, 6), d = v * tps; return q({ category: 'Vitesse', prompt: `Un car parcourt ${d} km en ${tps} heures. Quelle est sa vitesse ?`, answer: formatNum(v), unit: 'km/h', options: spreadOptions(v, 0), limit: 25 }); } },
+    { id: 'vitesse-distance', title: 'Calculer une distance', explanation: "La distance est la vitesse multipliée par le temps. À 60 km/h pendant 3 heures : 60 × 3 = 180 km.", levels: ['singapour'],
+      question() { const v = rnd(4, 20) * 5, tps = rnd(2, 6), d = v * tps; return q({ category: 'Distance', prompt: `Un train roule à ${v} km/h pendant ${tps} heures. Quelle distance parcourt-il ?`, answer: formatNum(d), unit: 'km', options: spreadOptions(d, 0), limit: 25 }); } },
+    { id: 'vitesse-temps', title: 'Calculer une durée', explanation: "Le temps est la distance divisée par la vitesse. 240 km à 60 km/h : 240 ÷ 60 = 4 heures.", levels: ['singapour'],
+      question() { const v = rnd(4, 20) * 5, tps = rnd(2, 8), d = v * tps; return q({ category: 'Durée', prompt: `Un cycliste parcourt ${d} km à ${v} km/h. Combien de temps met-il ?`, answer: formatNum(tps), unit: 'heures', options: spreadOptions(tps, 0), limit: 25 }); } },
+    { id: 'vitesse-moyenne', title: 'Vitesse moyenne', explanation: "La vitesse moyenne n'est pas la moyenne des vitesses. Additionne toutes les distances, additionne toutes les durées, puis divise.", levels: ['singapour'],
+      question() {
+        const t1 = rnd(1, 4), t2 = rnd(1, 4), moy = rnd(4, 16) * 5, dTot = moy * (t1 + t2);
+        const d1 = rnd(1, (dTot / 10 | 0) - 1) * 10, d2 = dTot - d1;   /* les deux étapes doivent être non nulles */
+        return q({ category: 'Vitesse moyenne', prompt: `Un automobiliste parcourt ${d1} km en ${t1} h, puis ${d2} km en ${t2} h. Quelle est sa vitesse moyenne ?`,
+          answer: formatNum(moy), unit: 'km/h', options: spreadOptions(moy, 0), limit: 35 });
+      } }
+  ] },
+  { id: 'cercle', emoji: '⭕', title: 'Le cercle', skills: [
+    { id: 'cercle-rayon-diametre', title: 'Rayon et diamètre', explanation: "Le diamètre traverse le cercle en passant par le centre : il vaut deux fois le rayon.", levels: ['singapour'],
+      question() {
+        const r = rnd(2, 30), versDiametre = Math.random() < 0.5;
+        const donne = versDiametre ? r : 2 * r, rep = versDiametre ? 2 * r : r;
+        return q({ category: 'Rayon et diamètre', prompt: `Le ${versDiametre ? 'rayon' : 'diamètre'} de ce cercle mesure ${donne} cm. Quel est son ${versDiametre ? 'diamètre' : 'rayon'} ?`,
+          svg: svgCircleLabeled(donne, versDiametre ? 'rayon' : 'diamètre'), answer: formatNum(rep), unit: 'cm', options: spreadOptions(rep, 0), limit: 20 });
+      } },
+    { id: 'cercle-circonference', title: 'Circonférence du cercle', explanation: "La circonférence est π × diamètre. On prend π ≈ 3,14. Pour un diamètre de 10 cm : 3,14 × 10 = 31,4 cm.", levels: ['singapour'],
+      question() { const k = rnd(1, 12), d = 10 * k, rep = Math.round(3.14 * d * 10) / 10; return q({ category: 'Circonférence', prompt: `Un cercle a un diamètre de ${d} cm. Quelle est sa circonférence ? (π ≈ 3,14)`, svg: svgCircleLabeled(d, 'diamètre'), answer: formatNum(rep), unit: 'cm', options: spreadOptions(rep, 1), limit: 30 }); } },
+    { id: 'cercle-aire', title: 'Aire du disque', explanation: "L'aire est π × rayon × rayon. Attention : c'est le rayon qu'on multiplie par lui-même, pas le diamètre.", levels: ['singapour'],
+      question() { const r = rnd(1, 6) * 10, rep = Math.round(3.14 * r * r); return q({ category: 'Aire du disque', prompt: `Un disque a un rayon de ${r} cm. Quelle est son aire ? (π ≈ 3,14)`, svg: svgCircleLabeled(r, 'rayon'), answer: formatNum(rep), unit: 'cm²', options: spreadOptions(rep, 0), limit: 35 }); } },
+    { id: 'cercle-demi', title: 'Périmètre d\'un demi-disque', explanation: "Le tour d'un demi-disque, c'est la moitié du cercle plus le diamètre qui le ferme : π × rayon + 2 × rayon.", levels: ['singapour'],
+      question() { const r = rnd(1, 10) * 10, rep = Math.round((3.14 * r + 2 * r) * 10) / 10; return q({ category: 'Demi-disque', prompt: `Un demi-disque a un rayon de ${r} cm. Quel est son périmètre complet ? (π ≈ 3,14)`, answer: formatNum(rep), unit: 'cm', options: spreadOptions(rep, 1), limit: 35 }); } }
+  ] },
+
+  { id: 'algebre', emoji: '🔤', title: 'Algèbre', skills: [
+    { id: 'algebre-ecrire', title: 'Écrire une expression', explanation: "La lettre remplace le nombre qu'on ne connaît pas. « 5 de plus que n » s'écrit n + 5, « 3 fois n » s'écrit 3n.", levels: ['singapour'],
+      question() {
+        const k = rnd(2, 9), [n1, n2] = sgDeuxNoms();
+        const cas = [{ txt: `en a ${k} de plus`, rep: `n + ${k}`, faux: [`n - ${k}`, `${k}n`, `n × ${k}`] },
+                     { txt: `en a ${k} de moins`, rep: `n - ${k}`, faux: [`n + ${k}`, `${k} - n`, `${k}n`] },
+                     { txt: `en a ${k} fois plus`, rep: `${k}n`, faux: [`n + ${k}`, `n - ${k}`, `n ÷ ${k}`] }][rnd(0, 2)];
+        return q({ category: 'Expression', prompt: `${n1} a n billes. ${n2} ${cas.txt}. Combien ${n2} a-t-il de billes ?`, answer: cas.rep, options: mkOptions(cas.rep, cas.faux), limit: 25 });
+      } },
+    { id: 'algebre-evaluer', title: 'Calculer la valeur d\'une expression', explanation: "Remplace la lettre par sa valeur, puis effectue le calcul en respectant les priorités.", levels: ['singapour'],
+      question() { const a = rnd(2, 9), b = rnd(1, 20), n = rnd(2, 12), rep = a * n + b; return q({ category: 'Évaluer', prompt: `Si n = ${n}, combien vaut ${a}n + ${b} ?`, answer: formatNum(rep), options: spreadOptions(rep, 0), limit: 25 }); } },
+    { id: 'algebre-simplifier', title: 'Réduire une expression', explanation: "On additionne entre eux les termes qui portent la même lettre. 3n et 5n donnent 8n, mais 3n et 5 ne se regroupent pas.", levels: ['singapour'],
+      question() {
+        const a = rnd(2, 9), b = rnd(2, 9), lettre = ['n', 'a', 'x'][rnd(0, 2)];
+        if (Math.random() < 0.5) { const rep = `${a + b}${lettre}`; return q({ category: 'Réduire', prompt: `Réduis : ${a}${lettre} + ${b}${lettre}`, answer: rep, options: mkOptions(rep, [`${a * b}${lettre}`, `${a + b}`, `${Math.abs(a - b)}${lettre}`, `${a + b}${lettre}${lettre}`]), limit: 25 }); }
+        const c = rnd(1, 9), rep = `${a + b}${lettre} + ${c}`;
+        return q({ category: 'Réduire', prompt: `Réduis : ${a}${lettre} + ${c} + ${b}${lettre}`, answer: rep, options: mkOptions(rep, [`${a + b + c}${lettre}`, `${a + b}${lettre}`, `${a + c}${lettre} + ${b}`, `${a * b}${lettre} + ${c}`]), limit: 30 });
+      } },
+    { id: 'algebre-equation', title: 'Trouver la valeur inconnue', explanation: "Fais l'opération inverse pour isoler la lettre : on retire ce qui a été ajouté, on divise par ce qui a multiplié.", levels: ['singapour'],
+      question() {
+        const n = rnd(2, 20);
+        if (Math.random() < 0.5) { const a = rnd(2, 9); return q({ category: 'Équation', prompt: `Trouve n : ${a}n = ${a * n}`, answer: formatNum(n), options: spreadOptions(n, 0), limit: 25 }); }
+        const plus = Math.random() < 0.5, b = plus ? rnd(1, 15) : rnd(1, n - 1);   /* pas de résultat négatif au programme P6 */
+        return q({ category: 'Équation', prompt: `Trouve n : n ${plus ? '+' : '−'} ${b} = ${plus ? n + b : n - b}`, answer: formatNum(n), options: spreadOptions(n, 0), limit: 25 });
+      } }
+  ] },
+
+  { id: 'volume', emoji: '🧊', title: 'Volume', skills: [
+    { id: 'volume-cube', title: 'Volume d\'un cube', explanation: "Toutes les arêtes d'un cube sont égales. Son volume est arête × arête × arête.", levels: ['singapour'],
+      question() { const a = rnd(2, 12), rep = a * a * a; return q({ category: 'Cube', prompt: `Un cube a une arête de ${a} cm. Quel est son volume ?`, svg: svgCuboid(a, a, a), answer: formatNum(rep), unit: 'cm³', options: spreadOptions(rep, 0), limit: 25 }); } },
+    { id: 'volume-pave', title: 'Volume d\'un pavé droit', explanation: "Le volume d'un pavé droit est longueur × largeur × hauteur.", levels: ['singapour'],
+      question() { const L = rnd(2, 15), l = rnd(2, 12), h = rnd(2, 10), rep = L * l * h; return q({ category: 'Pavé droit', prompt: 'Quel est le volume de ce pavé droit ?', svg: svgCuboid(L, l, h), answer: formatNum(rep), unit: 'cm³', options: spreadOptions(rep, 0), limit: 30 }); } },
+    { id: 'volume-arete', title: 'Retrouver une dimension', explanation: "Divise le volume par les deux dimensions connues : il reste la troisième.", levels: ['singapour'],
+      question() { const L = rnd(2, 15), l = rnd(2, 12), h = rnd(2, 10), V = L * l * h; return q({ category: 'Dimension manquante', prompt: `Un pavé droit a un volume de ${V} cm³. Sa longueur est ${L} cm et sa largeur ${l} cm. Quelle est sa hauteur ?`, answer: formatNum(h), unit: 'cm', options: spreadOptions(h, 0), limit: 30 }); } },
+    { id: 'volume-litres', title: 'Des cm³ aux litres', explanation: "Un litre occupe exactement 1000 cm³. Pour passer des cm³ aux litres, divise par 1000.", levels: ['singapour'],
+      question() {
+        const litres = rnd(1, 30), cm3 = litres * 1000, versLitres = Math.random() < 0.5;
+        if (versLitres) return q({ category: 'Contenance', prompt: `Un récipient contient ${cm3} cm³ d'eau. Combien de litres cela fait-il ?`, answer: formatNum(litres), unit: 'L', options: spreadOptions(litres, 0), limit: 25 });
+        return q({ category: 'Contenance', prompt: `Un récipient contient ${litres} L d'eau. Combien de cm³ cela fait-il ?`, answer: formatNum(cm3), unit: 'cm³', options: spreadOptions(cm3, 0), limit: 25 });
+      } }
+  ] },
+
+  { id: 'diagrammes', emoji: '🥧', title: 'Diagrammes circulaires', skills: [
+    { id: 'pie-effectif', title: 'Lire un effectif', explanation: "Le disque entier représente le total. Un secteur de 25 % en représente le quart : multiplie le total par le pourcentage puis divise par 100.", levels: ['singapour'],
+      question() {
+        const reparts = [[50, 30, 20], [40, 35, 25], [25, 25, 50], [60, 25, 15], [45, 30, 25]][rnd(0, 4)];
+        const noms = shuffle(['Foot', 'Danse', 'Musique', 'Dessin', 'Natation']).slice(0, 3);
+        const total = rnd(2, 20) * 20, i = rnd(0, 2), rep = reparts[i] * total / 100;
+        return q({ category: 'Effectif', prompt: `${total} élèves ont choisi une activité. Combien ont choisi « ${noms[i]} » ?`,
+          svg: svgPie(reparts.map((p, k) => ({ label: `${noms[k]} ${p} %`, frac: p / 100 }))),
+          answer: formatNum(rep), options: spreadOptions(rep, 0), limit: 30 });
+      } },
+    { id: 'pie-manquant', title: 'Le pourcentage manquant', explanation: "Le disque complet vaut toujours 100 %. Additionne les secteurs connus et retire la somme de 100.", levels: ['singapour'],
+      question() {
+        const reparts = [[50, 30, 20], [40, 35, 25], [25, 25, 50], [60, 25, 15], [45, 30, 25]][rnd(0, 4)];
+        const noms = shuffle(['Rouge', 'Bleu', 'Vert', 'Jaune', 'Violet']).slice(0, 3);
+        const i = rnd(0, 2), rep = reparts[i];
+        return q({ category: 'Pourcentage manquant', prompt: `Quel pourcentage manque pour le secteur « ${noms[i]} » ?`,
+          svg: svgPie(reparts.map((p, k) => ({ label: `${noms[k]} ${k === i ? '?' : p + ' %'}`, frac: p / 100 }))),
+          answer: formatNum(rep), unit: '%', options: spreadOptions(rep, 0), limit: 30 });
+      } },
+    { id: 'pie-angle', title: "D'un angle à un effectif", explanation: "Le disque entier fait 360°. Un secteur de 90° vaut donc 90/360, soit le quart du total.", levels: ['singapour'],
+      question() {
+        /* 72 divise 360 pour chacun de ces angles : la réponse tombe juste */
+        const angle = [30, 45, 60, 90, 120, 180][rnd(0, 5)], total = rnd(1, 8) * 72;
+        const rep = angle / 360 * total;
+        return q({ category: 'Angle du secteur', prompt: `Dans un diagramme circulaire, un secteur mesure ${angle}°. Le total est ${total} personnes. Combien de personnes ce secteur représente-t-il ?`,
+          svg: svgPie([{ label: `${angle}°`, frac: angle / 360 }, { label: 'reste', frac: 1 - angle / 360 }]),
+          answer: formatNum(rep), options: spreadOptions(rep, 0), limit: 35 });
+      } }
+  ] },];
 function getDomain(id) { return DOMAINS.find(d => d.id === id); }
 function getSkill(domainId, skillId) { const d = getDomain(domainId); return d ? d.skills.find(s => s.id === skillId) : null; }
 function skillsForLevel(domainId, level) { const d = getDomain(domainId); return d ? d.skills.filter(s => s.levels.includes(level)) : []; }
+/* Un domaine sans compétence pour le niveau choisi n'a rien à montrer. Et sur
+   le niveau Singapour, les domaines propres à la méthode passent devant : ce
+   sont eux qu'on vient y chercher, pas les douze domaines communs. */
+function domainesPourNiveau(level) {
+  const dispo = DOMAINS.map(d => ({ d, n: skillsForLevel(d.id, level).length })).filter(x => x.n > 0);
+  if (level !== 'singapour') return dispo;
+  const propre = (x) => x.d.skills.every(s => s.levels.length === 1 && s.levels[0] === 'singapour');
+  return [...dispo.filter(propre), ...dispo.filter(x => !propre(x))];
+}
 
 /* ================= État global ================= */
+const LEVELS = [{ id: 'cm2', label: 'CM2' }, { id: 'sixieme', label: '6ème' }, { id: 'singapour', label: 'Singapour' }];
+function levelLabel(id) { const l = LEVELS.find(x => x.id === id); return l ? l.label : id; }
 const state = { screen: 'home', level: loadStore().level || 'cm2', currentDomain: null, currentSkill: null, mentalTrickId: null, quiz: null };
 function setLevel(lvl) { state.level = lvl; const s = loadStore(); s.level = lvl; saveStore(s); render(); }
 function clearTimer() { if (state.quiz && state.quiz.timerHandle) { clearInterval(state.quiz.timerHandle); state.quiz.timerHandle = null; } }
@@ -484,12 +744,13 @@ function render() {
 function attachListeners() { document.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction)); }
 
 function renderHome() {
-  const cards = [{ id: 'astuces', emoji: '🧠', title: 'Astuces calcul mental', desc: "Des exercices générés à l'infini" }, ...DOMAINS.map(d => { const n = skillsForLevel(d.id, state.level).length; return { id: d.id, emoji: d.emoji, title: d.title, desc: `${n} compétence${n > 1 ? 's' : ''}` }; })]
+  const cards = [...(tricksForLevel(state.level).length ? [{ id: 'astuces', emoji: '🧠', title: 'Astuces calcul mental', desc: "Des exercices générés à l'infini" }] : []),
+    ...domainesPourNiveau(state.level).map(({ d, n }) => ({ id: d.id, emoji: d.emoji, title: d.title, desc: `${n} compétence${n > 1 ? 's' : ''}` }))]
     .map(c => `<div class="mode-card" data-action="open-domain" data-id="${c.id}"><div class="mode-emoji">${c.emoji}</div><div class="mode-info"><div class="mode-title">${c.title}</div><div class="mode-desc">${c.desc}</div></div><div class="mode-arrow">→</div></div>`).join('');
   return `<div class="screen">
     <h1>🎓 Maths Malin</h1>
-    <p class="subtitle">Programme complet CM2 &amp; 6ème</p>
-    <div class="level-switch"><button class="level-btn ${state.level === 'cm2' ? 'active' : ''}" data-action="set-level" data-level="cm2">CM2</button><button class="level-btn ${state.level === 'sixieme' ? 'active' : ''}" data-action="set-level" data-level="sixieme">6ème</button></div>
+    <p class="subtitle">${state.level === 'singapour' ? 'Méthode de Singapour · Primary 6' : 'Programme complet CM2 &amp; 6ème'}</p>
+    <div class="level-switch">${LEVELS.map(l => `<button class="level-btn ${state.level === l.id ? 'active' : ''}" data-action="set-level" data-level="${l.id}">${l.label}</button>`).join('')}</div>
     ${cards}
   </div>`;
 }
@@ -498,12 +759,12 @@ function renderSkillList() {
   if (state.currentDomain === 'astuces') {
     const list = tricksForLevel(state.level);
     const cards = list.map(t => { const best = getBest('mental-' + t.id + '-' + state.level); return `<div class="trick-card" data-action="open-mental" data-id="${t.id}"><div class="trick-emoji">${t.emoji}</div><div class="trick-info"><div class="trick-title">${t.title}</div>${best !== undefined ? `<div class="trick-progress">✓ Meilleur score : ${best}%</div>` : ''}</div><div class="mode-arrow">→</div></div>`; }).join('');
-    return `<div class="screen"><button class="btn-back" data-action="go-home">← Retour</button><h1>🧠 Astuces calcul mental</h1><p class="subtitle">Niveau ${state.level === 'cm2' ? 'CM2' : '6ème'}</p>${cards}</div>`;
+    return `<div class="screen"><button class="btn-back" data-action="go-home">← Retour</button><h1>🧠 Astuces calcul mental</h1><p class="subtitle">Niveau ${levelLabel(state.level)}</p>${cards}</div>`;
   }
   const d = getDomain(state.currentDomain);
   const list = skillsForLevel(state.currentDomain, state.level);
   const cards = list.map(s => { const best = getBest('skill-' + d.id + '-' + s.id + '-' + state.level); return `<div class="trick-card" data-action="open-skill" data-id="${s.id}"><div class="trick-emoji">${d.emoji}</div><div class="trick-info"><div class="trick-title">${s.title}</div>${best !== undefined ? `<div class="trick-progress">✓ Meilleur score : ${best}%</div>` : ''}</div><div class="mode-arrow">→</div></div>`; }).join('');
-  return `<div class="screen"><button class="btn-back" data-action="go-home">← Retour</button><h1>${d.emoji} ${d.title}</h1><p class="subtitle">Niveau ${state.level === 'cm2' ? 'CM2' : '6ème'}</p>${cards || '<p class="subtitle">Aucune compétence pour ce niveau pour le moment.</p>'}</div>`;
+  return `<div class="screen"><button class="btn-back" data-action="go-home">← Retour</button><h1>${d.emoji} ${d.title}</h1><p class="subtitle">Niveau ${levelLabel(state.level)}</p>${cards || '<p class="subtitle">Aucune compétence pour ce niveau pour le moment.</p>'}</div>`;
 }
 
 function renderMentalLesson() {
