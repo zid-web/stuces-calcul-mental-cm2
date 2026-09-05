@@ -1,7 +1,7 @@
 {
-  "name": "Maths Malin — CM2 & 6ème",
-  "short_name": "Maths Malin",
-  "description": "Programme complet de maths pour CM2, 6ème et méthode de Singapour : nombres, fractions, décimaux, mesures, géométrie, modèles en barres",
+  "name": "Révise Malin — CM2 & 6ème",
+  "short_name": "Révise Malin",
+  "description": "Réviser en CM2 et 6ème : maths, histoire, géographie et dictée. Méthode de Singapour incluse.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

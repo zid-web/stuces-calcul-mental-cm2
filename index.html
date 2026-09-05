@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Maths Malin — CM2 &amp; 6ème</title>
+<title>Révise Malin — CM2 &amp; 6ème</title>
 <meta name="theme-color" content="#5B4FE8">
-<meta name="description" content="Programme complet de maths pour CM2, 6ème et méthode de Singapour : nombres, fractions, décimaux, mesures, géométrie, modèles en barres">
+<meta name="description" content="Réviser en CM2 et 6ème : maths, histoire, géographie et dictée. Méthode de Singapour incluse.">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -45,6 +45,8 @@
   .btn:active { transform: scale(0.97); }
   .btn-primary { background: var(--purple); color: white; }
   .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  /* un bouton indisponible doit se voir : sinon l'enfant appuie dans le vide */
+  .btn:disabled, .btn-pause:disabled, .vitesse-btn:disabled { opacity: 0.4; cursor: default; }
   .btn-back { background: transparent; border: none; color: var(--purple); font-weight: 600; font-size: 0.92rem; padding: 0.5rem 0; margin-bottom: 0.3rem; align-self: flex-start; cursor: pointer; }
   .btn-stack { display: flex; flex-direction: column; gap: 10px; }
 
@@ -53,6 +55,38 @@
   .lesson-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }
   .lesson-explanation { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; }
 
+  .voix-alerte { background: var(--warning-bg); border: 1px solid #E8C98A; color: #8A5510; border-radius: 12px; padding: 0.8rem; font-size: 0.85rem; line-height: 1.4; margin-bottom: 1rem; }
+  .dictee-lecteur { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1rem; margin-bottom: 1.1rem; }
+  .dictee-phrase-info { font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-align: center; margin-bottom: 0.7rem; }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row .btn { flex: 1; }
+  .dictee-vitesse { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 0.8rem; font-size: 0.8rem; color: var(--text-secondary); }
+  .vitesse-btn { border: 1px solid var(--border); background: transparent; color: var(--text-secondary); border-radius: 8px; padding: 0.28rem 0.6rem; font-weight: 700; font-size: 0.78rem; cursor: pointer; }
+  .vitesse-btn.active { background: var(--purple); border-color: var(--purple); color: #FFFFFF; }
+  .dictee-saisie { width: 100%; border: 1px solid var(--border); border-radius: 14px; padding: 0.9rem; font-size: 1rem; line-height: 1.5; font-family: inherit; color: var(--text); background: var(--card); resize: vertical; }
+  .dictee-saisie:focus { outline: 2px solid var(--purple); outline-offset: -1px; }
+
+  .copie { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; line-height: 2; font-size: 0.98rem; margin-bottom: 0.7rem; }
+  .mot { padding: 1px 3px; border-radius: 5px; }
+  .mot.ok { color: var(--text); }
+  .mot.faute { background: var(--danger-bg); color: var(--danger); font-weight: 700; }
+  .mot.oubli { background: var(--warning-bg); color: #8A5510; font-weight: 700; text-decoration: underline dotted; }
+  .mot.ajout { background: #EFEDF5; color: var(--text-secondary); }
+  .mot s { opacity: 0.75; font-weight: 400; }
+  .legende { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.76rem; color: var(--text-secondary); margin-bottom: 1rem; }
+  .legende span { display: flex; align-items: center; gap: 4px; }
+  .pastille { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .pastille.ok { background: var(--text); }
+  .pastille.faute { background: var(--danger); }
+  .pastille.oubli { background: #BA7517; }
+  .pastille.ajout { background: #C9C5D6; }
+  .cours-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; margin-bottom: 10px; font-size: 0.92rem; line-height: 1.55; }
+  .cours-card p { margin-bottom: 0.7rem; }
+  .cours-card p:last-child { margin-bottom: 0; }
+  .cours-card strong { color: var(--purple); }
+  .reperes { background: var(--bg); border-radius: 10px; padding: 0.7rem 0.8rem; margin-top: 0.7rem; }
+  .repere { display: flex; gap: 8px; font-size: 0.86rem; padding: 0.2rem 0; }
+  .repere-cle { font-weight: 700; color: var(--purple); white-space: nowrap; }
   .section-label { font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 0.6rem; }
 
   .step-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 0.9rem; margin-bottom: 10px; text-align: center; }
@@ -733,7 +767,379 @@ const DOMAINS = [
           svg: svgPie([{ label: `${angle}°`, frac: angle / 360 }, { label: 'reste', frac: 1 - angle / 360 }]),
           answer: formatNum(rep), options: spreadOptions(rep, 0), limit: 35 });
       } }
-  ] },];
+  ] },
+
+  /* ========== Histoire ========== */
+  { id: 'histoire', emoji: '📜', title: 'Histoire', skills: [
+    { id: 'hist-republique', title: 'Le temps de la République', explanation: "Comment la République s'est installée en France et quels symboles la représentent.", levels: ['cm2'],
+      cours: [
+        "Après la Révolution de 1789, la France met longtemps à devenir une République durable. La <strong>Troisième République</strong> est proclamée en <strong>1870</strong> et s'installe vraiment dans les années qui suivent.",
+        "Les lois de <strong>Jules Ferry</strong>, en 1881 et 1882, rendent l'école primaire <strong>gratuite, laïque et obligatoire</strong> pour les filles comme pour les garçons. C'est l'une des grandes décisions de la République.",
+        "La République se reconnaît à ses symboles : le <strong>drapeau tricolore</strong>, <strong>La Marseillaise</strong>, la devise <strong>Liberté, Égalité, Fraternité</strong>, le <strong>14 juillet</strong> et le buste de <strong>Marianne</strong>.",
+        "En <strong>1905</strong>, la loi de séparation des Églises et de l'État instaure la <strong>laïcité</strong> : l'État ne reconnaît aucune religion et chacun est libre de croire ou de ne pas croire."
+      ],
+      reperes: [['1870', 'Proclamation de la Troisième République'], ['1881-1882', "Lois de Jules Ferry sur l'école"], ['1905', 'Loi de séparation des Églises et de l\'État'], ['1944', 'Droit de vote accordé aux femmes']],
+      question() { return questionDeBanque([
+        { cat: 'La République', prompt: "En quelle année la Troisième République est-elle proclamée ?", answer: '1870', faux: ['1789', '1848', '1914'] },
+        { cat: 'La République', prompt: "Qui a fait voter les lois rendant l'école gratuite et obligatoire ?", answer: 'Jules Ferry', faux: ['Jules Verne', 'Victor Hugo', 'Léon Gambetta'] },
+        { cat: 'La République', prompt: "Quelle est la devise de la République française ?", answer: 'Liberté, Égalité, Fraternité', faux: ['Travail, Famille, Patrie', 'Unité, Force, Justice', 'Paix, Liberté, Égalité'] },
+        { cat: 'La République', prompt: "Quelle est la fête nationale française ?", answer: '14 juillet', faux: ['1er mai', '11 novembre', '8 mai'] },
+        { cat: 'La République', prompt: "Comment s'appelle l'hymne national français ?", answer: 'La Marseillaise', faux: ['La Parisienne', "Le Chant du départ", "L'Internationale"] },
+        { cat: 'La République', prompt: "Quel personnage représente la République française ?", answer: 'Marianne', faux: ['Jeanne d\'Arc', 'Joséphine', 'Clémence'] },
+        { cat: 'La République', prompt: "En quelle année la loi de séparation des Églises et de l'État est-elle votée ?", answer: '1905', faux: ['1881', '1918', '1946'] },
+        { cat: 'La République', prompt: "Quelles sont les trois couleurs du drapeau français ?", answer: 'Bleu, blanc, rouge', faux: ['Bleu, blanc, vert', 'Rouge, blanc, noir', 'Bleu, jaune, rouge'] },
+        { cat: 'La République', prompt: "Comment appelle-t-on le principe selon lequel l'État ne reconnaît aucune religion ?", answer: 'La laïcité', faux: ['La démocratie', 'La monarchie', 'La citoyenneté'] },
+        { cat: 'La République', prompt: "En quelle année les femmes obtiennent-elles le droit de vote en France ?", answer: '1944', faux: ['1789', '1905', '1968'] },
+        { cat: 'La République', prompt: "L'école rendue obligatoire par Jules Ferry concernait-elle les filles ?", answer: 'Oui, filles et garçons', faux: ['Non, seulement les garçons', 'Non, seulement les riches', 'Oui, mais seulement en ville'] },
+        { cat: 'La République', prompt: "Dans une République, qui choisit les dirigeants ?", answer: 'Les citoyens, par le vote', faux: ['Le roi', "L'armée", 'Le fils du président'] }
+      ]); } },
+
+    { id: 'hist-industriel', title: "L'âge industriel", explanation: "Les machines, les usines et les grandes transformations de la vie au XIXe siècle.", levels: ['cm2'],
+      cours: [
+        "Au <strong>XIXe siècle</strong>, l'invention de la <strong>machine à vapeur</strong> transforme le travail. On construit des <strong>usines</strong> où des centaines d'ouvriers fabriquent en série ce que des artisans faisaient à la main.",
+        "Le <strong>charbon</strong> devient la principale source d'énergie. Il alimente les machines, les locomotives et les hauts fourneaux qui produisent l'acier.",
+        "Le <strong>chemin de fer</strong> se développe très vite : on voyage plus loin et bien plus vite qu'à cheval, et les marchandises circulent dans tout le pays.",
+        "Beaucoup de paysans quittent la campagne pour travailler en ville : c'est <strong>l'exode rural</strong>. Les conditions de travail sont dures, et même des enfants travaillent à l'usine. Des lois viendront peu à peu les protéger."
+      ],
+      reperes: [['XIXe siècle', "L'âge industriel en France"], ['1804', 'Première locomotive à vapeur'], ['Charbon', "L'énergie des usines et des trains"], ['Exode rural', 'Départ des campagnes vers les villes']],
+      question() { return questionDeBanque([
+        { cat: 'Âge industriel', prompt: "Quelle invention transforme le travail au XIXe siècle ?", answer: 'La machine à vapeur', faux: ["L'ordinateur", 'Le moteur électrique', 'Le télégraphe'] },
+        { cat: 'Âge industriel', prompt: "Quelle énergie fait fonctionner les usines de l'âge industriel ?", answer: 'Le charbon', faux: ["Le pétrole", "Le gaz naturel", "L'électricité solaire"] },
+        { cat: 'Âge industriel', prompt: "Comment appelle-t-on le départ des paysans vers les villes ?", answer: "L'exode rural", faux: ["L'exode urbain", "La colonisation", "L'émigration"] },
+        { cat: 'Âge industriel', prompt: "Quel moyen de transport se développe beaucoup au XIXe siècle ?", answer: 'Le chemin de fer', faux: ["L'avion", "L'automobile électrique", 'Le métro'] },
+        { cat: 'Âge industriel', prompt: "Où travaillent les ouvriers de l'âge industriel ?", answer: 'Dans des usines', faux: ['Dans des châteaux', 'Dans des monastères', 'Dans des bureaux'] },
+        { cat: 'Âge industriel', prompt: "Les enfants travaillaient-ils dans les usines au XIXe siècle ?", answer: 'Oui, très jeunes', faux: ['Non, jamais', 'Seulement le dimanche', 'Seulement après 18 ans'] },
+        { cat: 'Âge industriel', prompt: "Quel métal est produit en grande quantité à l'âge industriel ?", answer: "L'acier", faux: ["L'or", "L'aluminium", 'Le bronze'] },
+        { cat: 'Âge industriel', prompt: "En quel siècle se situe l'âge industriel en France ?", answer: 'Le XIXe siècle', faux: ['Le XVIe siècle', 'Le XVIIIe siècle', 'Le XXe siècle'] },
+        { cat: 'Âge industriel', prompt: "Avant les usines, qui fabriquait les objets ?", answer: 'Des artisans, à la main', faux: ['Des robots', 'Des ingénieurs', 'Personne'] },
+        { cat: 'Âge industriel', prompt: "Comment appelle-t-on ceux qui travaillent dans les usines ?", answer: 'Les ouvriers', faux: ['Les paysans', 'Les seigneurs', 'Les commerçants'] }
+      ]); } },
+
+    { id: 'hist-guerres', title: 'Les deux guerres mondiales', explanation: "1914-1918 et 1939-1945 : deux conflits qui ont bouleversé la France et le monde.", levels: ['cm2'],
+      cours: [
+        "La <strong>Première Guerre mondiale</strong> dure de <strong>1914 à 1918</strong>. Les soldats français, appelés les <strong>Poilus</strong>, vivent dans des <strong>tranchées</strong>, dans le froid et la boue. La bataille de <strong>Verdun</strong>, en 1916, est l'une des plus meurtrières.",
+        "L'<strong>armistice</strong> est signé le <strong>11 novembre 1918</strong>. La guerre a fait des millions de morts. On lui donne le nom de Grande Guerre.",
+        "La <strong>Seconde Guerre mondiale</strong> commence en <strong>1939</strong>. La France est envahie et occupée par l'Allemagne nazie en 1940. Le <strong>général de Gaulle</strong> lance depuis Londres l'<strong>appel du 18 juin 1940</strong> à continuer le combat.",
+        "Des Français entrent dans la <strong>Résistance</strong>. Le <strong>6 juin 1944</strong>, les Alliés débarquent en Normandie. La guerre en Europe se termine le <strong>8 mai 1945</strong>. Pendant ce conflit, les nazis ont exterminé des millions de Juifs : c'est la <strong>Shoah</strong>."
+      ],
+      reperes: [['1914-1918', 'Première Guerre mondiale'], ['11 novembre 1918', 'Armistice'], ['18 juin 1940', 'Appel du général de Gaulle'], ['6 juin 1944', 'Débarquement en Normandie'], ['8 mai 1945', 'Fin de la guerre en Europe']],
+      question() { return questionDeBanque([
+        { cat: 'Guerres mondiales', prompt: "Quelles sont les dates de la Première Guerre mondiale ?", answer: '1914-1918', faux: ['1939-1945', '1870-1871', '1900-1910'] },
+        { cat: 'Guerres mondiales', prompt: "Comment appelait-on les soldats français de 1914-1918 ?", answer: 'Les Poilus', faux: ['Les Sans-culottes', 'Les Résistants', 'Les Gaulois'] },
+        { cat: 'Guerres mondiales', prompt: "Dans quoi les soldats de 14-18 vivaient-ils au front ?", answer: 'Des tranchées', faux: ['Des châteaux', 'Des sous-marins', 'Des casernes chauffées'] },
+        { cat: 'Guerres mondiales', prompt: "Quelle date marque l'armistice de la Première Guerre mondiale ?", answer: '11 novembre 1918', faux: ['8 mai 1945', '14 juillet 1918', '1er septembre 1939'] },
+        { cat: 'Guerres mondiales', prompt: "Quelle grande bataille de 1916 est restée célèbre ?", answer: 'Verdun', faux: ['Waterloo', 'Austerlitz', 'Normandie'] },
+        { cat: 'Guerres mondiales', prompt: "En quelle année commence la Seconde Guerre mondiale ?", answer: '1939', faux: ['1914', '1940', '1945'] },
+        { cat: 'Guerres mondiales', prompt: "Qui lance l'appel du 18 juin 1940 depuis Londres ?", answer: 'Le général de Gaulle', faux: ['Le maréchal Pétain', 'Georges Clemenceau', 'Winston Churchill'] },
+        { cat: 'Guerres mondiales', prompt: "Comment appelle-t-on ceux qui ont combattu l'occupant de l'intérieur ?", answer: 'Les résistants', faux: ['Les Poilus', 'Les Alliés', 'Les collaborateurs'] },
+        { cat: 'Guerres mondiales', prompt: "Où les Alliés débarquent-ils le 6 juin 1944 ?", answer: 'En Normandie', faux: ['En Bretagne', 'En Provence', 'En Belgique'] },
+        { cat: 'Guerres mondiales', prompt: "Quelle date marque la fin de la Seconde Guerre mondiale en Europe ?", answer: '8 mai 1945', faux: ['11 novembre 1918', '6 juin 1944', '14 juillet 1945'] },
+        { cat: 'Guerres mondiales', prompt: "Comment appelle-t-on l'extermination des Juifs par les nazis ?", answer: 'La Shoah', faux: ['La Résistance', "L'armistice", "L'exode"] },
+        { cat: 'Guerres mondiales', prompt: "Quel pays occupe la France à partir de 1940 ?", answer: "L'Allemagne", faux: ["L'Italie", "L'Angleterre", "L'Espagne"] }
+      ]); } },
+
+    { id: 'hist-europe', title: "De l'après-guerre à l'Europe", explanation: "La reconstruction, les progrès de la vie quotidienne et la construction européenne.", levels: ['cm2'],
+      cours: [
+        "Après 1945, la France est à reconstruire. Les <strong>Trente Glorieuses</strong> (1945-1975) sont trente années de forte croissance : le travail ne manque pas et le niveau de vie augmente beaucoup.",
+        "La vie quotidienne change vite : réfrigérateur, machine à laver, <strong>télévision</strong>, automobile entrent dans les foyers. Les femmes obtiennent le <strong>droit de vote en 1944</strong> et l'exercent pour la première fois en 1945.",
+        "Pour que la guerre ne recommence pas, des pays européens décident de <strong>coopérer</strong>. En <strong>1957</strong>, le <strong>traité de Rome</strong> crée le Marché commun entre six pays, dont la France et l'Allemagne.",
+        "Cette union devient l'<strong>Union européenne</strong>. En <strong>2002</strong>, l'<strong>euro</strong> remplace le franc dans les porte-monnaie français. Le drapeau européen est bleu avec un cercle de douze étoiles dorées."
+      ],
+      reperes: [['1945-1975', 'Les Trente Glorieuses'], ['1957', 'Traité de Rome'], ['2002', "L'euro remplace le franc"], ['Drapeau européen', 'Douze étoiles dorées sur fond bleu']],
+      question() { return questionDeBanque([
+        { cat: 'Après-guerre', prompt: "Comment appelle-t-on les années de forte croissance après 1945 ?", answer: 'Les Trente Glorieuses', faux: ['La Belle Époque', 'Les Années folles', 'La Renaissance'] },
+        { cat: 'Après-guerre', prompt: "En quelle année l'euro remplace-t-il le franc dans les porte-monnaie ?", answer: '2002', faux: ['1957', '1992', '2010'] },
+        { cat: 'Après-guerre', prompt: "Quel traité de 1957 lance la construction européenne ?", answer: 'Le traité de Rome', faux: ['Le traité de Versailles', "Le traité de l'Élysée", 'Le traité de Paris'] },
+        { cat: 'Après-guerre', prompt: "Combien d'étoiles compte le drapeau européen ?", answer: 'Douze', faux: ['Vingt-sept', 'Six', 'Cinquante'] },
+        { cat: 'Après-guerre', prompt: "Quelle est la monnaie de la France aujourd'hui ?", answer: "L'euro", faux: ['Le franc', 'La livre', 'Le dollar'] },
+        { cat: 'Après-guerre', prompt: "Quel appareil entre dans les foyers français dans les années 1950-1960 ?", answer: 'La télévision', faux: ["L'ordinateur", 'Le téléphone portable', 'Internet'] },
+        { cat: 'Après-guerre', prompt: "Pourquoi les pays européens ont-ils décidé de coopérer après 1945 ?", answer: 'Pour éviter une nouvelle guerre', faux: ['Pour conquérir des colonies', 'Pour parler la même langue', 'Pour supprimer les frontières maritimes'] },
+        { cat: 'Après-guerre', prompt: "En quelle année les Françaises votent-elles pour la première fois ?", answer: '1945', faux: ['1918', '1936', '1968'] },
+        { cat: 'Après-guerre', prompt: "Comment s'appelle aujourd'hui l'union des pays européens ?", answer: "L'Union européenne", faux: ["L'ONU", "L'OTAN", 'Le Commonwealth'] },
+        { cat: 'Après-guerre', prompt: "Combien de pays signent le traité de Rome en 1957 ?", answer: 'Six', faux: ['Douze', 'Vingt-sept', 'Trois'] }
+      ]); } },
+
+    { id: 'hist-prehistoire', title: 'Préhistoire et Néolithique', explanation: "Des premiers humains aux premiers villages : la plus longue période de notre histoire.", levels: ['sixieme'],
+      cours: [
+        "La <strong>Préhistoire</strong> commence avec l'apparition des premiers êtres humains en <strong>Afrique</strong>, il y a environ <strong>3 millions d'années</strong>. Ces humains se déplacent peu à peu sur toute la planète : ce sont les grandes migrations.",
+        "Au <strong>Paléolithique</strong>, les humains sont <strong>nomades</strong> : ils se déplacent sans cesse pour <strong>chasser</strong>, <strong>pêcher</strong> et <strong>cueillir</strong>. Ils taillent des outils en pierre et maîtrisent le <strong>feu</strong>. Ils peignent des animaux sur les parois des grottes, comme à <strong>Lascaux</strong>.",
+        "Vers <strong>10 000 ans avant Jésus-Christ</strong>, une révolution commence au Proche-Orient : le <strong>Néolithique</strong>. Les humains apprennent à cultiver la terre (<strong>agriculture</strong>) et à élever des animaux (<strong>élevage</strong>).",
+        "Comme ils doivent rester près de leurs champs, ils deviennent <strong>sédentaires</strong> et construisent les <strong>premiers villages</strong>. Ils inventent la poterie et le tissage. L'<strong>écriture</strong>, apparue vers 3300 avant Jésus-Christ en Mésopotamie, marque la fin de la Préhistoire."
+      ],
+      reperes: [['Paléolithique', 'Nomades, chasseurs-cueilleurs'], ['Néolithique', 'Agriculture, élevage, villages'], ['vers -10 000', 'Début du Néolithique'], ['vers -3300', "Invention de l'écriture"]],
+      question() { return questionDeBanque([
+        { cat: 'Préhistoire', prompt: "Sur quel continent les premiers êtres humains sont-ils apparus ?", answer: "L'Afrique", faux: ["L'Europe", "L'Asie", "L'Amérique"] },
+        { cat: 'Préhistoire', prompt: "Comment vivaient les humains du Paléolithique ?", answer: 'Nomades, ils se déplaçaient', faux: ['Sédentaires, dans des villages', 'Dans des villes fortifiées', 'Dans des fermes'] },
+        { cat: 'Préhistoire', prompt: "De quoi vivaient les humains du Paléolithique ?", answer: 'Chasse, pêche et cueillette', faux: ["Agriculture et élevage", 'Commerce', 'Artisanat'] },
+        { cat: 'Préhistoire', prompt: "Quelles sont les deux grandes inventions du Néolithique ?", answer: "L'agriculture et l'élevage", faux: ["L'écriture et la roue", 'Le feu et les outils', 'La poterie et le bronze'] },
+        { cat: 'Préhistoire', prompt: "Que signifie « devenir sédentaire » ?", answer: 'Se fixer à un endroit', faux: ['Se déplacer sans cesse', 'Vivre dans une grotte', 'Chasser en groupe'] },
+        { cat: 'Préhistoire', prompt: "Quelle grotte française est célèbre pour ses peintures ?", answer: 'Lascaux', faux: ['Versailles', 'Carnac', 'Alésia'] },
+        { cat: 'Préhistoire', prompt: "Quelle invention marque la fin de la Préhistoire ?", answer: "L'écriture", faux: ['Le feu', 'La roue', "L'agriculture"] },
+        { cat: 'Préhistoire', prompt: "Vers quelle date commence le Néolithique ?", answer: 'Vers 10 000 avant J.-C.', faux: ['Vers 3 000 après J.-C.', 'Vers 500 avant J.-C.', 'Vers 1 000 après J.-C.'] },
+        { cat: 'Préhistoire', prompt: "Dans quelle région l'écriture a-t-elle été inventée ?", answer: 'En Mésopotamie', faux: ['En Gaule', 'En Chine', 'Au Pérou'] },
+        { cat: 'Préhistoire', prompt: "Quelle maîtrise a permis aux humains de se réchauffer et de cuire ?", answer: 'Le feu', faux: ["L'électricité", 'Le charbon', 'La vapeur'] }
+      ]); } },
+
+    { id: 'hist-antiquite', title: "La Méditerranée antique", explanation: "Grecs et Romains : leurs cités, leurs dieux et leurs récits fondateurs.", levels: ['sixieme'],
+      cours: [
+        "Dans la <strong>Grèce antique</strong>, les habitants sont regroupés en <strong>cités</strong> indépendantes comme <strong>Athènes</strong> et <strong>Sparte</strong>. À Athènes naît la <strong>démocratie</strong> : les citoyens votent eux-mêmes les lois. Attention : femmes, esclaves et étrangers en sont exclus.",
+        "Les Grecs sont <strong>polythéistes</strong> : ils croient en plusieurs dieux, comme <strong>Zeus</strong>, <strong>Athéna</strong> ou <strong>Poséidon</strong>. Leurs récits fondateurs sont racontés dans deux grands poèmes attribués à <strong>Homère</strong> : <strong>l'Iliade</strong> et <strong>l'Odyssée</strong>.",
+        "Tous les quatre ans, les cités se retrouvent à <strong>Olympie</strong> pour les <strong>Jeux olympiques</strong>, en l'honneur de Zeus. Ce qui unit les Grecs, c'est la langue, les dieux et ces grandes fêtes.",
+        "À Rome, la légende raconte que la ville a été fondée par <strong>Romulus</strong> en <strong>753 avant Jésus-Christ</strong>. Rome est d'abord une royauté, puis une <strong>République</strong>, puis un <strong>Empire</strong> à partir d'<strong>Auguste</strong>, en 27 avant Jésus-Christ."
+      ],
+      reperes: [['Athènes', 'Naissance de la démocratie'], ['Homère', "L'Iliade et l'Odyssée"], ['-753', 'Fondation légendaire de Rome'], ['-27', 'Auguste, premier empereur romain']],
+      question() { return questionDeBanque([
+        { cat: 'Antiquité', prompt: "Dans quelle cité grecque naît la démocratie ?", answer: 'Athènes', faux: ['Sparte', 'Rome', 'Olympie'] },
+        { cat: 'Antiquité', prompt: "Que veut dire « polythéiste » ?", answer: 'Croire en plusieurs dieux', faux: ['Croire en un seul dieu', 'Ne croire en aucun dieu', 'Croire aux ancêtres'] },
+        { cat: 'Antiquité', prompt: "Quel poète grec a composé l'Iliade et l'Odyssée ?", answer: 'Homère', faux: ['Platon', 'Socrate', 'Hérodote'] },
+        { cat: 'Antiquité', prompt: "Qui est le roi des dieux chez les Grecs ?", answer: 'Zeus', faux: ['Jupiter', 'Poséidon', 'Apollon'] },
+        { cat: 'Antiquité', prompt: "Où se déroulaient les Jeux olympiques dans l'Antiquité ?", answer: 'À Olympie', faux: ['À Athènes', 'À Rome', 'À Sparte'] },
+        { cat: 'Antiquité', prompt: "Selon la légende, qui a fondé Rome ?", answer: 'Romulus', faux: ['Jules César', 'Auguste', 'Rémus et Numa'] },
+        { cat: 'Antiquité', prompt: "En quelle année Rome aurait-elle été fondée ?", answer: '753 avant J.-C.', faux: ['27 avant J.-C.', '476 après J.-C.', '1000 avant J.-C.'] },
+        { cat: 'Antiquité', prompt: "Qui devient le premier empereur romain en 27 avant J.-C. ?", answer: 'Auguste', faux: ['Jules César', 'Néron', 'Romulus'] },
+        { cat: 'Antiquité', prompt: "Comment appelle-t-on les petites villes-États grecques indépendantes ?", answer: 'Des cités', faux: ['Des empires', 'Des provinces', 'Des royaumes'] },
+        { cat: 'Antiquité', prompt: "À Athènes, qui pouvait voter ?", answer: 'Les citoyens hommes seulement', faux: ['Tous les habitants', 'Les femmes seulement', 'Les esclaves aussi'] },
+        { cat: 'Antiquité', prompt: "Quelle cité grecque était surtout réputée pour ses guerriers ?", answer: 'Sparte', faux: ['Athènes', 'Corinthe', 'Olympie'] },
+        { cat: 'Antiquité', prompt: "Quelle déesse grecque protège la cité d'Athènes ?", answer: 'Athéna', faux: ['Héra', 'Aphrodite', 'Artémis'] }
+      ]); } },
+
+    { id: 'hist-empire-romain', title: "L'Empire romain", explanation: "Un empire immense autour de la Méditerranée, et la naissance du christianisme.", levels: ['sixieme'],
+      cours: [
+        "À son apogée, au <strong>IIe siècle après Jésus-Christ</strong>, l'<strong>Empire romain</strong> entoure toute la <strong>mer Méditerranée</strong>, que les Romains appellent <em>Mare Nostrum</em>, « notre mer ». Sa capitale est <strong>Rome</strong>.",
+        "Pour tenir cet empire, les Romains construisent un immense réseau de <strong>routes</strong>, des <strong>aqueducs</strong> qui amènent l'eau dans les villes, des <strong>thermes</strong>, des <strong>amphithéâtres</strong> comme le <strong>Colisée</strong> et des <strong>arcs de triomphe</strong>.",
+        "La <strong>Gaule</strong> est conquise par <strong>Jules César</strong>, qui bat le chef gaulois <strong>Vercingétorix</strong> à <strong>Alésia</strong> en <strong>52 avant Jésus-Christ</strong>. Les Gaulois adoptent peu à peu le mode de vie romain : c'est la <strong>romanisation</strong>.",
+        "Le <strong>christianisme</strong> naît en Palestine au Ier siècle. D'abord persécuté, il devient autorisé, puis la religion officielle de l'Empire à la fin du IVe siècle. L'Empire romain d'Occident s'effondre en <strong>476</strong>, ce qui marque la fin de l'Antiquité."
+      ],
+      reperes: [['-52', 'Alésia : César bat Vercingétorix'], ['Ier siècle', 'Naissance du christianisme'], ['IIe siècle', "Apogée de l'Empire romain"], ['476', "Chute de l'Empire romain d'Occident"]],
+      question() { return questionDeBanque([
+        { cat: 'Empire romain', prompt: "Quelle mer l'Empire romain entoure-t-il entièrement ?", answer: 'La Méditerranée', faux: ["L'Atlantique", 'La mer Noire', 'La mer du Nord'] },
+        { cat: 'Empire romain', prompt: "Quel général romain conquiert la Gaule ?", answer: 'Jules César', faux: ['Auguste', 'Vercingétorix', 'Romulus'] },
+        { cat: 'Empire romain', prompt: "Quel chef gaulois est vaincu à Alésia ?", answer: 'Vercingétorix', faux: ['Astérix', 'Brennus', 'Clovis'] },
+        { cat: 'Empire romain', prompt: "En quelle année a lieu la bataille d'Alésia ?", answer: '52 avant J.-C.', faux: ['476 après J.-C.', '753 avant J.-C.', '27 avant J.-C.'] },
+        { cat: 'Empire romain', prompt: "À quoi servaient les aqueducs romains ?", answer: "À amener l'eau dans les villes", faux: ['À faire passer les armées', 'À défendre les frontières', 'À stocker le grain'] },
+        { cat: 'Empire romain', prompt: "Comment s'appelle le grand amphithéâtre de Rome ?", answer: 'Le Colisée', faux: ['Le Panthéon', 'Le Forum', "L'Acropole"] },
+        { cat: 'Empire romain', prompt: "Comment appelle-t-on l'adoption du mode de vie romain par les Gaulois ?", answer: 'La romanisation', faux: ['La colonisation', 'La christianisation', 'La migration'] },
+        { cat: 'Empire romain', prompt: "Où naît le christianisme au Ier siècle ?", answer: 'En Palestine', faux: ['À Rome', 'En Grèce', 'En Gaule'] },
+        { cat: 'Empire romain', prompt: "En quelle année tombe l'Empire romain d'Occident ?", answer: '476', faux: ['52 avant J.-C.', '1492', '800'] },
+        { cat: 'Empire romain', prompt: "Quelle est la capitale de l'Empire romain ?", answer: 'Rome', faux: ['Athènes', 'Constantinople', 'Alexandrie'] },
+        { cat: 'Empire romain', prompt: "Quel événement marque la fin de l'Antiquité ?", answer: "La chute de l'Empire romain d'Occident", faux: ["L'invention de l'écriture", 'La bataille d\'Alésia', 'La fondation de Rome'] }
+      ]); } }
+  ] },
+  /* ========== Géographie ========== */
+  { id: 'geographie', emoji: '🌍', title: 'Géographie', skills: [
+    { id: 'geo-france', title: 'Le relief et les fleuves de France', explanation: "Montagnes, plaines et grands fleuves : savoir situer les repères du territoire français.", levels: ['cm2'],
+      cours: [
+        "La France métropolitaine a la forme d'un <strong>hexagone</strong>. Les <strong>plaines</strong> et les plateaux occupent les deux tiers du territoire, surtout au nord et à l'ouest.",
+        "Les <strong>montagnes</strong> se trouvent surtout au sud et à l'est. Les <strong>Alpes</strong> sont les plus hautes : le <strong>mont Blanc</strong> culmine à <strong>4 806 mètres</strong>. Viennent ensuite les <strong>Pyrénées</strong>, à la frontière avec l'Espagne, puis le <strong>Massif central</strong>, le <strong>Jura</strong> et les <strong>Vosges</strong>, plus anciens et plus arrondis.",
+        "Quatre grands fleuves traversent le pays. La <strong>Loire</strong> est le plus long (environ 1 000 km) et se jette dans l'océan Atlantique. La <strong>Seine</strong> traverse Paris et rejoint la Manche. La <strong>Garonne</strong> arrose Bordeaux. Le <strong>Rhône</strong> descend vers la mer Méditerranée.",
+        "La France est bordée par la <strong>mer du Nord</strong>, la <strong>Manche</strong>, l'<strong>océan Atlantique</strong> et la <strong>mer Méditerranée</strong>."
+      ],
+      reperes: [['Mont Blanc', '4 806 m, dans les Alpes'], ['Loire', 'Le plus long fleuve de France'], ['Seine', 'Traverse Paris'], ['Rhône', 'Se jette en Méditerranée'], ['Hexagone', 'La forme de la France métropolitaine']],
+      question() { return questionDeBanque([
+        { cat: 'La France', prompt: "Quel est le plus long fleuve de France ?", answer: 'La Loire', faux: ['La Seine', 'Le Rhône', 'La Garonne'] },
+        { cat: 'La France', prompt: "Quel fleuve traverse Paris ?", answer: 'La Seine', faux: ['La Loire', 'Le Rhône', 'La Garonne'] },
+        { cat: 'La France', prompt: "Quel est le plus haut sommet des Alpes françaises ?", answer: 'Le mont Blanc', faux: ['Le pic du Midi', 'Le puy de Dôme', 'Le mont Ventoux'] },
+        { cat: 'La France', prompt: "Quelle est l'altitude du mont Blanc ?", answer: '4 806 m', faux: ['2 500 m', '3 200 m', '6 000 m'] },
+        { cat: 'La France', prompt: "Quelle chaîne de montagnes sépare la France de l'Espagne ?", answer: 'Les Pyrénées', faux: ['Les Alpes', 'Le Jura', 'Les Vosges'] },
+        { cat: 'La France', prompt: "Dans quelle mer le Rhône se jette-t-il ?", answer: 'La mer Méditerranée', faux: ["L'océan Atlantique", 'La Manche', 'La mer du Nord'] },
+        { cat: 'La France', prompt: "Quelle forme géométrique évoque la France métropolitaine ?", answer: 'Un hexagone', faux: ['Un carré', 'Un triangle', 'Un pentagone'] },
+        { cat: 'La France', prompt: "Quel fleuve arrose Bordeaux ?", answer: 'La Garonne', faux: ['La Loire', 'La Seine', 'Le Rhin'] },
+        { cat: 'La France', prompt: "Quel massif ancien se trouve au centre de la France ?", answer: 'Le Massif central', faux: ['Les Alpes', 'Les Pyrénées', 'Les Vosges'] },
+        { cat: 'La France', prompt: "Dans quel océan la Loire se jette-t-elle ?", answer: "L'océan Atlantique", faux: ['La Méditerranée', 'La mer du Nord', "L'océan Indien"] },
+        { cat: 'La France', prompt: "Quelle mer sépare la France de l'Angleterre ?", answer: 'La Manche', faux: ['La mer du Nord', 'La Méditerranée', 'La mer Baltique'] },
+        { cat: 'La France', prompt: "Quelle partie du territoire français est surtout occupée par des plaines ?", answer: 'Le nord et l\'ouest', faux: ['Le sud et l\'est', 'Le centre uniquement', 'Les côtes seulement'] }
+      ]); } },
+
+    { id: 'geo-europe', title: "La France dans l'Europe", explanation: "Les pays voisins, l'Union européenne et les grandes villes du continent.", levels: ['cm2'],
+      cours: [
+        "La France métropolitaine a plusieurs <strong>pays voisins</strong> : la <strong>Belgique</strong>, le <strong>Luxembourg</strong>, l'<strong>Allemagne</strong>, la <strong>Suisse</strong>, l'<strong>Italie</strong>, l'<strong>Espagne</strong>, ainsi que deux très petits États, <strong>Monaco</strong> et <strong>Andorre</strong>.",
+        "La <strong>capitale</strong> de la France est <strong>Paris</strong>. Les autres grandes villes françaises sont Marseille, Lyon, Toulouse, Nice, Nantes et Bordeaux.",
+        "La France fait partie de l'<strong>Union européenne</strong>, qui regroupe aujourd'hui <strong>27 pays</strong>. Sa monnaie commune est l'<strong>euro</strong>, utilisée par une partie de ces pays.",
+        "La France ne se limite pas à l'Europe : elle possède des territoires <strong>outre-mer</strong>, comme la <strong>Guadeloupe</strong>, la <strong>Martinique</strong>, la <strong>Guyane</strong>, <strong>La Réunion</strong> et <strong>Mayotte</strong>, répartis sur plusieurs océans."
+      ],
+      reperes: [['Paris', 'Capitale de la France'], ['27', "Nombre de pays de l'Union européenne"], ['Euro', 'La monnaie commune'], ['Outre-mer', 'Guadeloupe, Martinique, Guyane, La Réunion, Mayotte']],
+      question() { return questionDeBanque([
+        { cat: "L'Europe", prompt: "Quelle est la capitale de la France ?", answer: 'Paris', faux: ['Lyon', 'Marseille', 'Bordeaux'] },
+        { cat: "L'Europe", prompt: "Combien de pays compte l'Union européenne aujourd'hui ?", answer: '27', faux: ['12', '15', '50'] },
+        { cat: "L'Europe", prompt: "Lequel de ces pays est un voisin de la France ?", answer: "L'Italie", faux: ['Le Portugal', 'La Pologne', 'La Grèce'] },
+        { cat: "L'Europe", prompt: "Quel très petit État est enclavé entre la France et l'Espagne ?", answer: 'Andorre', faux: ['Monaco', 'Le Luxembourg', 'Malte'] },
+        { cat: "L'Europe", prompt: "Quelle est la capitale de l'Espagne ?", answer: 'Madrid', faux: ['Barcelone', 'Lisbonne', 'Séville'] },
+        { cat: "L'Europe", prompt: "Quelle est la capitale de l'Italie ?", answer: 'Rome', faux: ['Milan', 'Venise', 'Naples'] },
+        { cat: "L'Europe", prompt: "Quelle est la capitale de l'Allemagne ?", answer: 'Berlin', faux: ['Munich', 'Francfort', 'Hambourg'] },
+        { cat: "L'Europe", prompt: "Laquelle de ces îles est un territoire français d'outre-mer ?", answer: 'La Réunion', faux: ['La Sardaigne', 'Les Baléares', 'La Sicile'] },
+        { cat: "L'Europe", prompt: "Sur quel continent se trouve la Guyane française ?", answer: "L'Amérique du Sud", faux: ["L'Afrique", "L'Asie", "L'Océanie"] },
+        { cat: "L'Europe", prompt: "Quelle est la deuxième ville de France par sa population ?", answer: 'Marseille', faux: ['Lyon', 'Toulouse', 'Nice'] },
+        { cat: "L'Europe", prompt: "Quel pays voisin de la France n'utilise pas l'euro ?", answer: 'La Suisse', faux: ["L'Allemagne", "L'Espagne", "L'Italie"] }
+      ]); } },
+
+    { id: 'geo-deplacer', title: 'Se déplacer et communiquer', explanation: "Les transports du quotidien et les réseaux qui relient le monde entier.", levels: ['cm2'],
+      cours: [
+        "Pour se déplacer au quotidien, on utilise la <strong>voiture</strong>, le <strong>bus</strong>, le <strong>tramway</strong>, le <strong>métro</strong>, le <strong>vélo</strong> ou tout simplement la marche. En ville, les <strong>transports en commun</strong> permettent de déplacer beaucoup de personnes à la fois et polluent moins par voyageur.",
+        "Pour les longues distances, le <strong>TGV</strong> relie les grandes villes françaises à plus de 300 km/h, et l'<strong>avion</strong> permet de traverser le monde en quelques heures.",
+        "Les marchandises voyagent surtout par <strong>camion</strong>, par <strong>train</strong> et, pour le commerce mondial, par <strong>porte-conteneurs</strong>. Les plus grands ports concentrent ce trafic.",
+        "Pour communiquer, les informations passent par <strong>Internet</strong>. Elles circulent dans des <strong>câbles sous-marins</strong> posés au fond des océans et par des <strong>satellites</strong>. Mais tout le monde n'a pas le même accès à ces réseaux : c'est la <strong>fracture numérique</strong>."
+      ],
+      reperes: [['TGV', 'Plus de 300 km/h entre grandes villes'], ['Porte-conteneurs', 'Le transport du commerce mondial'], ['Câbles sous-marins', "L'essentiel du trafic Internet"], ['Fracture numérique', "Inégalités d'accès aux réseaux"]],
+      question() { return questionDeBanque([
+        { cat: 'Se déplacer', prompt: "Quel train relie les grandes villes françaises à grande vitesse ?", answer: 'Le TGV', faux: ['Le RER', 'Le tramway', 'Le métro'] },
+        { cat: 'Se déplacer', prompt: "Comment voyagent la plupart des marchandises entre les continents ?", answer: 'Par porte-conteneurs', faux: ['Par avion', 'Par camion', 'Par train'] },
+        { cat: 'Se déplacer', prompt: "Par quoi passe l'essentiel du trafic Internet mondial ?", answer: 'Des câbles sous-marins', faux: ['Uniquement des satellites', 'Des ondes radio', 'Des lignes téléphoniques'] },
+        { cat: 'Se déplacer', prompt: "Comment appelle-t-on les inégalités d'accès à Internet ?", answer: 'La fracture numérique', faux: ["L'exode rural", 'La mondialisation', 'La densité'] },
+        { cat: 'Se déplacer', prompt: "Quel avantage ont les transports en commun sur la voiture individuelle ?", answer: 'Ils polluent moins par voyageur', faux: ['Ils vont toujours plus vite', 'Ils coûtent toujours plus cher', 'Ils vont partout'] },
+        { cat: 'Se déplacer', prompt: "Quel moyen de transport permet de traverser un océan en quelques heures ?", answer: "L'avion", faux: ['Le bateau', 'Le train', 'Le camion'] },
+        { cat: 'Se déplacer', prompt: "Lequel de ces déplacements ne produit aucune pollution ?", answer: 'La marche à pied', faux: ['La voiture', "L'avion", 'Le bus'] },
+        { cat: 'Se déplacer', prompt: "Où arrivent les porte-conteneurs ?", answer: 'Dans les ports', faux: ['Dans les gares', 'Dans les aéroports', 'Sur les autoroutes'] },
+        { cat: 'Se déplacer', prompt: "Quel transport en commun circule sur des rails en ville ?", answer: 'Le tramway', faux: ['Le bus', 'Le taxi', 'Le camion'] },
+        { cat: 'Se déplacer', prompt: "Qu'est-ce qui aide les satellites à faire circuler l'information ?", answer: 'Les ondes', faux: ['Les rails', 'Les routes', 'Les câbles électriques'] }
+      ]); } },
+
+    { id: 'geo-habiter', title: 'Mieux habiter', explanation: "Ville, campagne et environnement : comment on peut habiter autrement.", levels: ['cm2'],
+      cours: [
+        "En France, plus de <strong>huit habitants sur dix</strong> vivent en <strong>ville</strong>. Autour des villes s'étendent les <strong>banlieues</strong> et les zones <strong>périurbaines</strong>, où l'on habite tout en travaillant souvent en ville.",
+        "À la campagne, la population est moins nombreuse : on parle d'<strong>espaces de faible densité</strong>. On y trouve l'<strong>agriculture</strong>, des paysages ouverts, mais aussi moins de commerces et de services.",
+        "Habiter mieux, c'est aussi <strong>préserver l'environnement</strong> : trier et <strong>recycler</strong> les déchets, économiser l'eau et l'énergie, créer des <strong>espaces verts</strong> et favoriser les déplacements sans voiture.",
+        "Le <strong>développement durable</strong> consiste à répondre aux besoins d'aujourd'hui sans empêcher les générations futures de répondre aux leurs. C'est le principe des écoquartiers et des transports propres."
+      ],
+      reperes: [['8 sur 10', 'Part des Français vivant en ville'], ['Périurbain', 'Autour des villes'], ['Faible densité', 'Peu d\'habitants au km²'], ['Développement durable', 'Sans compromettre les générations futures']],
+      question() { return questionDeBanque([
+        { cat: 'Mieux habiter', prompt: "Où vit la grande majorité des Français ?", answer: 'En ville', faux: ['À la campagne', 'En montagne', 'Sur les îles'] },
+        { cat: 'Mieux habiter', prompt: "Comment appelle-t-on les espaces situés autour des villes ?", answer: 'Les espaces périurbains', faux: ['Les centres-villes', 'Les littoraux', 'Les massifs'] },
+        { cat: 'Mieux habiter', prompt: "Qu'est-ce que le développement durable ?", answer: 'Répondre aux besoins sans nuire aux générations futures', faux: ['Construire toujours plus vite', 'Développer uniquement les villes', 'Augmenter la production sans limite'] },
+        { cat: 'Mieux habiter', prompt: "Que fait-on des déchets quand on les trie ?", answer: 'On les recycle', faux: ['On les brûle tous', 'On les enterre', 'On les jette à la mer'] },
+        { cat: 'Mieux habiter', prompt: "Comment appelle-t-on un espace où vivent peu d'habitants au km² ?", answer: 'Un espace de faible densité', faux: ['Une métropole', 'Une banlieue', 'Un littoral'] },
+        { cat: 'Mieux habiter', prompt: "Quelle activité domine dans les campagnes françaises ?", answer: "L'agriculture", faux: ["L'industrie lourde", 'La finance', 'Le tourisme de masse'] },
+        { cat: 'Mieux habiter', prompt: "Quel aménagement rend une ville plus agréable et plus fraîche ?", answer: 'Les espaces verts', faux: ['Les parkings', 'Les autoroutes urbaines', 'Les zones commerciales'] },
+        { cat: 'Mieux habiter', prompt: "Quel déplacement urbain ne pollue pas ?", answer: 'Le vélo', faux: ['La voiture', 'Le scooter', 'Le camion'] },
+        { cat: 'Mieux habiter', prompt: "Comment appelle-t-on un quartier conçu pour respecter l'environnement ?", answer: 'Un écoquartier', faux: ['Un lotissement', 'Une zone industrielle', 'Un centre commercial'] },
+        { cat: 'Mieux habiter', prompt: "Que manque-t-il souvent dans les espaces de faible densité ?", answer: 'Des commerces et des services', faux: ['Des champs', 'De la place', 'De l\'air pur'] }
+      ]); } },
+
+    { id: 'geo-metropole', title: 'Habiter une métropole', explanation: "Les très grandes villes du monde : leur organisation, leurs atouts et leurs difficultés.", levels: ['sixieme'],
+      cours: [
+        "Une <strong>métropole</strong> est une très grande ville qui concentre les <strong>activités</strong>, les <strong>emplois</strong>, les <strong>décisions</strong> et les <strong>transports</strong>. Elle rayonne bien au-delà de ses limites, parfois sur le monde entier.",
+        "Une métropole s'organise en quartiers : le <strong>centre-ville</strong> ancien, un quartier <strong>d'affaires</strong> avec ses tours, des quartiers d'habitation, puis les <strong>banlieues</strong> et l'espace <strong>périurbain</strong>.",
+        "Les métropoles offrent beaucoup de services : universités, hôpitaux, musées, aéroports. Mais elles connaissent aussi des difficultés : <strong>embouteillages</strong>, <strong>pollution</strong>, logements chers et fortes <strong>inégalités</strong> entre quartiers.",
+        "Dans les pays pauvres, une partie des habitants vit dans des <strong>bidonvilles</strong>, des quartiers construits sans plan ni équipements. <strong>Tokyo</strong>, <strong>New York</strong>, <strong>Shanghai</strong>, <strong>Lagos</strong> et <strong>Paris</strong> sont des métropoles."
+      ],
+      reperes: [['Métropole', 'Grande ville qui concentre et rayonne'], ['Quartier d\'affaires', 'Les tours et les bureaux'], ['Bidonville', 'Habitat précaire, sans équipements'], ['Tokyo', "L'une des plus peuplées du monde"]],
+      question() { return questionDeBanque([
+        { cat: 'Métropole', prompt: "Qu'est-ce qu'une métropole ?", answer: 'Une grande ville qui concentre activités et décisions', faux: ['Un village agrandi', 'Une ville de bord de mer', 'Une capitale uniquement'] },
+        { cat: 'Métropole', prompt: "Comment appelle-t-on le quartier des tours et des bureaux ?", answer: "Le quartier d'affaires", faux: ['Le centre historique', 'La banlieue', 'La zone industrielle'] },
+        { cat: 'Métropole', prompt: "Quel problème est fréquent dans les métropoles ?", answer: 'Les embouteillages et la pollution', faux: ['Le manque de population', "L'absence de transports", 'Le manque de commerces'] },
+        { cat: 'Métropole', prompt: "Comment appelle-t-on un quartier d'habitat précaire sans équipements ?", answer: 'Un bidonville', faux: ['Un écoquartier', 'Une banlieue résidentielle', 'Un centre-ville'] },
+        { cat: 'Métropole', prompt: "Laquelle de ces villes est une métropole mondiale ?", answer: 'Tokyo', faux: ['Chartres', 'Dinan', 'Guérande'] },
+        { cat: 'Métropole', prompt: "Que trouve-t-on autour du centre d'une métropole ?", answer: 'Des banlieues et un espace périurbain', faux: ['Uniquement des champs', 'Des déserts', 'Rien du tout'] },
+        { cat: 'Métropole', prompt: "Pourquoi les logements sont-ils chers dans les métropoles ?", answer: 'La demande y est très forte', faux: ['Ils sont tous neufs', 'Il y a peu d\'habitants', 'Les terrains sont gratuits'] },
+        { cat: 'Métropole', prompt: "Quel équipement relie une métropole au reste du monde ?", answer: "L'aéroport international", faux: ['La mairie', 'Le marché', "L'école primaire"] },
+        { cat: 'Métropole', prompt: "Quelle est la métropole française la plus peuplée ?", answer: 'Paris', faux: ['Lille', 'Strasbourg', 'Rennes'] },
+        { cat: 'Métropole', prompt: "Que veut dire « une métropole rayonne » ?", answer: 'Son influence dépasse largement ses limites', faux: ['Elle est très éclairée la nuit', 'Elle est très ensoleillée', 'Elle est très étendue'] }
+      ]); } },
+
+    { id: 'geo-littoral', title: 'Habiter les littoraux', explanation: "Les bords de mer : tourisme, pêche, ports et fragilité des milieux.", levels: ['sixieme'],
+      cours: [
+        "Le <strong>littoral</strong> est la zone de contact entre la <strong>terre</strong> et la <strong>mer</strong>. C'est un espace très attractif : partout dans le monde, les populations s'y concentrent.",
+        "On distingue les <strong>littoraux touristiques</strong>, avec leurs plages, leurs hôtels et leurs ports de plaisance, et les <strong>littoraux industrialo-portuaires</strong>, où les grands <strong>ports</strong> reçoivent les porte-conteneurs et où s'installent usines et raffineries.",
+        "La <strong>pêche</strong> reste une activité importante, mais la <strong>surpêche</strong> menace les ressources : on prélève parfois plus de poissons que la mer ne peut en produire.",
+        "Les littoraux sont <strong>fragiles</strong>. Ils subissent l'<strong>érosion</strong>, la <strong>pollution</strong>, le bétonnage des côtes et la <strong>montée du niveau de la mer</strong> liée au réchauffement climatique. Des espaces protégés sont créés pour les préserver."
+      ],
+      reperes: [['Littoral', 'Contact entre la terre et la mer'], ['Industrialo-portuaire', 'Grands ports, usines, raffineries'], ['Surpêche', 'Prélever plus que la mer ne produit'], ['Érosion', 'Le recul du trait de côte']],
+      question() { return questionDeBanque([
+        { cat: 'Littoraux', prompt: "Qu'est-ce qu'un littoral ?", answer: 'La zone de contact entre la terre et la mer', faux: ['Une chaîne de montagnes', 'Un fleuve large', 'Une grande plaine'] },
+        { cat: 'Littoraux', prompt: "Quelle activité domine sur un littoral touristique ?", answer: 'Le tourisme balnéaire', faux: ["L'industrie lourde", "L'élevage", "L'exploitation minière"] },
+        { cat: 'Littoraux', prompt: "Que reçoivent les grands ports de commerce ?", answer: 'Des porte-conteneurs', faux: ['Des avions', 'Des trains à grande vitesse', 'Des voitures particulières'] },
+        { cat: 'Littoraux', prompt: "Qu'est-ce que la surpêche ?", answer: 'Prélever plus de poissons que la mer n\'en produit', faux: ['Pêcher uniquement l\'été', 'Pêcher à la ligne', 'Élever des poissons'] },
+        { cat: 'Littoraux', prompt: "Comment appelle-t-on le recul progressif de la côte ?", answer: "L'érosion", faux: ['La marée', 'La sédimentation', 'La pollution'] },
+        { cat: 'Littoraux', prompt: "Quel phénomène climatique menace les littoraux ?", answer: 'La montée du niveau de la mer', faux: ['La baisse des marées', 'Le refroidissement', 'La fonte des fleuves'] },
+        { cat: 'Littoraux', prompt: "Pourquoi les populations se concentrent-elles sur les littoraux ?", answer: 'Ce sont des espaces attractifs et bien reliés', faux: ['Le climat y est toujours froid', 'Les terres y sont gratuites', 'Il n\'y a pas de risques'] },
+        { cat: 'Littoraux', prompt: "Comment appelle-t-on un littoral où se trouvent usines et grand port ?", answer: 'Un littoral industrialo-portuaire', faux: ['Un littoral balnéaire', 'Un littoral protégé', 'Un littoral rural'] },
+        { cat: 'Littoraux', prompt: "Que construit-on parfois trop sur les côtes, au détriment des milieux ?", answer: 'Des immeubles et des routes', faux: ['Des forêts', 'Des dunes', 'Des récifs'] },
+        { cat: 'Littoraux', prompt: "Comment protège-t-on les milieux littoraux fragiles ?", answer: 'En créant des espaces protégés', faux: ['En construisant davantage', 'En augmentant la pêche', 'En supprimant les plages'] }
+      ]); } },
+
+    { id: 'geo-faible-densite', title: 'Les espaces de faible densité', explanation: "Campagnes, montagnes et déserts : vivre là où il y a peu d'habitants.", levels: ['sixieme'],
+      cours: [
+        "La <strong>densité de population</strong> est le nombre d'<strong>habitants par kilomètre carré</strong>. Un espace de <strong>faible densité</strong> compte peu d'habitants sur une grande surface.",
+        "Ces espaces sont variés : campagnes agricoles, <strong>montagnes</strong>, forêts, <strong>déserts</strong> chauds ou froids. On les appelle parfois les <strong>marges</strong>, car ils sont à l'écart des grands centres.",
+        "On y vit de l'<strong>agriculture</strong>, de l'<strong>élevage</strong>, de l'exploitation de la forêt, parfois du <strong>tourisme</strong> — sports d'hiver en montagne, tourisme vert à la campagne.",
+        "Les habitants y font face à des difficultés : <strong>distances</strong> importantes, fermeture de commerces et d'écoles, accès plus difficile aux soins. Certains de ces espaces se repeuplent pourtant, grâce au <strong>télétravail</strong> et à la recherche d'un cadre de vie plus calme."
+      ],
+      reperes: [['Densité', 'Habitants par kilomètre carré'], ['Marges', 'Espaces à l\'écart des grands centres'], ['Tourisme vert', 'Une ressource pour les campagnes'], ['Télétravail', 'Il permet de vivre loin des villes']],
+      question() { return questionDeBanque([
+        { cat: 'Faible densité', prompt: "Comment calcule-t-on la densité de population ?", answer: 'Nombre d\'habitants par km²', faux: ['Nombre d\'habitants par maison', 'Nombre de villes par région', 'Nombre de km² par habitant'] },
+        { cat: 'Faible densité', prompt: "Lequel de ces espaces est de faible densité ?", answer: 'Un désert', faux: ['Une métropole', 'Un quartier d\'affaires', 'Une banlieue'] },
+        { cat: 'Faible densité', prompt: "Quelle activité fait vivre les espaces ruraux ?", answer: "L'agriculture et l'élevage", faux: ['La finance', "L'industrie automobile", 'Le transport aérien'] },
+        { cat: 'Faible densité', prompt: "Quelle difficulté rencontrent les habitants de ces espaces ?", answer: "L'éloignement des services", faux: ['Le trop-plein de commerces', 'Les embouteillages', 'Le manque de place'] },
+        { cat: 'Faible densité', prompt: "Quel tourisme se développe en montagne l'hiver ?", answer: 'Les sports d\'hiver', faux: ['Le tourisme balnéaire', 'Le tourisme urbain', 'Les croisières'] },
+        { cat: 'Faible densité', prompt: "Qu'est-ce qui permet aujourd'hui de travailler loin des villes ?", answer: 'Le télétravail', faux: ["L'autoroute", 'Le TGV uniquement', "L'aviation"] },
+        { cat: 'Faible densité', prompt: "Comment appelle-t-on ces espaces à l'écart des grands centres ?", answer: 'Des marges', faux: ['Des métropoles', 'Des littoraux', 'Des capitales'] },
+        { cat: 'Faible densité', prompt: "Un désert froid est-il un espace de faible densité ?", answer: 'Oui', faux: ['Non, il est très peuplé', 'Seulement en été', 'Cela dépend du pays'] },
+        { cat: 'Faible densité', prompt: "Qu'est-ce que le tourisme vert ?", answer: 'Un tourisme à la campagne, proche de la nature', faux: ['Un tourisme dans les grandes villes', 'Un tourisme en bord de mer', 'Un tourisme industriel'] },
+        { cat: 'Faible densité', prompt: "Que ferme-t-on parfois faute d'habitants dans ces espaces ?", answer: 'Des écoles et des commerces', faux: ['Des aéroports', 'Des universités', 'Des ports'] }
+      ]); } },
+
+    { id: 'geo-monde-habite', title: 'Le monde habité', explanation: "Où vivent les humains sur la planète, et pourquoi si inégalement.", levels: ['sixieme'],
+      cours: [
+        "La Terre compte aujourd'hui environ <strong>8 milliards d'habitants</strong>. Ils sont très inégalement répartis : certaines régions sont surpeuplées, d'autres presque vides.",
+        "Les grands <strong>foyers de peuplement</strong> sont l'<strong>Asie de l'Est</strong> (Chine, Japon), l'<strong>Asie du Sud</strong> (Inde), l'<strong>Europe</strong> et le <strong>nord-est de l'Amérique du Nord</strong>. L'<strong>Asie</strong> est de loin le continent le plus peuplé.",
+        "À l'inverse, les <strong>déserts</strong> chauds ou froids, les <strong>hautes montagnes</strong> et les grandes <strong>forêts</strong> sont très peu habités : ce sont des espaces aux contraintes fortes.",
+        "Les océans couvrent la plus grande partie de la planète. Le plus vaste est l'<strong>océan Pacifique</strong>. Aujourd'hui, plus de la moitié de l'humanité vit en <strong>ville</strong> : c'est l'<strong>urbanisation</strong>."
+      ],
+      reperes: [['8 milliards', "Population mondiale actuelle"], ['Asie', 'Le continent le plus peuplé'], ['Pacifique', 'Le plus grand océan'], ['Urbanisation', 'Plus d\'un humain sur deux vit en ville']],
+      question() { return questionDeBanque([
+        { cat: 'Monde habité', prompt: "Combien d'habitants compte la Terre aujourd'hui ?", answer: 'Environ 8 milliards', faux: ['Environ 1 milliard', 'Environ 800 millions', 'Environ 50 milliards'] },
+        { cat: 'Monde habité', prompt: "Quel est le continent le plus peuplé ?", answer: "L'Asie", faux: ["L'Afrique", "L'Europe", "L'Amérique"] },
+        { cat: 'Monde habité', prompt: "Comment appelle-t-on une région du monde très peuplée ?", answer: 'Un foyer de peuplement', faux: ['Un désert humain', 'Une marge', 'Un littoral'] },
+        { cat: 'Monde habité', prompt: "Quel est le plus grand océan de la planète ?", answer: "L'océan Pacifique", faux: ["L'océan Atlantique", "L'océan Indien", "L'océan Arctique"] },
+        { cat: 'Monde habité', prompt: "Lequel de ces espaces est très peu habité ?", answer: 'Un désert', faux: ['Une plaine fertile', 'Un littoral tempéré', 'Une vallée fluviale'] },
+        { cat: 'Monde habité', prompt: "Où vit aujourd'hui plus de la moitié de l'humanité ?", answer: 'En ville', faux: ['À la campagne', 'En montagne', 'Sur les littoraux uniquement'] },
+        { cat: 'Monde habité', prompt: "Comment appelle-t-on l'augmentation de la population des villes ?", answer: "L'urbanisation", faux: ["L'exode urbain", 'La densification agricole', 'La migration saisonnière'] },
+        { cat: 'Monde habité', prompt: "Quel pays d'Asie compte le plus grand foyer de peuplement avec la Chine ?", answer: "L'Inde", faux: ['Le Japon', 'La Thaïlande', 'Le Népal'] },
+        { cat: 'Monde habité', prompt: "Pourquoi les hautes montagnes sont-elles peu peuplées ?", answer: 'Les conditions de vie y sont difficiles', faux: ['Il y fait trop chaud', 'Les terres y sont trop riches', 'Elles sont interdites'] },
+        { cat: 'Monde habité', prompt: "La population mondiale est-elle répartie de façon égale ?", answer: 'Non, très inégalement', faux: ['Oui, partout pareil', 'Oui, sauf en Europe', 'Oui, depuis 2000'] }
+      ]); } }
+  ] },
+];
+
+/* ================= Dictées ================= */
+/* Chaque texte est écrit avec sa ponctuation : la voix la respecte pour les
+   pauses, mais la correction ne la compte pas comme faute. */
+const DICTEES = [
+  { id: 'd-rentree', titre: 'La rentrée', niveau: 'cm2', points: "Accord dans le groupe nominal",
+    texte: "C'est le jour de la rentrée. Les élèves entrent dans la classe et posent leurs cartables. La maîtresse écrit son nom au tableau. Les nouveaux cahiers sentent le papier neuf." },
+  { id: 'd-automne', titre: "L'automne", niveau: 'cm2', points: "Pluriel des noms et des adjectifs",
+    texte: "Les feuilles jaunes tombent doucement des grands arbres. Le vent les emporte jusqu'au fond du jardin. Les enfants ramassent des marrons dans leurs poches." },
+  { id: 'd-marche', titre: 'Au marché', niveau: 'cm2', points: "Accord du verbe avec son sujet",
+    texte: "Chaque samedi, ma grand-mère va au marché du village. Elle choisit des légumes frais et deux belles pommes rouges. Les marchands l'appellent par son prénom." },
+  { id: 'd-orage', titre: "L'orage", niveau: 'cm2', points: "Les homophones a / à et et / est",
+    texte: "Le ciel est devenu tout noir. Un éclair a traversé les nuages et le tonnerre a grondé. Nous sommes rentrés à la maison en courant." },
+  { id: 'd-chaton', titre: 'Le chaton', niveau: 'cm2', points: "Accord de l'adjectif",
+    texte: "Un petit chaton gris dort près de la cheminée. Ses pattes blanches remuent pendant son rêve. Quand il se réveille, il réclame son bol de lait." },
+  { id: 'd-velo', titre: 'La promenade à vélo', niveau: 'cm2', points: "Passé composé et participe passé",
+    texte: "Dimanche, nous avons pris nos vélos pour longer la rivière. Ma sœur est tombée dans l'herbe mais elle a beaucoup ri. Nous sommes revenus fatigués et heureux." },
+  { id: 'd-hiver', titre: "Le matin d'hiver", niveau: 'cm2', points: "Les verbes du premier groupe",
+    texte: "La neige recouvre le toit de la maison. Les oiseaux cherchent des graines sous les branches. Je souffle sur la vitre glacée pour dessiner une étoile." },
+  { id: 'd-ecole', titre: "Le chemin de l'école", niveau: 'cm2', points: "Les mots invariables",
+    texte: "Tous les matins, je marche jusqu'à l'école avec mon voisin. Nous passons devant la boulangerie, puis nous traversons la petite place. Nous arrivons toujours avant la cloche." },
+
+  { id: 'd-village', titre: 'Le village au petit matin', niveau: 'sixieme', points: "Imparfait et accords",
+    texte: "Le village s'éveillait lentement sous une brume légère. Les volets claquaient les uns après les autres et une odeur de pain chaud montait de la boulangerie. Sur la place déserte, un chien errant cherchait un peu de fraîcheur près de la fontaine." },
+  { id: 'd-bibliotheque', titre: 'À la bibliothèque', niveau: 'sixieme', points: "Accord du participe passé",
+    texte: "Les livres que nous avons empruntés la semaine dernière sont restés sur la table. La bibliothécaire nous a demandé de les ranger avant de partir. Nous les avons classés par ordre alphabétique, comme elle nous l'avait expliqué." },
+  { id: 'd-orage6', titre: "L'orage en montagne", niveau: 'sixieme', points: "Passé simple",
+    texte: "Le ciel s'assombrit brusquement au-dessus des sommets. Un vent glacial se leva et les randonneurs pressèrent le pas. Ils atteignirent le refuge au moment où les premières gouttes frappaient les rochers." },
+  { id: 'd-mer', titre: 'Devant la mer', niveau: 'sixieme', points: "Homophones et accords",
+    texte: "La mer est calme ce matin et le sable est encore humide. Des mouettes tournent au-dessus des barques amarrées près de la jetée. On aperçoit au loin la silhouette d'un cargo qui se dirige vers le port." },
+  { id: 'd-atelier', titre: "L'atelier du menuisier", niveau: 'sixieme', points: "Vocabulaire et pluriels",
+    texte: "Dans l'atelier flottait une odeur de bois fraîchement coupé. Les copeaux s'accumulaient sous l'établi et les outils étaient rangés le long du mur. Le menuisier passait la main sur la planche pour vérifier qu'aucune aspérité ne subsistait." },
+  { id: 'd-nuit', titre: 'La nuit étoilée', niveau: 'sixieme', points: "Accords et mots difficiles",
+    texte: "La nuit était si claire que nous distinguions les constellations les plus lointaines. Assis dans l'herbe humide, nous cherchions la Grande Ourse sans jamais nous lasser. Une étoile filante traversa le ciel et personne n'osa prononcer un mot." },
+  { id: 'd-marche6', titre: 'Le marché de la ville', niveau: 'sixieme', points: "Accord sujet-verbe éloigné",
+    texte: "Les étals colorés que les marchands installent dès l'aube attirent une foule bruyante. Les odeurs d'épices, de fromages et de fruits mûrs se mélangent dans les allées étroites. Vers midi, les vendeurs fatigués remballent leurs marchandises." },
+  { id: 'd-lecture', titre: 'Le goût de la lecture', niveau: 'sixieme', points: "Subjonctif et accords",
+    texte: "Il faut que chacun trouve le livre qui lui donnera envie de continuer. Certains préfèrent les récits d'aventures, d'autres les histoires vraies. Peu importe le genre, pourvu que les pages se tournent sans qu'on y prenne garde." }
+];
+function dicteesPourNiveau(niveau) { return DICTEES.filter(d => d.niveau === niveau); }
+
 function getDomain(id) { return DOMAINS.find(d => d.id === id); }
 function getSkill(domainId, skillId) { const d = getDomain(domainId); return d ? d.skills.find(s => s.id === skillId) : null; }
 function skillsForLevel(domainId, level) { const d = getDomain(domainId); return d ? d.skills.filter(s => s.levels.includes(level)) : []; }
@@ -750,13 +1156,20 @@ function domainesPourNiveau(level) {
 /* ================= État global ================= */
 const LEVELS = [{ id: 'cm2', label: 'CM2' }, { id: 'sixieme', label: '6ème' }, { id: 'singapour', label: 'Singapour' }];
 function levelLabel(id) { const l = LEVELS.find(x => x.id === id); return l ? l.label : id; }
-const state = { screen: 'home', level: loadStore().level || 'cm2', currentDomain: null, currentSkill: null, mentalTrickId: null, quiz: null };
+const state = { screen: 'home', level: loadStore().level || 'cm2', currentDomain: null, currentSkill: null, mentalTrickId: null, quiz: null, dictee: null };
 function setLevel(lvl) { state.level = lvl; const s = loadStore(); s.level = lvl; saveStore(s); render(); }
 function clearTimer() { if (state.quiz && state.quiz.timerHandle) { clearInterval(state.quiz.timerHandle); state.quiz.timerHandle = null; } }
 
 /* ================= Construction et moteur de quiz ================= */
 /* Évite de retomber sur des questions identiques : on retente quelques fois,
    puis on accepte un doublon si le générateur a peu de combinaisons possibles. */
+/* Histoire et géographie ne se génèrent pas : leurs questions sont écrites une
+   à une dans une banque. On en tire au hasard, sans jamais reposer la même. */
+function questionDeBanque(banque) {
+  const b = banque[rnd(0, banque.length - 1)];
+  return q({ category: b.cat, prompt: b.prompt, answer: b.answer, options: mkOptions(b.answer, b.faux), limit: b.limit || 25 });
+}
+
 function pickDistinct(makeFn, keyFn, count) {
   const out = [], seen = new Set();
   for (let i = 0; i < count; i++) {
@@ -814,6 +1227,212 @@ function answerQuiz(chosen) {
   }, 1100);
 }
 
+
+/* ---------- La voix ---------- */
+/* Les voix du navigateur arrivent de façon asynchrone : tant qu'elles ne sont
+   pas chargées, getVoices() renvoie une liste vide. On réaffiche l'écran dès
+   qu'elles arrivent pour que le bouton « Écouter » cesse d'être grisé. */
+let voixPretes = false;
+function voixFrancaise() {
+  if (!('speechSynthesis' in window)) return null;
+  const voix = speechSynthesis.getVoices();
+  return voix.find(v => v.lang === 'fr-FR') || voix.find(v => v.lang && v.lang.toLowerCase().startsWith('fr')) || null;
+}
+function lectureDisponible() { return 'speechSynthesis' in window && voixFrancaise() !== null; }
+if ('speechSynthesis' in window) {
+  speechSynthesis.addEventListener('voiceschanged', () => {
+    voixPretes = true;
+    if (state.screen === 'dictee') render();
+  });
+}
+
+function direTexte(texte, vitesse) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(texte);
+  u.lang = 'fr-FR';
+  /* Choisir la voix est un confort, pas une nécessité : si l'appareil refuse
+     celle qu'on lui propose, on lit quand même avec la voix par défaut plutôt
+     que de laisser l'enfant devant un bouton muet. */
+  try { const v = voixFrancaise(); if (v) u.voice = v; } catch (e) { /* voix par défaut */ }
+  u.rate = vitesse;      // 0.7 en lecture lente, 0.95 en normale
+  speechSynthesis.speak(u);
+}
+function stopperVoix() { if ('speechSynthesis' in window) speechSynthesis.cancel(); }
+
+/* ---------- Découpage et comparaison ---------- */
+function phrasesDe(texte) {
+  return texte.match(/[^.!?…]+[.!?…]*/g).map(s => s.trim()).filter(Boolean);
+}
+function motsDe(texte) { return texte.trim().split(/\s+/).filter(Boolean); }
+
+/* La ponctuation n'est pas comptée comme faute, mais les accents et les
+   majuscules le sont : c'est ce qui fait tout l'intérêt d'une dictée. */
+function normaliserMot(mot) {
+  return mot.replace(/[’ʼ]/g, "'")          // apostrophe typographique
+            .replace(/^[«»"'“”(\[]+/, '')
+            .replace(/[.,;:!?…«»"'“”)\]]+$/, '');
+}
+
+/* Alignement par plus longue sous-suite commune : il repère les mots oubliés
+   et les mots en trop au lieu de tout décaler après la première erreur. */
+function alignerMots(attendus, ecrits) {
+  const n = attendus.length, m = ecrits.length;
+  const dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--)
+    for (let j = m - 1; j >= 0; j--)
+      dp[i][j] = attendus[i] === ecrits[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  const brut = [];
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (attendus[i] === ecrits[j]) brut.push({ type: 'ok', a: i++, e: j++ });
+    else if (dp[i + 1][j] >= dp[i][j + 1]) brut.push({ type: 'oubli', a: i++ });
+    else brut.push({ type: 'ajout', e: j++ });
+  }
+  while (i < n) brut.push({ type: 'oubli', a: i++ });
+  while (j < m) brut.push({ type: 'ajout', e: j++ });
+
+  /* Un mot oublié qui fait face à un mot en trop, c'est en réalité un mot mal
+     écrit. On traite chaque série d'erreurs d'un bloc et on apparie dans
+     l'ordre : sinon, sur deux erreurs qui se suivent, le mot saisi se
+     retrouverait confronté au mot attendu de l'erreur voisine. */
+  const res = [];
+  for (let k = 0; k < brut.length; ) {
+    if (brut[k].type === 'ok') { res.push(brut[k++]); continue; }
+    let fin = k;
+    while (fin < brut.length && brut[fin].type !== 'ok') fin++;
+    const serie = brut.slice(k, fin);
+    const oublis = serie.filter(x => x.type === 'oubli'), ajouts = serie.filter(x => x.type === 'ajout');
+    const paires = Math.min(oublis.length, ajouts.length);
+    for (let i = 0; i < paires; i++) res.push({ type: 'faute', a: oublis[i].a, e: ajouts[i].e });
+    for (let i = paires; i < oublis.length; i++) res.push(oublis[i]);
+    for (let i = paires; i < ajouts.length; i++) res.push(ajouts[i]);
+    k = fin;
+  }
+  return res;
+}
+
+/* Un signe de ponctuation isolé (« ! » précédé d'une espace) n'est pas un mot :
+   comme la ponctuation est tolérée, il ne doit pas compter comme mot en trop. */
+function motsComparables(texte) {
+  const out = [];
+  for (const mot of motsDe(texte)) { const n = normaliserMot(mot); if (n) out.push({ mot, n }); }
+  return out;
+}
+
+function corrigerDictee(attendu, saisi) {
+  const A = motsComparables(attendu), E = motsComparables(saisi);
+  const align = alignerMots(A.map(x => x.n), E.map(x => x.n));
+  const justes = align.filter(x => x.type === 'ok').length;
+  const total = A.length;
+  return { align, motsAttendus: A.map(x => x.mot), motsEcrits: E.map(x => x.mot), justes, total, pct: total ? Math.round(justes / total * 100) : 0 };
+}
+
+/* ---------- Les écrans de la dictée ---------- */
+function renderDicteeList() {
+  const liste = dicteesPourNiveau(state.level);
+  const cartes = liste.map(d => {
+    const best = getBest('dictee-' + d.id);
+    return `<div class="trick-card" data-action="open-dictee" data-id="${d.id}"><div class="trick-emoji">✍️</div><div class="trick-info"><div class="trick-title">${d.titre}</div><div class="mode-desc">${motsDe(d.texte).length} mots · ${d.points}</div>${best !== undefined ? `<div class="trick-progress">✓ Meilleur score : ${best}%</div>` : ''}</div><div class="mode-arrow">→</div></div>`;
+  }).join('');
+  const alerte = lectureDisponible() ? '' : `<div class="voix-alerte">🔇 Aucune voix française n'a été trouvée sur cet appareil. La dictée peut être lue par un adulte : le texte reste caché jusqu'à la correction.</div>`;
+  return `<div class="screen"><button class="btn-back" data-action="go-home">← Retour</button>
+    <h1>✍️ Dictée</h1><p class="subtitle">Niveau ${levelLabel(state.level)}</p>
+    ${alerte}${cartes}</div>`;
+}
+
+function renderDictee() {
+  const d = getDictee(state.dictee.id);
+  const phrases = phrasesDe(d.texte);
+  const i = state.dictee.phrase;
+  const lente = state.dictee.vitesse < 0.85;
+  const dispo = lectureDisponible();
+  return `<div class="screen"><button class="btn-back" data-action="back-to-dictees">← Retour</button>
+    <div class="lesson-hero"><div class="lesson-emoji">✍️</div><div class="lesson-title">${d.titre}</div><div class="lesson-explanation">Écoute, puis écris ce que tu entends. Tu peux réécouter autant de fois que tu veux.</div></div>
+
+    <div class="dictee-lecteur">
+      <div class="dictee-phrase-info">Phrase ${i + 1} sur ${phrases.length}</div>
+      <div class="btn-stack">
+        <button class="btn btn-primary" data-action="dire-phrase" ${dispo ? '' : 'disabled'}>🔊 Écouter la phrase ${i + 1}</button>
+        <div class="btn-row">
+          <button class="btn btn-secondary" data-action="phrase-precedente" ${i === 0 ? 'disabled' : ''}>← Précédente</button>
+          <button class="btn btn-secondary" data-action="phrase-suivante" ${i >= phrases.length - 1 ? 'disabled' : ''}>Suivante →</button>
+        </div>
+        <button class="btn btn-secondary" data-action="dire-tout" ${dispo ? '' : 'disabled'}>📖 Écouter tout le texte</button>
+      </div>
+      <div class="dictee-vitesse">
+        <span>Vitesse</span>
+        <button class="vitesse-btn ${lente ? 'active' : ''}" data-action="vitesse-lente">Lente</button>
+        <button class="vitesse-btn ${lente ? '' : 'active'}" data-action="vitesse-normale">Normale</button>
+      </div>
+      ${dispo ? '' : `<div class="voix-alerte" style="margin-top:0.8rem;">🔇 Aucune voix française sur cet appareil : demande à un adulte de te lire le texte.</div>`}
+    </div>
+
+    <div class="section-label">Ta dictée</div>
+    <textarea id="dictee-saisie" class="dictee-saisie" rows="7" placeholder="Écris ici ce que tu entends…" spellcheck="false" autocorrect="off" autocapitalize="off">${state.dictee.saisi.replace(/</g, '&lt;')}</textarea>
+    <div class="btn-stack" style="margin-top:0.6rem;">
+      <button class="btn btn-primary" data-action="corriger-dictee">✅ Corriger ma dictée</button>
+    </div>
+  </div>`;
+}
+
+function renderDicteeResult() {
+  const d = getDictee(state.dictee.id);
+  const r = state.dictee.resultat;
+  const emoji = r.pct === 100 ? '🏆' : r.pct >= 80 ? '🌟' : r.pct >= 50 ? '👍' : '💪';
+  const titre = r.pct === 100 ? 'Sans faute !' : r.pct >= 80 ? 'Très bien !' : r.pct >= 50 ? 'Bon travail' : "Continue à t'entraîner";
+
+  const morceaux = r.align.map(x => {
+    if (x.type === 'ok') return `<span class="mot ok">${r.motsAttendus[x.a]}</span>`;
+    if (x.type === 'faute') return `<span class="mot faute"><s>${r.motsEcrits[x.e]}</s> ${r.motsAttendus[x.a]}</span>`;
+    if (x.type === 'oubli') return `<span class="mot oubli">${r.motsAttendus[x.a]}</span>`;
+    return `<span class="mot ajout"><s>${r.motsEcrits[x.e]}</s></span>`;
+  }).join(' ');
+
+  const fautes = r.align.filter(x => x.type === 'faute').length;
+  const oublis = r.align.filter(x => x.type === 'oubli').length;
+  const ajouts = r.align.filter(x => x.type === 'ajout').length;
+  const detail = [
+    fautes ? `${fautes} mot${fautes > 1 ? 's' : ''} mal écrit${fautes > 1 ? 's' : ''}` : '',
+    oublis ? `${oublis} oubli${oublis > 1 ? 's' : ''}` : '',
+    ajouts ? `${ajouts} mot${ajouts > 1 ? 's' : ''} en trop` : ''
+  ].filter(Boolean).join(' · ') || 'Aucune erreur';
+
+  return `<div class="screen">
+    <div class="results-emoji">${emoji}</div><div class="results-title">${titre}</div>
+    <div class="results-card"><div class="results-score">${r.justes} / ${r.total}</div><div class="results-meta">${r.pct}% de mots justes · ${detail}</div></div>
+    ${renderGain(state.dictee.gain, r.pct)}
+    <div class="section-label">Ta copie corrigée</div>
+    <div class="copie">${morceaux}</div>
+    <div class="legende">
+      <span><span class="pastille ok"></span> juste</span>
+      <span><span class="pastille faute"></span> mal écrit</span>
+      <span><span class="pastille oubli"></span> oublié</span>
+      <span><span class="pastille ajout"></span> en trop</span>
+    </div>
+    <div class="section-label">Le texte original</div>
+    <div class="cours-card">${d.texte}</div>
+    <div class="btn-stack"><button class="btn btn-primary" data-action="refaire-dictee">🔄 Refaire cette dictée</button><button class="btn btn-secondary" data-action="back-to-dictees">← Autres dictées</button></div>
+  </div>`;
+}
+
+function getDictee(id) { return DICTEES.find(d => d.id === id); }
+
+function ouvrirDictee(id) {
+  stopperVoix();
+  state.dictee = { id, phrase: 0, vitesse: 0.75, saisi: '', resultat: null, gain: null };
+  state.screen = 'dictee'; render();
+}
+function corrigerEtAfficher() {
+  stopperVoix();
+  const d = getDictee(state.dictee.id);
+  const r = corrigerDictee(d.texte, state.dictee.saisi);
+  state.dictee.resultat = r;
+  saveBest('dictee-' + d.id, r.pct);
+  state.dictee.gain = attribuerRecompense(r.pct);
+  state.screen = 'dicteeResult'; render();
+}
+
 /* ================= Rendu ================= */
 function render() {
   const app = document.getElementById('app');
@@ -823,9 +1442,18 @@ function render() {
   else if (state.screen === 'skillLesson') app.innerHTML = renderSkillLesson();
   else if (state.screen === 'quiz') app.innerHTML = renderQuiz();
   else if (state.screen === 'quizResults') app.innerHTML = renderQuizResults();
+  else if (state.screen === 'dicteeList') app.innerHTML = renderDicteeList();
+  else if (state.screen === 'dictee') app.innerHTML = renderDictee();
+  else if (state.screen === 'dicteeResult') app.innerHTML = renderDicteeResult();
   attachListeners();
 }
-function attachListeners() { document.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction)); }
+function attachListeners() {
+  document.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
+  const saisie = document.getElementById('dictee-saisie');
+  /* on garde la frappe dans l'état sans réafficher l'écran : un rendu à chaque
+     lettre ferait perdre le curseur et le clavier du téléphone */
+  if (saisie) saisie.addEventListener('input', (e) => { state.dictee.saisi = e.target.value; });
+}
 
 /* Le coffre à jetons, visible dès l'accueil : c'est ce qui donne envie de
    relancer un quiz. Les jetons et les hamsters sont communs aux trois niveaux. */
@@ -841,10 +1469,12 @@ function renderRecompenses() {
 
 function renderHome() {
   const cards = [...(tricksForLevel(state.level).length ? [{ id: 'astuces', emoji: '🧠', title: 'Astuces calcul mental', desc: "Des exercices générés à l'infini" }] : []),
+    /* la dictée est un exercice de français : elle n'a pas sa place dans un programme de maths singapourien */
+    ...(dicteesPourNiveau(state.level).length ? [{ id: 'dictee', emoji: '✍️', title: 'Dictée', desc: `${dicteesPourNiveau(state.level).length} textes lus à voix haute` }] : []),
     ...domainesPourNiveau(state.level).map(({ d, n }) => ({ id: d.id, emoji: d.emoji, title: d.title, desc: `${n} compétence${n > 1 ? 's' : ''}` }))]
     .map(c => `<div class="mode-card" data-action="open-domain" data-id="${c.id}"><div class="mode-emoji">${c.emoji}</div><div class="mode-info"><div class="mode-title">${c.title}</div><div class="mode-desc">${c.desc}</div></div><div class="mode-arrow">→</div></div>`).join('');
   return `<div class="screen">
-    <h1>🎓 Maths Malin</h1>
+    <h1>🎓 Révise Malin</h1>
     <p class="subtitle">${state.level === 'singapour' ? 'Méthode de Singapour · Primary 6' : 'Programme complet CM2 &amp; 6ème'}</p>
     ${renderRecompenses()}
     <div class="level-switch">${LEVELS.map(l => `<button class="level-btn ${state.level === l.id ? 'active' : ''}" data-action="set-level" data-level="${l.id}">${l.label}</button>`).join('')}</div>
@@ -875,8 +1505,21 @@ function renderMentalLesson() {
   </div>`;
 }
 
+/* La leçon d'histoire ou de géographie : un texte à lire, des repères à
+   retenir, puis le quiz. Pas d'exemples générés ici, il n'y a rien à tirer. */
+function renderCours(s, d) {
+  const reperes = s.reperes ? `<div class="reperes">${s.reperes.map(r => `<div class="repere"><span class="repere-cle">${r[0]}</span><span>${r[1]}</span></div>`).join('')}</div>` : '';
+  return `<div class="screen"><button class="btn-back" data-action="back-to-list">← Retour</button>
+    <div class="lesson-hero"><div class="lesson-emoji">${d.emoji}</div><div class="lesson-title">${s.title}</div><div class="lesson-explanation">${s.explanation}</div></div>
+    <div class="section-label">La leçon</div>
+    <div class="cours-card">${s.cours.map(par => `<p>${par}</p>`).join('')}${reperes}</div>
+    <div class="btn-stack" style="margin-top:0.5rem;"><button class="btn btn-primary" data-action="start-skill-quiz">✨ Pratiquer (8 questions, chrono)</button></div>
+  </div>`;
+}
+
 function renderSkillLesson() {
   const s = getSkill(state.currentDomain, state.currentSkill); const d = getDomain(state.currentDomain);
+  if (s.cours) return renderCours(s, d);
   const [ex1, ex2] = pickDistinct(() => s.question(state.level), lessonKey, 2);
   const exCard = (ex) => `<div class="step-card">${ex.formula ? `<div class="step-formula">${ex.formula}</div>` : `<div class="step-breakdown" style="margin-top:0;">${ex.prompt}</div>`}${ex.svg ? `<div class="step-shape">${ex.svg}</div>` : ''}<div class="step-result">Réponse : ${ex.answer}${ex.unit ? ' ' + ex.unit : ''}</div></div>`;
   return `<div class="screen"><button class="btn-back" data-action="back-to-list">← Retour</button>
@@ -941,8 +1584,22 @@ function renderQuizResults() {
 function onAction(e) {
   const a = e.currentTarget.dataset.action;
   if (a === 'set-level') setLevel(e.currentTarget.dataset.level);
-  else if (a === 'go-home') { clearTimer(); state.screen = 'home'; state.quiz = null; render(); }
-  else if (a === 'open-domain') { state.currentDomain = e.currentTarget.dataset.id; state.screen = 'skillList'; render(); }
+  else if (a === 'go-home') { clearTimer(); stopperVoix(); state.screen = 'home'; state.quiz = null; render(); }
+  else if (a === 'open-domain') {
+    const id = e.currentTarget.dataset.id;
+    if (id === 'dictee') { state.screen = 'dicteeList'; render(); return; }
+    state.currentDomain = id; state.screen = 'skillList'; render();
+  }
+  else if (a === 'open-dictee') ouvrirDictee(e.currentTarget.dataset.id);
+  else if (a === 'back-to-dictees') { stopperVoix(); state.screen = 'dicteeList'; render(); }
+  else if (a === 'dire-phrase') direTexte(phrasesDe(getDictee(state.dictee.id).texte)[state.dictee.phrase], state.dictee.vitesse);
+  else if (a === 'dire-tout') direTexte(getDictee(state.dictee.id).texte, state.dictee.vitesse);
+  else if (a === 'phrase-suivante') { stopperVoix(); state.dictee.phrase++; render(); }
+  else if (a === 'phrase-precedente') { stopperVoix(); state.dictee.phrase--; render(); }
+  else if (a === 'vitesse-lente') { state.dictee.vitesse = 0.75; render(); }
+  else if (a === 'vitesse-normale') { state.dictee.vitesse = 0.95; render(); }
+  else if (a === 'corriger-dictee') corrigerEtAfficher();
+  else if (a === 'refaire-dictee') ouvrirDictee(state.dictee.id);
   else if (a === 'back-to-list') { state.screen = 'skillList'; render(); }
   else if (a === 'open-mental') { state.mentalTrickId = e.currentTarget.dataset.id; state.screen = 'mentalLesson'; render(); }
   else if (a === 'open-skill') { state.currentSkill = e.currentTarget.dataset.id; state.screen = 'skillLesson'; render(); }
