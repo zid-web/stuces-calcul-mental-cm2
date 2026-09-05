@@ -1,4 +1,6 @@
-# Astuces Calcul Mental CM2 — PWA
+# Maths Malin — CM2 & 6ème (PWA)
+
+Application de révision de maths pour le CM2 et la 6ème : calcul mental, nombres, fractions, décimaux, mesures et géométrie. Fonctionne hors-ligne une fois installée.
 
 ## Pourquoi une PWA a besoin d'être hébergée
 Android installe une PWA depuis une adresse web en HTTPS (le service worker qui permet le mode hors-ligne l'exige). Ouvrir `index.html` directement depuis le stockage du téléphone ne déclenche pas l'installation. La bonne nouvelle : héberger ces fichiers est gratuit et prend 2 minutes.
@@ -16,10 +18,12 @@ Android installe une PWA depuis une adresse web en HTTPS (le service worker qui 
 3. Ton URL sera `https://tonpseudo.github.io/tondepot/`
 
 ## Fichiers inclus
-- `index.html` — l'application (interface, logique, toutes les astuces)
+- `index.html` — l'application (interface, logique, toutes les leçons et exercices)
 - `manifest.json` — nom, icônes et couleurs de l'app installée
 - `sw.js` — service worker pour le fonctionnement hors-ligne
-- `icons/icon-192.png`, `icons/icon-512.png` — icônes de l'application
+- `icons/icon-192.png`, `icons/icon-512.png` — icônes de l'application (hamster)
 
 ## Personnalisation
-Toutes les astuces et exercices sont dans le tableau `TRICKS` en haut du `<script>` d'`index.html`. Tu peux facilement en ajouter d'autres en suivant le même format.
+Les leçons et exercices sont définis dans les données en haut du `<script>` d'`index.html`. Tu peux en ajouter d'autres en suivant le même format.
+
+Après chaque modification des fichiers, pense à incrémenter `CACHE_NAME` dans `sw.js` (`calcul-cm2-v3` → `v4`, etc.) pour que les appareils déjà installés récupèrent bien la nouvelle version.
