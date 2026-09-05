@@ -22,7 +22,7 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
-  #app { min-height: 100vh; min-height: 100dvh; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); display: flex; flex-direction: column; }
+  #app { min-height: 100vh; min-height: 100dvh; padding: env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + var(--install-offset, 0px)) env(safe-area-inset-left); display: flex; flex-direction: column; }
   .screen { flex: 1; display: flex; flex-direction: column; padding: 1.25rem 1rem 2rem; max-width: 480px; margin: 0 auto; width: 100%; }
 
   h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.3rem; }
@@ -100,6 +100,7 @@
   .install-banner .install-btn { background: white; color: var(--purple); }
   .install-banner .dismiss-btn { background: transparent; color: white; opacity: 0.8; }
   .install-text { flex: 1; font-size: 0.9rem; }
+  .install-help { display: block; font-size: 0.78rem; opacity: 0.85; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -583,14 +584,45 @@ render();
 
 /* ================= PWA install ================= */
 let deferredPrompt;
+
+/* Déjà installée : l'app se lance alors dans sa propre fenêtre, sans barre
+   d'adresse. Inutile de proposer de l'installer une seconde fois. */
+function isInstalled() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+/* La bande revient au bout d'une semaine si elle a été fermée sans installer. */
+const INSTALL_SNOOZE = 7 * 24 * 3600 * 1000;
+function installSnoozed() { const s = loadStore(); return s.installHiddenAt && Date.now() - s.installHiddenAt < INSTALL_SNOOZE; }
+function snoozeInstall() { const s = loadStore(); s.installHiddenAt = Date.now(); saveStore(s); }
+
+/* Chrome sur Android laisse déclencher l'installation depuis la page. */
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; showInstallBanner(); });
+window.addEventListener('appinstalled', () => { deferredPrompt = null; hideInstallBanner(); });
+
+/* Ailleurs (iPhone, Firefox, Chrome qui ne propose rien) l'événement ci-dessus
+   n'arrive jamais : on affiche alors la marche à suivre du navigateur. */
+window.addEventListener('load', () => { setTimeout(() => { if (!deferredPrompt) showInstallBanner(); }, 3000); });
+
 function showInstallBanner() {
-  if (document.getElementById('install-banner')) return;
+  if (document.getElementById('install-banner') || isInstalled() || installSnoozed()) return;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const banner = document.createElement('div'); banner.id = 'install-banner'; banner.className = 'install-banner';
-  banner.innerHTML = `<div class="install-text">📲 Installe l'appli sur ton téléphone !</div><button class="install-btn">Installer</button><button class="dismiss-btn">✕</button>`;
+  const help = isIOS ? "Appuie sur Partager puis « Sur l'écran d'accueil »" : "Ouvre le menu ⋮ puis « Installer l'application »";
+  banner.innerHTML = `<div class="install-text">📲 Installe l'appli sur ton téléphone !${deferredPrompt ? '' : `<span class="install-help">${help}</span>`}</div>${deferredPrompt ? '<button class="install-btn">Installer</button>' : ''}<button class="dismiss-btn">✕</button>`;
   document.body.appendChild(banner);
-  banner.querySelector('.install-btn').addEventListener('click', async () => { banner.remove(); if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; } });
-  banner.querySelector('.dismiss-btn').addEventListener('click', () => banner.remove());
+  /* la bande est fixée en bas de l'écran : on réserve sa hauteur dans #app,
+     sinon elle recouvrirait la dernière carte et le bouton « Pratiquer ». */
+  document.documentElement.style.setProperty('--install-offset', banner.offsetHeight + 'px');
+  const installBtn = banner.querySelector('.install-btn');
+  if (installBtn) installBtn.addEventListener('click', async () => { hideInstallBanner(); if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; } });
+  banner.querySelector('.dismiss-btn').addEventListener('click', () => { hideInstallBanner(); snoozeInstall(); });
+}
+
+function hideInstallBanner() {
+  const banner = document.getElementById('install-banner');
+  if (banner) banner.remove();
+  document.documentElement.style.removeProperty('--install-offset');
 }
 if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); }); }
 </script>
