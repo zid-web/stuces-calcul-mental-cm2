@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Maths Malin — CM2 &amp; 6ème</title>
+<meta name="theme-color" content="#5B4FE8">
+<meta name="description" content="Programme complet de maths pour CM2 et 6ème : nombres, fractions, décimaux, mesures, géométrie">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+  :root {
+    --purple: #5B4FE8; --purple-dark: #3C3489;
+    --bg: #F6F5FF; --card: #FFFFFF; --text: #232134; --text-secondary: #6B6880;
+    --success: #1D9E75; --success-bg: #E1F5EE;
+    --danger: #D85A30; --danger-bg: #FAECE7;
+    --warning: #BA7517; --warning-bg: #FAEEDA;
+    --border: #E4E2F1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+  #app { min-height: 100vh; min-height: 100dvh; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); display: flex; flex-direction: column; }
+  .screen { flex: 1; display: flex; flex-direction: column; padding: 1.25rem 1rem 2rem; max-width: 480px; margin: 0 auto; width: 100%; }
+
+  h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .subtitle { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 1.1rem; }
+
+  .level-switch { display: flex; gap: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 1.2rem; }
+  .level-btn { flex: 1; padding: 0.6rem; border: none; border-radius: 9px; background: transparent; font-weight: 600; font-size: 0.9rem; cursor: pointer; color: var(--text-secondary); }
+  .level-btn.active { background: var(--purple); color: white; }
+
+  .mode-card, .trick-card { display: flex; align-items: center; gap: 0.9rem; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 0.95rem 1rem; margin-bottom: 9px; cursor: pointer; }
+  .mode-card:active, .trick-card:active { transform: scale(0.98); }
+  .mode-emoji, .trick-emoji { font-size: 1.7rem; flex-shrink: 0; }
+  .mode-info, .trick-info { flex: 1; min-width: 0; }
+  .mode-title, .trick-title { font-weight: 600; font-size: 0.95rem; }
+  .mode-desc { font-size: 0.78rem; color: var(--text-secondary); }
+  .mode-arrow { font-size: 1.2rem; color: var(--purple); flex-shrink: 0; }
+  .trick-progress { font-size: 0.72rem; color: var(--success); font-weight: 600; margin-top: 2px; }
+
+  .btn { padding: 1rem; border-radius: 14px; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--purple); color: white; }
+  .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  .btn-back { background: transparent; border: none; color: var(--purple); font-weight: 600; font-size: 0.92rem; padding: 0.5rem 0; margin-bottom: 0.3rem; align-self: flex-start; cursor: pointer; }
+  .btn-stack { display: flex; flex-direction: column; gap: 10px; }
+
+  .lesson-hero { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem 1.3rem; text-align: center; margin-bottom: 1.1rem; }
+  .lesson-emoji { font-size: 2.2rem; margin-bottom: 0.5rem; }
+  .lesson-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .lesson-explanation { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; }
+
+  .section-label { font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 0.6rem; }
+
+  .step-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 0.9rem; margin-bottom: 10px; text-align: center; }
+  .step-formula { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .step-breakdown { font-size: 0.83rem; color: var(--text-secondary); background: var(--bg); padding: 0.5rem 0.7rem; border-radius: 8px; margin: 0.4rem 0; }
+  .step-result { font-size: 1.05rem; font-weight: 700; color: var(--purple); }
+  .step-shape { display: flex; justify-content: center; margin: 0.5rem 0; }
+
+  .quiz-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .quiz-progress { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; }
+  .quiz-score { font-size: 1.1rem; font-weight: 700; }
+
+  .timer-wrap { margin-bottom: 1.1rem; }
+  .timer-bar-bg { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
+  .timer-bar-fill { height: 100%; background: var(--purple); border-radius: 4px; transition: width 0.9s linear, background-color 0.3s; }
+  .timer-bar-fill.low { background: var(--danger); }
+  .timer-num { font-size: 0.76rem; color: var(--text-secondary); text-align: right; }
+
+  .question-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem 1.1rem; text-align: center; margin-bottom: 1.1rem; }
+  .question-label { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.7rem; }
+  .question-formula { font-size: 1.9rem; font-weight: 700; }
+  .question-shape { display: flex; justify-content: center; margin: 0.7rem 0; }
+  .question-shape svg { max-width: 100%; height: auto; }
+
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .option-btn { padding: 0.95rem; font-size: 1rem; font-weight: 700; border-radius: 14px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; }
+  .option-btn.correct { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+  .option-btn.wrong { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+
+  .results-emoji { font-size: 3.2rem; text-align: center; margin: 0.8rem 0; }
+  .results-title { font-size: 1.4rem; font-weight: 700; text-align: center; margin-bottom: 1.1rem; }
+  .results-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; text-align: center; margin-bottom: 1rem; }
+  .results-score { font-size: 2.1rem; font-weight: 700; color: var(--purple); margin: 0.3rem 0; }
+  .results-meta { font-size: 0.83rem; color: var(--text-secondary); }
+  .verdict-box { padding: 1rem; border-radius: 14px; margin-bottom: 1rem; font-size: 0.88rem; line-height: 1.4; }
+  .verdict-good { background: var(--success-bg); color: var(--success); }
+  .verdict-mid { background: var(--warning-bg); color: var(--warning); }
+  .verdict-low { background: var(--danger-bg); color: var(--danger); }
+  .breakdown-list { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 0.9rem 1rem; margin-bottom: 1.1rem; }
+  .breakdown-row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.86rem; border-bottom: 1px solid var(--border); }
+  .breakdown-row:last-child { border-bottom: none; }
+
+  .install-banner { position: fixed; bottom: 0; left: 0; right: 0; background: var(--purple); color: white; padding: 1rem 1.2rem; padding-bottom: calc(1rem + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 1rem; z-index: 100; }
+  .install-banner button { padding: 0.6rem 1rem; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; }
+  .install-banner .install-btn { background: white; color: var(--purple); }
+  .install-banner .dismiss-btn { background: transparent; color: white; opacity: 0.8; }
+  .install-text { flex: 1; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ================= Utils ================= */
+function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function rndMultiple(minMult, maxMult, step) { return rnd(minMult, maxMult) * step; }
+function shuffle(arr) { return arr.map(v => [Math.random(), v]).sort((a, b) => a[0] - b[0]).map(v => v[1]); }
+function formatNum(n) {
+  const r = Math.round(n * 100) / 100;
+  const s = (r % 1 === 0) ? String(r) : String(r);
+  return s.replace('.', ',');
+}
+function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; }
+function isPrime(n) { if (n < 2) return false; for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return true; }
+function numericOptions(answer, decimals) {
+  const opts = new Set([answer]);
+  let guard = 0;
+  while (opts.size < 4 && guard < 40) {
+    guard++;
+    const delta = decimals > 0 ? (Math.random() < 0.5 ? -1 : 1) * (Math.round((Math.random() * 3 + 0.5) * 10) / 10) : (Math.random() < 0.5 ? -1 : 1) * rnd(1, 8);
+    let v = decimals > 0 ? Math.round((answer + delta) * 10) / 10 : Math.round(answer + delta);
+    if (!isNaN(v)) opts.add(v);
+  }
+  return shuffle([...opts]);
+}
+function mkOptions(correct, distractors) {
+  const uniq = [];
+  for (const d of distractors) { if (d !== correct && !uniq.includes(d)) uniq.push(d); if (uniq.length >= 3) break; }
+  while (uniq.length < 3) { const filler = correct + '_' + uniq.length; if (!uniq.includes(filler)) uniq.push(filler); }
+  return shuffle([correct, ...uniq]);
+}
+function loadStore() { try { return JSON.parse(localStorage.getItem('cm_store') || '{}'); } catch { return {}; } }
+function saveStore(obj) { localStorage.setItem('cm_store', JSON.stringify(obj)); }
+function saveBest(key, pct) { const s = loadStore(); s[key] = Math.max(s[key] || 0, pct); saveStore(s); }
+function getBest(key) { return loadStore()[key]; }
+
+/* ================= SVG helpers ================= */
+function svgWrap(inner) { return `<svg viewBox="0 0 220 180" style="width:190px;height:auto;">${inner}</svg>`; }
+function svgSquare(a) {
+  return svgWrap(`<rect x="50" y="30" width="120" height="120" fill="none" stroke="#5B4FE8" stroke-width="4"/><text x="110" y="20" text-anchor="middle" font-size="15" fill="#232134">${formatNum(a)} cm</text>`);
+}
+function svgRectangle(L, l) {
+  const w = Math.min(170, Math.max(70, L * 9)), h = Math.min(120, Math.max(40, l * 9));
+  const x = (220 - w) / 2, y = (170 - h) / 2;
+  return svgWrap(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#5B4FE8" stroke-width="4"/><text x="110" y="${y - 8}" text-anchor="middle" font-size="14" fill="#232134">${formatNum(L)} cm</text><text x="${x + w + 30}" y="${y + h / 2}" text-anchor="middle" font-size="14" fill="#232134">${formatNum(l)} cm</text>`);
+}
+function svgTriangleRight(base, hauteur) {
+  const bw = Math.min(150, Math.max(70, base * 8)), bh = Math.min(120, Math.max(50, hauteur * 8));
+  const x0 = (220 - bw) / 2, y0 = 150;
+  return svgWrap(`<polygon points="${x0},${y0} ${x0 + bw},${y0} ${x0},${y0 - bh}" fill="none" stroke="#0F6E56" stroke-width="4"/><text x="${x0 + bw / 2}" y="${y0 + 18}" text-anchor="middle" font-size="14" fill="#232134">${formatNum(base)} cm</text><text x="${x0 - 12}" y="${y0 - bh / 2}" text-anchor="end" font-size="14" fill="#232134">${formatNum(hauteur)} cm</text>`);
+}
+function svgTrianglePerim(a, b, c) {
+  return svgWrap(`<polygon points="40,150 180,150 100,30" fill="none" stroke="#0F6E56" stroke-width="4"/><text x="110" y="168" text-anchor="middle" font-size="13" fill="#232134">${formatNum(a)} cm</text><text x="150" y="90" text-anchor="middle" font-size="13" fill="#232134">${formatNum(b)} cm</text><text x="65" y="90" text-anchor="middle" font-size="13" fill="#232134">${formatNum(c)} cm</text>`);
+}
+function svgCircle(r) {
+  const px = Math.min(70, Math.max(35, r * 6));
+  return svgWrap(`<circle cx="110" cy="95" r="${px}" fill="none" stroke="#993C1D" stroke-width="4"/><line x1="110" y1="95" x2="${110 + px}" y2="95" stroke="#993C1D" stroke-width="2"/><text x="${110 + px / 2}" y="88" text-anchor="middle" font-size="13" fill="#232134">${formatNum(r)} cm</text>`);
+}
+function svgAngle(deg) {
+  const vx = 60, vy = 150, ray = 110, rad = deg * Math.PI / 180;
+  const x2 = vx + ray * Math.cos(rad), y2 = vy - ray * Math.sin(rad);
+  return svgWrap(`<line x1="${vx}" y1="${vy}" x2="${vx + ray}" y2="${vy}" stroke="#534AB7" stroke-width="4"/><line x1="${vx}" y1="${vy}" x2="${x2}" y2="${y2}" stroke="#534AB7" stroke-width="4"/><path d="M ${vx + 26} ${vy} A 26 26 0 0 0 ${vx + 26 * Math.cos(rad)} ${vy - 26 * Math.sin(rad)}" fill="none" stroke="#D85A30" stroke-width="2"/>`);
+}
+function svgPolygon(n) {
+  const cx = 110, cy = 95, R = 65; let pts = [];
+  for (let i = 0; i < n; i++) { const a = -Math.PI / 2 + i * 2 * Math.PI / n; pts.push(`${cx + R * Math.cos(a)},${cy + R * Math.sin(a)}`); }
+  return svgWrap(`<polygon points="${pts.join(' ')}" fill="none" stroke="#185FA5" stroke-width="4"/>`);
+}
+function svgCircleShape() { return svgWrap(`<circle cx="110" cy="95" r="60" fill="none" stroke="#185FA5" stroke-width="4"/>`); }
+function svgFractionBar(n, m) {
+  const w = 180 / n;
+  let rects = '';
+  for (let i = 0; i < n; i++) { rects += `<rect x="${20 + i * w}" y="70" width="${w - 3}" height="50" fill="${i < m ? '#5B4FE8' : '#FFFFFF'}" stroke="#5B4FE8" stroke-width="2"/>`; }
+  return svgWrap(rects);
+}
+function svgGridPoint(x, y, size) {
+  const unit = 25, ox = 30, oy = 150;
+  let lines = '';
+  for (let i = 0; i <= size; i++) {
+    lines += `<line x1="${ox + i * unit}" y1="${oy}" x2="${ox + i * unit}" y2="${oy - size * unit}" stroke="#E4E2F1" stroke-width="1"/>`;
+    lines += `<line x1="${ox}" y1="${oy - i * unit}" x2="${ox + size * unit}" y2="${oy - i * unit}" stroke="#E4E2F1" stroke-width="1"/>`;
+    lines += `<text x="${ox + i * unit}" y="${oy + 14}" font-size="10" text-anchor="middle" fill="#6B6880">${i}</text>`;
+    lines += `<text x="${ox - 10}" y="${oy - i * unit + 3}" font-size="10" text-anchor="middle" fill="#6B6880">${i}</text>`;
+  }
+  lines += `<line x1="${ox}" y1="${oy}" x2="${ox + size * unit}" y2="${oy}" stroke="#232134" stroke-width="2"/>`;
+  lines += `<line x1="${ox}" y1="${oy}" x2="${ox}" y2="${oy - size * unit}" stroke="#232134" stroke-width="2"/>`;
+  lines += `<circle cx="${ox + x * unit}" cy="${oy - y * unit}" r="6" fill="#D85A30"/>`;
+  return svgWrap(lines);
+}
+function svgTwoLines(kind) {
+  if (kind === 'Parallèles') return svgWrap(`<line x1="30" y1="70" x2="190" y2="70" stroke="#534AB7" stroke-width="4"/><line x1="30" y1="120" x2="190" y2="120" stroke="#534AB7" stroke-width="4"/>`);
+  if (kind === 'Perpendiculaires') return svgWrap(`<line x1="30" y1="95" x2="190" y2="95" stroke="#534AB7" stroke-width="4"/><line x1="110" y1="20" x2="110" y2="170" stroke="#534AB7" stroke-width="4"/>`);
+  const deg = rnd(20, 70) * (Math.random() < 0.5 ? 1 : -1);
+  const rad = deg * Math.PI / 180;
+  const dx = 90 * Math.cos(rad), dy = 90 * Math.sin(rad);
+  return svgWrap(`<line x1="30" y1="95" x2="190" y2="95" stroke="#534AB7" stroke-width="4"/><line x1="${110 - dx}" y1="${95 - dy}" x2="${110 + dx}" y2="${95 + dy}" stroke="#534AB7" stroke-width="4"/>`);
+}
+const SYMMETRY_SHAPES = [
+  { svg: svgWrap(`<rect x="60" y="30" width="100" height="100" fill="none" stroke="#5B4FE8" stroke-width="4"/><line x1="110" y1="20" x2="110" y2="140" stroke="#D85A30" stroke-width="2" stroke-dasharray="6,4"/>`), symmetric: true },
+  { svg: svgWrap(`<circle cx="110" cy="85" r="60" fill="none" stroke="#5B4FE8" stroke-width="4"/><line x1="110" y1="15" x2="110" y2="155" stroke="#D85A30" stroke-width="2" stroke-dasharray="6,4"/>`), symmetric: true },
+  { svg: svgWrap(`<polygon points="110,30 160,140 60,140" fill="none" stroke="#5B4FE8" stroke-width="4"/><line x1="110" y1="15" x2="110" y2="150" stroke="#D85A30" stroke-width="2" stroke-dasharray="6,4"/>`), symmetric: true },
+  { svg: svgWrap(`<polygon points="60,140 180,140 180,60" fill="none" stroke="#5B4FE8" stroke-width="4"/><line x1="120" y1="15" x2="120" y2="150" stroke="#D85A30" stroke-width="2" stroke-dasharray="6,4"/>`), symmetric: false },
+  { svg: svgWrap(`<polygon points="50,140 140,140 140,90 100,90 100,60 170,60 170,30 50,30" fill="none" stroke="#5B4FE8" stroke-width="4"/><line x1="110" y1="15" x2="110" y2="150" stroke="#D85A30" stroke-width="2" stroke-dasharray="6,4"/>`), symmetric: false },
+  { svg: svgWrap(`<polygon points="30,90 130,40 190,90 130,140" fill="none" stroke="#5B4FE8" stroke-width="4"/><line x1="110" y1="15" x2="110" y2="150" stroke="#D85A30" stroke-width="2" stroke-dasharray="6,4"/>`), symmetric: false }
+];
+
+/* ================= Astuces de calcul mental (domaine spécial) ================= */
+const TRICKS = [
+  { id: 'mult10', emoji: '🔟', title: 'Multiplier par 10', levels: ['cm2', 'sixieme'],
+    explanation: "Pour multiplier par 10, ajoute un zéro (ou décale la virgule d'un rang pour un nombre décimal).",
+    gen(level) {
+      if (level === 'sixieme' && Math.random() < 0.4) {
+        const a = Math.round((Math.random() * 9 + 0.5) * 10) / 10;
+        const result = Math.round(a * 10 * 10) / 10;
+        return { formula: `${formatNum(a)} × 10`, breakdown: `On décale la virgule d'un rang : ${formatNum(a)} → ${formatNum(result)}`, result };
+      }
+      const a = rnd(2, 99); const result = a * 10;
+      return { formula: `${a} × 10`, breakdown: `On ajoute un zéro : ${a} → ${result}`, result };
+    } },
+  { id: 'mult100', emoji: '💯', title: 'Multiplier par 100', levels: ['sixieme'],
+    explanation: "Pour multiplier par 100, ajoute deux zéros.",
+    gen() { const a = rnd(2, 99); const result = a * 100; return { formula: `${a} × 100`, breakdown: `On ajoute deux zéros : ${a} → ${result}`, result }; } },
+  { id: 'mult11', emoji: '🔁', title: 'Multiplier par 11', levels: ['cm2', 'sixieme'],
+    explanation: "Pour un nombre à deux chiffres : sépare-les et ajoute leur somme entre eux.",
+    gen() { let a; do { a = rnd(10, 89); } while ((Math.floor(a / 10) + a % 10) >= 10); const d1 = Math.floor(a / 10), d2 = a % 10, result = a * 11; return { formula: `${a} × 11`, breakdown: `${d1} + ${d2} = ${d1 + d2} → on place ${d1 + d2} entre ${d1} et ${d2}`, result }; } },
+  { id: 'mult5', emoji: '✋', title: 'Multiplier par 5', levels: ['cm2', 'sixieme'],
+    explanation: "Multiplie par 10, puis divise par 2.",
+    gen() { const a = rnd(2, 60); const step = a * 10; const result = step / 2; return { formula: `${a} × 5`, breakdown: `${a} × 10 = ${step}, puis ÷ 2`, result }; } },
+  { id: 'add-dizaine', emoji: '➕', title: 'Additionner en découpant', levels: ['cm2', 'sixieme'],
+    explanation: "Additionne d'abord les dizaines, puis les unités.",
+    gen() { const a = rnd(11, 69), b = rnd(11, 39), result = a + b; const da = Math.floor(a / 10) * 10, db = Math.floor(b / 10) * 10, ua = a % 10, ub = b % 10; return { formula: `${a} + ${b}`, breakdown: `(${da}+${db}) + (${ua}+${ub}) = ${da + db} + ${ua + ub}`, result }; } },
+  { id: 'sub-complement', emoji: '➖', title: 'Soustraire avec le complément', levels: ['cm2', 'sixieme'],
+    explanation: "Compte la distance entre les deux nombres au lieu de soustraire.",
+    gen() { const a = rnd(30, 90), b = rnd(5, a - 5), result = a - b; const round = Math.ceil(b / 10) * 10, step1 = round - b, step2 = a - round; return { formula: `${a} - ${b}`, breakdown: `${b} → ${round} (+${step1}), puis ${round} → ${a} (+${step2})`, result }; } },
+  { id: 'mult3', emoji: '🔺', title: 'Multiplier par 3', levels: ['cm2', 'sixieme'],
+    explanation: "Double le nombre, puis ajoute le nombre de départ.",
+    gen() { const a = rnd(2, 40); const result = a * 3; return { formula: `${a} × 3`, breakdown: `(${a} × 2) + ${a} = ${a * 2} + ${a}`, result }; } },
+  { id: 'mult4', emoji: '🍀', title: 'Multiplier par 4', levels: ['cm2', 'sixieme'],
+    explanation: "Double le nombre, puis double le résultat.",
+    gen() { const a = rnd(2, 30); const result = a * 4; return { formula: `${a} × 4`, breakdown: `${a} × 2 = ${a * 2}, puis × 2`, result }; } },
+  { id: 'mult9', emoji: '✨', title: 'Multiplier par 9', levels: ['cm2', 'sixieme'],
+    explanation: "Multiplie par 10, puis retire le nombre de départ.",
+    gen() { const a = rnd(2, 30); const result = a * 9; return { formula: `${a} × 9`, breakdown: `${a} × 10 = ${a * 10}, puis − ${a}`, result }; } },
+  { id: 'mult25', emoji: '🎯', title: 'Multiplier par 25', levels: ['sixieme'],
+    explanation: "Divise par 4, puis multiplie par 100.",
+    gen() { const a = rndMultiple(1, 10, 4); const result = a * 25; return { formula: `${a} × 25`, breakdown: `${a} ÷ 4 = ${a / 4}, puis × 100`, result }; } },
+  { id: 'carre5', emoji: '🧮', title: 'Carré des nombres finissant par 5', levels: ['sixieme'],
+    explanation: "Multiplie le chiffre des dizaines par (lui-même + 1), puis colle 25.",
+    gen() { const opts = [15, 25, 35, 45, 55, 65, 75, 85, 95]; const a = opts[rnd(0, opts.length - 1)]; const d = Math.floor(a / 10); const result = a * a; return { formula: `${a} × ${a}`, breakdown: `${d} × ${d + 1} = ${d * (d + 1)}, puis on colle 25`, result }; } },
+  { id: 'pct10', emoji: '📊', title: 'Trouver 10 % d\'un nombre', levels: ['sixieme'],
+    explanation: "10 % d'un nombre, c'est le nombre divisé par 10.",
+    gen() { const a = rndMultiple(2, 50, 10); const result = a / 10; return { formula: `10 % de ${a}`, breakdown: `${a} ÷ 10`, result }; } },
+  { id: 'pct50', emoji: '📈', title: 'Trouver 50 % d\'un nombre', levels: ['sixieme'],
+    explanation: "50 % d'un nombre, c'est sa moitié.",
+    gen() { const a = rndMultiple(2, 100, 2); const result = a / 2; return { formula: `50 % de ${a}`, breakdown: `${a} ÷ 2`, result }; } }
+];
+function tricksForLevel(level) { return TRICKS.filter(t => t.levels.includes(level)); }
+function getTrick(id) { return TRICKS.find(t => t.id === id); }
+
+/* ================= Domaines et compétences ================= */
+function q(obj) { return Object.assign({ unit: '', svg: null, limit: 18 }, obj); }
+
+const DOMAINS = [
+  { id: 'nombres', emoji: '🔢', title: 'Nombres entiers', skills: [
+    { id: 'decompo', title: 'Décomposer un nombre', explanation: "Chaque chiffre d'un nombre a une valeur selon sa position (unités, dizaines, centaines...).", levels: ['cm2', 'sixieme'],
+      question(level) { const N = level === 'sixieme' ? rnd(10000, 999999) : rnd(1000, 9999); const digits = String(N).split('').reverse(); const names = ['unités', 'dizaines', 'centaines', 'milliers', 'dizaines de mille', 'centaines de mille']; const pos = rnd(0, digits.length - 1); const correct = digits[pos]; return q({ category: 'Décomposer', prompt: `Dans le nombre ${N}, quel est le chiffre des ${names[pos]} ?`, answer: correct, options: mkOptions(correct, [String(rnd(0, 9)), String(rnd(0, 9)), String(rnd(0, 9))]), limit: 15 }); } },
+    { id: 'comparer', title: 'Comparer des nombres', explanation: "Compare deux nombres en observant leurs chiffres de gauche à droite.", levels: ['cm2', 'sixieme'],
+      question(level) { const max = level === 'sixieme' ? 999999 : 9999; let a = rnd(1, max), b = rnd(1, max); if (Math.random() < 0.1) b = a; const correct = a < b ? '<' : a > b ? '>' : '='; return q({ category: 'Comparer', prompt: `${a} ... ${b}`, answer: correct, options: ['<', '>', '='], limit: 12 }); } },
+    { id: 'arrondir', title: 'Arrondir un nombre', explanation: "Regarde le chiffre juste après le rang demandé pour savoir si on arrondit au-dessus ou en dessous.", levels: ['cm2', 'sixieme'],
+      question(level) { const N = level === 'sixieme' ? rnd(100, 99999) : rnd(10, 9999); const roundTo = level === 'sixieme' ? [10, 100, 1000][rnd(0, 2)] : [10, 100][rnd(0, 1)]; const correct = Math.round(N / roundTo) * roundTo; const label = roundTo === 10 ? 'la dizaine' : roundTo === 100 ? 'la centaine' : "l'unité de mille"; return q({ category: 'Arrondir', prompt: `Arrondis ${N} à ${label} près.`, answer: formatNum(correct), options: numericOptions(correct, 0).map(formatNum), limit: 15 }); } },
+    { id: 'multiples', title: 'Les multiples d\'un nombre', explanation: "Un multiple de N s'obtient en multipliant N par un nombre entier.", levels: ['cm2', 'sixieme'],
+      question(level) { const N = rnd(2, level === 'sixieme' ? 15 : 10); const correct = N * rnd(2, 9); return q({ category: 'Multiples', prompt: `Lequel de ces nombres est un multiple de ${N} ?`, answer: String(correct), options: mkOptions(String(correct), [String(correct + 1), String(Math.max(1, correct - 1)), String(correct + 2)]), limit: 15 }); } },
+    { id: 'diviseurs', title: 'Les diviseurs d\'un nombre', explanation: "Un diviseur de N divise N sans laisser de reste.", levels: ['cm2', 'sixieme'],
+      question(level) { const N = rnd(level === 'sixieme' ? 20 : 12, level === 'sixieme' ? 100 : 60); const divs = []; for (let i = 1; i <= N; i++) if (N % i === 0) divs.push(i); const correct = divs[rnd(0, divs.length - 1)]; const distract = []; let guard = 0; while (distract.length < 3 && guard < 60) { guard++; const c = rnd(2, N - 1); if (N % c !== 0 && !distract.includes(c) && c !== correct) distract.push(c); } return q({ category: 'Diviseurs', prompt: `Lequel de ces nombres est un diviseur de ${N} ?`, answer: String(correct), options: mkOptions(String(correct), distract.map(String)), limit: 18 }); } },
+    { id: 'pair-impair', title: 'Nombres pairs et impairs', explanation: "Un nombre pair se termine par 0, 2, 4, 6 ou 8.", levels: ['cm2', 'sixieme'],
+      question(level) { const N = rnd(1, level === 'sixieme' ? 9999 : 999); const correct = N % 2 === 0 ? 'Pair' : 'Impair'; return q({ category: 'Pair/Impair', prompt: `Le nombre ${N} est-il...`, answer: correct, options: ['Pair', 'Impair'], limit: 10 }); } },
+    { id: 'premiers', title: 'Nombres premiers', explanation: "Un nombre premier n'a que deux diviseurs : 1 et lui-même.", levels: ['cm2', 'sixieme'],
+      question(level) { const N = rnd(2, level === 'sixieme' ? 97 : 50); const correct = isPrime(N) ? 'Oui' : 'Non'; return q({ category: 'Premiers', prompt: `${N} est-il un nombre premier ?`, answer: correct, options: ['Oui', 'Non'], limit: 15 }); } },
+    { id: 'pgcd', title: 'PGCD de deux nombres', explanation: "Le PGCD est le plus grand nombre qui divise à la fois les deux nombres.", levels: ['sixieme'],
+      question() { const a = rnd(12, 60), b = rnd(12, 60); const correct = gcd(a, b); return q({ category: 'PGCD', prompt: `Quel est le PGCD de ${a} et ${b} ?`, answer: String(correct), options: mkOptions(String(correct), [String(correct + 1), String(Math.max(1, correct - 1)), String(correct + 2)]), limit: 25 }); } },
+    { id: 'ppcm', title: 'PPCM de deux nombres', explanation: "Le PPCM est le plus petit nombre qui soit à la fois multiple des deux nombres.", levels: ['sixieme'],
+      question() { const a = rnd(4, 15), b = rnd(4, 15); const correct = (a * b) / gcd(a, b); return q({ category: 'PPCM', prompt: `Quel est le PPCM de ${a} et ${b} ?`, answer: String(correct), options: mkOptions(String(correct), [String(correct + a), String(Math.max(1, correct - b)), String(correct * 2)]), limit: 25 }); } }
+  ] },
+  { id: 'suites', emoji: '🔗', title: 'Suites de nombres', skills: [
+    { id: 'suite-arith', title: 'Suite arithmétique', explanation: "On passe d'un terme au suivant en ajoutant toujours le même nombre.", levels: ['cm2', 'sixieme'],
+      question(level) { const start = rnd(1, 30), diff = rnd(2, level === 'sixieme' ? 15 : 9) * (Math.random() < 0.3 ? -1 : 1); const terms = [start, start + diff, start + 2 * diff, start + 3 * diff]; const correct = start + 4 * diff; return q({ category: 'Suite arithmétique', prompt: `${terms.join(' , ')} , ... ?`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 20 }); } },
+    { id: 'suite-geom', title: 'Suite géométrique', explanation: "On passe d'un terme au suivant en multipliant toujours par le même nombre.", levels: ['sixieme'],
+      question() { const start = rnd(1, 5), ratio = rnd(2, 3); const terms = [0, 1, 2, 3].map(i => start * Math.pow(ratio, i)); const correct = start * Math.pow(ratio, 4); return q({ category: 'Suite géométrique', prompt: `${terms.join(' , ')} , ... ?`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 22 }); } }
+  ] },
+  { id: 'multiplication', emoji: '✖️', title: 'Multiplication', skills: [
+    { id: 'tables', title: 'Tables de multiplication', explanation: "Connaître ses tables par cœur, c'est la base du calcul rapide.", levels: ['cm2', 'sixieme'],
+      question() { const a = rnd(2, 9), b = rnd(2, 9), correct = a * b; return q({ category: 'Tables', prompt: `${a} × ${b}`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 10 }); } },
+    { id: 'facteur-manquant', title: 'Trouver le facteur manquant', explanation: "Utilise la division pour retrouver le nombre manquant.", levels: ['cm2', 'sixieme'],
+      question() { const a = rnd(2, 12), b = rnd(2, 12), product = a * b; return q({ category: 'Facteur manquant', prompt: `${a} × ? = ${product}`, answer: String(b), options: numericOptions(b, 0).map(String), limit: 15 }); } },
+    { id: 'mult-1chiffre', title: 'Multiplier par un nombre à 1 chiffre', explanation: "Pose l'opération dans ta tête, chiffre par chiffre.", levels: ['cm2', 'sixieme'],
+      question() { const a = rnd(11, 99), b = rnd(2, 9), correct = a * b; return q({ category: 'Multiplication', prompt: `${a} × ${b}`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 20 }); } },
+    { id: 'mult-2chiffres', title: 'Multiplier par un nombre à 2 chiffres', explanation: "Décompose le calcul en deux étapes (dizaines puis unités).", levels: ['sixieme'],
+      question() { const a = rnd(11, 49), b = rnd(11, 29), correct = a * b; return q({ category: 'Multiplication', prompt: `${a} × ${b}`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 30 }); } },
+    { id: 'mult-puissance10', title: 'Multiplier par 10, 100 ou 1000', explanation: "Ajoute autant de zéros que la puissance de 10.", levels: ['cm2', 'sixieme'],
+      question(level) { const a = rnd(2, 99); const p = level === 'sixieme' ? [10, 100, 1000][rnd(0, 2)] : [10, 100][rnd(0, 1)]; const correct = a * p; return q({ category: 'Puissances de 10', prompt: `${a} × ${p}`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 15 }); } }
+  ] },
+  { id: 'division', emoji: '➗', title: 'Division', skills: [
+    { id: 'div-sans-reste', title: 'Division sans reste', explanation: "Cherche combien de fois le diviseur rentre exactement dans le nombre.", levels: ['cm2', 'sixieme'],
+      question(level) { const b = rnd(2, 12), qte = rnd(2, level === 'sixieme' ? 50 : 20), a = b * qte; return q({ category: 'Division', prompt: `${a} ÷ ${b}`, answer: String(qte), options: numericOptions(qte, 0).map(String), limit: 20 }); } },
+    { id: 'div-avec-reste', title: 'Division avec reste', explanation: "Le reste est ce qu'il manque pour compléter une fois de plus le diviseur.", levels: ['cm2', 'sixieme'],
+      question() { const b = rnd(2, 9), qte = rnd(2, 15), r = rnd(1, b - 1), a = b * qte + r; return q({ category: 'Division avec reste', prompt: `Quel est le reste de ${a} ÷ ${b} ?`, answer: String(r), options: mkOptions(String(r), [String((r + 1) % b), String(Math.max(0, r - 1)), String((r + 2) % b)]), limit: 20 }); } },
+    { id: 'div-relation-mult', title: 'Multiplication et division', explanation: "Une division défait une multiplication.", levels: ['cm2', 'sixieme'],
+      question() { const b = rnd(2, 12), qte = rnd(2, 12), product = b * qte; return q({ category: 'Multiplication / division', prompt: `Sachant que ${b} × ${qte} = ${product}, combien fait ${product} ÷ ${b} ?`, answer: String(qte), options: numericOptions(qte, 0).map(String), limit: 15 }); } }
+  ] },
+  { id: 'fractions', emoji: '🍰', title: 'Fractions', skills: [
+    { id: 'lire-fraction', title: 'Lire une fraction', explanation: "Compte les parts coloriées sur le nombre total de parts.", levels: ['cm2', 'sixieme'],
+      question() { const n = rnd(3, 8), m = rnd(1, n - 1); const correct = `${m}/${n}`; const distract = [`${Math.min(n - 1, m + 1)}/${n}`, `${n - m}/${n}`, `${m}/${n + 1}`]; return q({ category: 'Lire une fraction', prompt: 'Quelle fraction est représentée ?', svg: svgFractionBar(n, m), answer: correct, options: mkOptions(correct, distract), limit: 18 }); } },
+    { id: 'comparer-fractions', title: 'Comparer des fractions', explanation: "Compare en multipliant en croix : a/b et c/d, compare a×d et c×b.", levels: ['cm2', 'sixieme'],
+      question() { const denoms = [2, 3, 4, 5, 6, 8, 10]; let a, b, c, d, guard = 0; do { b = denoms[rnd(0, denoms.length - 1)]; d = denoms[rnd(0, denoms.length - 1)]; a = rnd(1, b - 1); c = rnd(1, d - 1); guard++; } while (a * d === c * b && guard < 20); if (a * d === c * b) { c = c === 1 ? 2 : c - 1; } const fa = `${a}/${b}`, fc = `${c}/${d}`; const correct = (a * d > c * b) ? fa : fc; return q({ category: 'Comparer fractions', prompt: `Quelle est la fraction la plus grande : ${fa} ou ${fc} ?`, answer: correct, options: [fa, fc], limit: 22 }); } },
+    { id: 'simplifier-fraction', title: 'Simplifier une fraction', explanation: "Divise le numérateur et le dénominateur par un même nombre.", levels: ['sixieme'],
+      question() { const denomsReduits = [2, 3, 4, 5]; const qd = denomsReduits[rnd(0, denomsReduits.length - 1)]; const p = rnd(1, qd - 1); const f = rnd(2, 5); const m = p * f, n = qd * f; const correct = `${p}/${qd}`; return q({ category: 'Simplifier', prompt: `Simplifie la fraction ${m}/${n}`, answer: correct, options: mkOptions(correct, [`${m}/${qd}`, `${p}/${n}`, `${p + 1}/${qd}`]), limit: 25 }); } },
+    { id: 'fractions-equiv', title: 'Fractions équivalentes', explanation: "Multiplie le numérateur et le dénominateur par le même nombre.", levels: ['cm2', 'sixieme'],
+      question() { const q0 = rnd(2, 6), p0 = rnd(1, q0 - 1), f = rnd(2, 4); const correct = `${p0 * f}/${q0 * f}`; return q({ category: 'Fractions équivalentes', prompt: `Quelle fraction est équivalente à ${p0}/${q0} ?`, answer: correct, options: mkOptions(correct, [`${p0 * f + 1}/${q0 * f}`, `${p0}/${q0 * f}`, `${p0 * f}/${q0 * f + 1}`]), limit: 22 }); } }
+  ] },
+  { id: 'decimaux', emoji: '🔟', title: 'Nombres décimaux', skills: [
+    { id: 'valeur-chiffre', title: 'Valeur d\'un chiffre', explanation: "Après la virgule : dixièmes, centièmes, millièmes.", levels: ['cm2', 'sixieme'],
+      question() { const intPart = rnd(1, 99); const dec = rnd(100, 999); const N = `${intPart},${dec}`; const names = ['dixièmes', 'centièmes', 'millièmes']; const pos = rnd(0, 2); const correct = String(dec)[pos]; return q({ category: 'Valeur d\'un chiffre', prompt: `Dans ${N}, quel est le chiffre des ${names[pos]} ?`, answer: correct, options: mkOptions(correct, [String(rnd(0, 9)), String(rnd(0, 9)), String(rnd(0, 9))]), limit: 18 }); } },
+    { id: 'comparer-decimaux', title: 'Comparer des décimaux', explanation: "Compare d'abord la partie entière, puis les dixièmes, puis les centièmes.", levels: ['cm2', 'sixieme'],
+      question() { const a = Math.round((rnd(1, 200) / 10) * 10) / 10, b = Math.round((rnd(1, 200) / 10) * 10) / 10; const correct = a < b ? '<' : a > b ? '>' : '='; return q({ category: 'Comparer décimaux', prompt: `${formatNum(a)} ... ${formatNum(b)}`, answer: correct, options: ['<', '>', '='], limit: 15 }); } },
+    { id: 'arrondir-decimaux', title: 'Arrondir un décimal', explanation: "Regarde le chiffre suivant pour savoir si on monte ou pas.", levels: ['cm2', 'sixieme'],
+      question() { const N = Math.round((rnd(100, 9999) / 100) * 100) / 100; const correct = Math.round(N); return q({ category: 'Arrondir décimal', prompt: `Arrondis ${formatNum(N)} à l'unité près.`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 18 }); } },
+    { id: 'add-sub-decimaux', title: 'Additionner / soustraire des décimaux', explanation: "Aligne bien les virgules avant de calculer.", levels: ['cm2', 'sixieme'],
+      question() { let a = Math.round((rnd(10, 500) / 10) * 10) / 10, b = Math.round((rnd(10, 300) / 10) * 10) / 10; if (b > a) [a, b] = [b, a]; const op = Math.random() < 0.5 ? '+' : '-'; const correct = Math.round((op === '+' ? a + b : a - b) * 10) / 10; return q({ category: 'Add/Sous décimaux', prompt: `${formatNum(a)} ${op} ${formatNum(b)}`, answer: formatNum(correct), options: numericOptions(correct, 1).map(formatNum), limit: 22 }); } },
+    { id: 'mult-decimaux-10', title: 'Multiplier un décimal par 10, 100...', explanation: "Décale la virgule vers la droite d'autant de rangs que de zéros.", levels: ['sixieme'],
+      question() { const a = Math.round((rnd(10, 999) / 10) * 10) / 10; const p = [10, 100][rnd(0, 1)]; const correct = Math.round(a * p * 10) / 10; return q({ category: 'Décimaux × 10', prompt: `${formatNum(a)} × ${p}`, answer: formatNum(correct), options: numericOptions(correct, correct % 1 !== 0 ? 1 : 0).map(formatNum), limit: 18 }); } }
+  ] },
+  { id: 'calculs', emoji: '🧮', title: 'Calculs et priorités', skills: [
+    { id: 'priorites', title: 'Priorités opératoires', explanation: "On effectue d'abord les parenthèses, puis les multiplications/divisions, puis les additions/soustractions.", levels: ['cm2', 'sixieme'],
+      question() {
+        const a = rnd(2, 9), b = rnd(2, 9), c = rnd(2, 9);
+        const patterns = [
+          { text: `${a} + ${b} × ${c}`, val: a + b * c },
+          { text: `(${a} + ${b}) × ${c}`, val: (a + b) * c },
+          { text: `${a} × ${b} + ${c}`, val: a * b + c },
+          { text: `${a} × ${b} - ${c}`, val: a * b - c },
+          { text: `${a} + ${b} - ${c}`, val: a + b - c }
+        ];
+        const p = patterns[rnd(0, patterns.length - 1)];
+        return q({ category: 'Priorités', prompt: p.text, answer: String(p.val), options: numericOptions(p.val, 0).map(String), limit: 25 });
+      } }
+  ] },
+  { id: 'pourcentages', emoji: '📊', title: 'Pourcentages', skills: [
+    { id: 'calc-pourcentage', title: 'Calculer un pourcentage', explanation: "X % d'un nombre, c'est ce nombre multiplié par X puis divisé par 100.", levels: ['cm2', 'sixieme'],
+      question(level) { const pcts = level === 'sixieme' ? [10, 15, 20, 25, 50, 75] : [10, 20, 25, 50]; const pct = pcts[rnd(0, pcts.length - 1)]; const N = rnd(20, 400); const correct = Math.round(N * pct / 100); return q({ category: 'Pourcentage', prompt: `${pct} % de ${N}`, answer: String(correct), options: numericOptions(correct, 0).map(String), limit: 20 }); } },
+    { id: 'convert-pct', title: 'Convertir fraction / pourcentage', explanation: "Transforme la fraction pour obtenir un dénominateur de 100.", levels: ['sixieme'],
+      question() { const denoms = [2, 4, 5, 10, 20, 25, 50]; const denom = denoms[rnd(0, denoms.length - 1)]; const num = rnd(1, denom - 1); const correct = Math.round(num / denom * 100); return q({ category: 'Fraction → %', prompt: `Quel pourcentage représente la fraction ${num}/${denom} ?`, answer: `${correct} %`, options: numericOptions(correct, 0).map(v => `${v} %`), limit: 22 }); } }
+  ] },
+  { id: 'mesures', emoji: '📏', title: 'Grandeurs et mesures', skills: [
+    { id: 'convert-longueurs', title: 'Convertir des longueurs', explanation: "1 m = 100 cm = 1000 mm. 1 km = 1000 m.", levels: ['cm2', 'sixieme'],
+      question(level) { const units = level === 'sixieme' ? { mm: 0.001, cm: 0.01, m: 1, km: 1000 } : { mm: 0.001, cm: 0.01, m: 1 }; const keys = Object.keys(units); let from = keys[rnd(0, keys.length - 1)], to = keys[rnd(0, keys.length - 1)]; while (to === from) to = keys[rnd(0, keys.length - 1)]; const value = rnd(1, 50); const correctRaw = value * units[from] / units[to]; const decimals = correctRaw % 1 !== 0 ? 2 : 0; const correct = Math.round(correctRaw * 100) / 100; return q({ category: 'Longueurs', prompt: `${value} ${from} = ? ${to}`, answer: formatNum(correct), options: numericOptions(correct, decimals).map(formatNum), limit: 20 }); } },
+    { id: 'perimetre', title: 'Calculer un périmètre', explanation: "Le périmètre est la somme des longueurs de tous les côtés.", levels: ['cm2', 'sixieme'],
+      question(level) {
+        const shapes = level === 'sixieme' ? ['carre', 'rectangle', 'triangle', 'cercle'] : ['carre', 'rectangle'];
+        const shape = shapes[rnd(0, shapes.length - 1)];
+        if (shape === 'carre') { const a = rnd(2, 12); const correct = 4 * a; return q({ category: 'Périmètre', prompt: 'Quel est le périmètre de ce carré ?', unit: 'cm', svg: svgSquare(a), answer: formatNum(correct), options: numericOptions(correct, 0).map(formatNum), limit: 20 }); }
+        if (shape === 'rectangle') { const L = rnd(4, 15), l = rnd(2, L - 1); const correct = 2 * (L + l); return q({ category: 'Périmètre', prompt: 'Quel est le périmètre de ce rectangle ?', unit: 'cm', svg: svgRectangle(L, l), answer: formatNum(correct), options: numericOptions(correct, 0).map(formatNum), limit: 20 }); }
+        if (shape === 'triangle') { const a = rnd(3, 10), b = rnd(3, 10), c = rnd(3, 10); const correct = a + b + c; return q({ category: 'Périmètre', prompt: 'Quel est le périmètre de ce triangle ?', unit: 'cm', svg: svgTrianglePerim(a, b, c), answer: formatNum(correct), options: numericOptions(correct, 0).map(formatNum), limit: 22 }); }
+        const r = rnd(2, 10); const correct = Math.round(2 * 3.14 * r * 100) / 100; return q({ category: 'Périmètre', prompt: 'Quel est le périmètre de ce cercle ? (π ≈ 3,14)', unit: 'cm', svg: svgCircle(r), answer: formatNum(correct), options: numericOptions(correct, 1).map(formatNum), limit: 25 });
+      } },
+    { id: 'aire', title: 'Calculer une aire', explanation: "L'aire se calcule différemment pour chaque figure.", levels: ['cm2', 'sixieme'],
+      question(level) {
+        const shapes = level === 'sixieme' ? ['carre', 'rectangle', 'triangle', 'cercle'] : ['carre', 'rectangle'];
+        const shape = shapes[rnd(0, shapes.length - 1)];
+        if (shape === 'carre') { const a = rnd(2, 12); const correct = a * a; return q({ category: 'Aire', prompt: "Quelle est l'aire de ce carré ?", unit: 'cm²', svg: svgSquare(a), answer: formatNum(correct), options: numericOptions(correct, 0).map(formatNum), limit: 20 }); }
+        if (shape === 'rectangle') { const L = rnd(4, 15), l = rnd(2, L - 1); const correct = L * l; return q({ category: 'Aire', prompt: "Quelle est l'aire de ce rectangle ?", unit: 'cm²', svg: svgRectangle(L, l), answer: formatNum(correct), options: numericOptions(correct, 0).map(formatNum), limit: 20 }); }
+        if (shape === 'triangle') { const base = rnd(4, 16), hauteur = rnd(3, 12); const correct = Math.round((base * hauteur / 2) * 100) / 100; return q({ category: 'Aire', prompt: "Quelle est l'aire de ce triangle ?", unit: 'cm²', svg: svgTriangleRight(base, hauteur), answer: formatNum(correct), options: numericOptions(correct, correct % 1 !== 0 ? 1 : 0).map(formatNum), limit: 25 }); }
+        const r = rnd(2, 10); const correct = Math.round(3.14 * r * r * 100) / 100; return q({ category: 'Aire', prompt: "Quelle est l'aire de ce cercle ? (π ≈ 3,14)", unit: 'cm²', svg: svgCircle(r), answer: formatNum(correct), options: numericOptions(correct, 1).map(formatNum), limit: 25 });
+      } },
+    { id: 'convert-masses', title: 'Convertir des masses', explanation: "1 kg = 1000 g. 1 tonne = 1000 kg.", levels: ['cm2', 'sixieme'],
+      question(level) { const units = level === 'sixieme' ? { g: 1, kg: 1000, t: 1000000 } : { g: 1, kg: 1000 }; const keys = Object.keys(units); let from = keys[rnd(0, keys.length - 1)], to = keys[rnd(0, keys.length - 1)]; while (to === from) to = keys[rnd(0, keys.length - 1)]; const value = rnd(1, 20); const correctRaw = value * units[from] / units[to]; const decimals = correctRaw % 1 !== 0 ? 2 : 0; const correct = Math.round(correctRaw * 100) / 100; return q({ category: 'Masses', prompt: `${value} ${from} = ? ${to}`, answer: formatNum(correct), options: numericOptions(correct, decimals).map(formatNum), limit: 20 }); } },
+    { id: 'convert-durees', title: 'Convertir des durées', explanation: "1 min = 60 s. 1 h = 60 min.", levels: ['cm2', 'sixieme'],
+      question() { const units = { s: 1, min: 60, h: 3600 }; const keys = Object.keys(units); let from = keys[rnd(0, keys.length - 1)], to = keys[rnd(0, keys.length - 1)]; while (to === from) to = keys[rnd(0, keys.length - 1)]; const value = rnd(1, 10); const correctRaw = value * units[from] / units[to]; const decimals = correctRaw % 1 !== 0 ? 2 : 0; const correct = Math.round(correctRaw * 100) / 100; return q({ category: 'Durées', prompt: `${value} ${from} = ? ${to}`, answer: formatNum(correct), options: numericOptions(correct, decimals).map(formatNum), limit: 20 }); } },
+    { id: 'convert-volumes', title: 'Comparer des contenances', explanation: "1 L = 100 cL = 1000 mL.", levels: ['cm2', 'sixieme'],
+      question() { const a = rnd(1, 9), b = rnd(1, 9); const unitsA = ['mL', 'cL', 'L'][rnd(0, 2)], unitsB = ['mL', 'cL', 'L'][rnd(0, 2)]; const factor = { mL: 1, cL: 10, L: 1000 }; const va = a * factor[unitsA], vb = b * factor[unitsB]; if (va === vb) return q({ category: 'Contenances', prompt: `Quel volume est le plus grand : ${a} ${unitsA} ou ${b + 1} ${unitsB} ?`, answer: `${b + 1} ${unitsB}`, options: [`${a} ${unitsA}`, `${b + 1} ${unitsB}`], limit: 20 }); const labelA = `${a} ${unitsA}`, labelB = `${b} ${unitsB}`; const correct = va > vb ? labelA : labelB; return q({ category: 'Contenances', prompt: `Quel volume est le plus grand : ${labelA} ou ${labelB} ?`, answer: correct, options: [labelA, labelB], limit: 20 }); } }
+  ] },
+  { id: 'angles', emoji: '📐', title: 'Les angles', skills: [
+    { id: 'type-angle', title: 'Reconnaître un type d\'angle', explanation: "Aigu : moins de 90°. Droit : exactement 90°. Obtus : plus de 90°.", levels: ['cm2', 'sixieme'],
+      question(level) { let deg = rnd(10, 170); if (Math.random() < 0.15) deg = 90; const correct = deg < 90 ? 'Aigu' : deg === 90 ? 'Droit' : 'Obtus'; return q({ category: 'Type d\'angle', prompt: "Quel est ce type d'angle ?", svg: svgAngle(deg), answer: correct, options: ['Aigu', 'Droit', 'Obtus'], limit: 15 }); } },
+    { id: 'mesure-angle', title: 'Estimer une mesure d\'angle', explanation: "Compare l'angle dessiné à un angle droit (90°) pour estimer sa mesure.", levels: ['sixieme'],
+      question() { const deg = rnd(2, 34) * 5; const correct = `${deg}°`; const distract = [`${deg + 10}°`, `${Math.max(5, deg - 10)}°`, `${deg + 20}°`]; return q({ category: 'Mesure d\'angle', prompt: 'Quelle est la mesure approximative de cet angle ?', svg: svgAngle(deg), answer: correct, options: mkOptions(correct, distract), limit: 20 }); } }
+  ] },
+  { id: 'espace', emoji: '🗺️', title: 'Espace et géométrie', skills: [
+    { id: 'coordonnees', title: 'Coordonnées dans un repère', explanation: "Le premier nombre indique l'abscisse (horizontal), le second l'ordonnée (vertical).", levels: ['cm2', 'sixieme'],
+      question() { const size = 5, x = rnd(0, size), y = rnd(0, size); const correct = `(${x} ; ${y})`; const distract = [`(${y} ; ${x})`, `(${Math.min(size, x + 1)} ; ${y})`, `(${x} ; ${Math.min(size, y + 1)})`]; return q({ category: 'Coordonnées', prompt: 'Quelles sont les coordonnées du point ?', svg: svgGridPoint(x, y, size), answer: correct, options: mkOptions(correct, distract), limit: 20 }); } },
+    { id: 'symetrie', title: 'Axe de symétrie', explanation: "Une figure a un axe de symétrie si on peut la plier en deux parts identiques le long de cette ligne.", levels: ['cm2', 'sixieme'],
+      question() { const s = SYMMETRY_SHAPES[rnd(0, SYMMETRY_SHAPES.length - 1)]; const correct = s.symmetric ? 'Oui' : 'Non'; return q({ category: 'Symétrie', prompt: 'La ligne pointillée est-elle un axe de symétrie ?', svg: s.svg, answer: correct, options: ['Oui', 'Non'], limit: 18 }); } },
+    { id: 'droites', title: 'Droites parallèles, perpendiculaires, sécantes', explanation: "Parallèles : ne se croisent jamais. Perpendiculaires : se croisent à angle droit. Sécantes : se croisent ailleurs.", levels: ['cm2', 'sixieme'],
+      question() { const kind = ['Parallèles', 'Perpendiculaires', 'Sécantes'][rnd(0, 2)]; return q({ category: 'Droites', prompt: 'Comment sont ces deux droites ?', svg: svgTwoLines(kind), answer: kind, options: ['Parallèles', 'Perpendiculaires', 'Sécantes'], limit: 15 }); } },
+    { id: 'figures-planes', title: 'Reconnaître une figure', explanation: "Compte les côtés pour identifier le nom de la figure.", levels: ['cm2', 'sixieme'],
+      question(level) { const shapes = level === 'sixieme' ? [{ n: 3, name: 'Triangle' }, { n: 4, name: 'Carré' }, { n: 5, name: 'Pentagone' }, { n: 6, name: 'Hexagone' }, { n: 0, name: 'Cercle' }] : [{ n: 3, name: 'Triangle' }, { n: 4, name: 'Carré' }, { n: 5, name: 'Pentagone' }]; const s = shapes[rnd(0, shapes.length - 1)]; const svg = s.n === 0 ? svgCircleShape() : svgPolygon(s.n); return q({ category: 'Figures planes', prompt: 'Quel est le nom de cette figure ?', svg, answer: s.name, options: shuffle(shapes.map(x => x.name)), limit: 15 }); } },
+    { id: 'solides', title: 'Sommets, arêtes et faces des solides', explanation: "Un solide a des sommets (pointes), des arêtes (bords) et des faces (surfaces plates).", levels: ['cm2', 'sixieme'],
+      question() {
+        const SOLIDS = [{ name: 'Cube', icon: '🧊', sommets: 8, aretes: 12, faces: 6 }, { name: 'Pavé droit', icon: '📦', sommets: 8, aretes: 12, faces: 6 }, { name: 'Pyramide à base carrée', icon: '🔺', sommets: 5, aretes: 8, faces: 5 }, { name: 'Prisme triangulaire', icon: '🔷', sommets: 6, aretes: 9, faces: 5 }];
+        const s = SOLIDS[rnd(0, SOLIDS.length - 1)]; const attrs = ['sommets', 'arêtes', 'faces']; const attr = attrs[rnd(0, 2)]; const key = attr === 'arêtes' ? 'aretes' : attr; const correct = s[key];
+        return q({ category: 'Solides', prompt: `${s.icon} Combien de ${attr} a un(e) ${s.name} ?`, answer: String(correct), options: mkOptions(String(correct), [String(correct + 1), String(Math.max(0, correct - 1)), String(correct + 2)]), limit: 18 });
+      } }
+  ] }
+];
+function getDomain(id) { return DOMAINS.find(d => d.id === id); }
+function getSkill(domainId, skillId) { const d = getDomain(domainId); return d ? d.skills.find(s => s.id === skillId) : null; }
+function skillsForLevel(domainId, level) { const d = getDomain(domainId); return d ? d.skills.filter(s => s.levels.includes(level)) : []; }
+
+/* ================= État global ================= */
+const state = { screen: 'home', level: loadStore().level || 'cm2', currentDomain: null, currentSkill: null, mentalTrickId: null, quiz: null };
+function setLevel(lvl) { state.level = lvl; const s = loadStore(); s.level = lvl; saveStore(s); render(); }
+function clearTimer() { if (state.quiz && state.quiz.timerHandle) { clearInterval(state.quiz.timerHandle); state.quiz.timerHandle = null; } }
+
+/* ================= Construction et moteur de quiz ================= */
+/* Évite de retomber sur des questions identiques : on retente quelques fois,
+   puis on accepte un doublon si le générateur a peu de combinaisons possibles. */
+function pickDistinct(makeFn, keyFn, count) {
+  const out = [], seen = new Set();
+  for (let i = 0; i < count; i++) {
+    let item = makeFn(), key = keyFn(item);
+    for (let a = 0; a < 20 && seen.has(key); a++) { item = makeFn(); key = keyFn(item); }
+    seen.add(key); out.push(item);
+  }
+  return out;
+}
+const questionKey = (q) => [q.formula, q.prompt, q.svg, q.answer].join('|');
+/* Pour les exemples d'une leçon on ignore le dessin : deux exemples de réponses
+   différentes (angle aigu puis obtus, par exemple) sont plus parlants. */
+const lessonKey = (q) => [q.formula, q.prompt, q.answer].join('|');
+function buildMentalQuiz(trickId, count) {
+  const trick = getTrick(trickId); const qs = [];
+  for (const ex of pickDistinct(() => trick.gen(state.level), (e) => e.formula, count)) { const decimals = ex.result % 1 !== 0 ? 1 : 0; qs.push({ category: trick.title, prompt: "Utilise l'astuce !", unit: '', svg: null, formula: ex.formula, answer: formatNum(ex.result), options: numericOptions(ex.result, decimals).map(formatNum), limit: 15 }); }
+  return qs;
+}
+function buildSkillQuiz(domainId, skillId, count) {
+  const skill = getSkill(domainId, skillId);
+  return pickDistinct(() => skill.question(state.level), questionKey, count);
+}
+function startQuiz(kind, builderFn, bestKey) {
+  clearTimer();
+  const questions = builderFn();
+  state.quiz = { kind, rebuild: builderFn, bestKey, index: 0, score: 0, questions, answered: false, lastChosen: null, timeLeft: questions[0].limit, timerHandle: null, times: [], catStats: {} };
+  state.screen = 'quiz'; render(); runTimer();
+}
+function runTimer() {
+  clearTimer();
+  state.quiz.timerHandle = setInterval(() => {
+    if (!state.quiz || state.quiz.answered) return;
+    state.quiz.timeLeft--;
+    if (state.quiz.timeLeft <= 0) { clearTimer(); answerQuiz(null); } else render();
+  }, 1000);
+}
+function answerQuiz(chosen) {
+  const qz = state.quiz; const cur = qz.questions[qz.index];
+  if (qz.answered) return;
+  qz.answered = true; clearTimer();
+  const correct = chosen !== null && chosen === cur.answer;
+  const timeUsed = cur.limit - qz.timeLeft; qz.times.push(timeUsed);
+  if (!qz.catStats[cur.category]) qz.catStats[cur.category] = { correct: 0, total: 0 };
+  qz.catStats[cur.category].total++;
+  if (correct) { qz.score++; qz.catStats[cur.category].correct++; }
+  render();
+  setTimeout(() => {
+    if (qz.index < qz.questions.length - 1) { qz.index++; qz.answered = false; qz.lastChosen = null; qz.timeLeft = qz.questions[qz.index].limit; render(); runTimer(); }
+    else { const total = qz.questions.length; const pct = Math.round((qz.score / total) * 100); if (qz.bestKey) saveBest(qz.bestKey, pct); state.screen = 'quizResults'; render(); }
+  }, 1100);
+}
+
+/* ================= Rendu ================= */
+function render() {
+  const app = document.getElementById('app');
+  if (state.screen === 'home') app.innerHTML = renderHome();
+  else if (state.screen === 'skillList') app.innerHTML = renderSkillList();
+  else if (state.screen === 'mentalLesson') app.innerHTML = renderMentalLesson();
+  else if (state.screen === 'skillLesson') app.innerHTML = renderSkillLesson();
+  else if (state.screen === 'quiz') app.innerHTML = renderQuiz();
+  else if (state.screen === 'quizResults') app.innerHTML = renderQuizResults();
+  attachListeners();
+}
+function attachListeners() { document.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction)); }
+
+function renderHome() {
+  const cards = [{ id: 'astuces', emoji: '🧠', title: 'Astuces calcul mental', desc: "Des exercices générés à l'infini" }, ...DOMAINS.map(d => { const n = skillsForLevel(d.id, state.level).length; return { id: d.id, emoji: d.emoji, title: d.title, desc: `${n} compétence${n > 1 ? 's' : ''}` }; })]
+    .map(c => `<div class="mode-card" data-action="open-domain" data-id="${c.id}"><div class="mode-emoji">${c.emoji}</div><div class="mode-info"><div class="mode-title">${c.title}</div><div class="mode-desc">${c.desc}</div></div><div class="mode-arrow">→</div></div>`).join('');
+  return `<div class="screen">
+    <h1>🎓 Maths Malin</h1>
+    <p class="subtitle">Programme complet CM2 &amp; 6ème</p>
+    <div class="level-switch"><button class="level-btn ${state.level === 'cm2' ? 'active' : ''}" data-action="set-level" data-level="cm2">CM2</button><button class="level-btn ${state.level === 'sixieme' ? 'active' : ''}" data-action="set-level" data-level="sixieme">6ème</button></div>
+    ${cards}
+  </div>`;
+}
+
+function renderSkillList() {
+  if (state.currentDomain === 'astuces') {
+    const list = tricksForLevel(state.level);
+    const cards = list.map(t => { const best = getBest('mental-' + t.id + '-' + state.level); return `<div class="trick-card" data-action="open-mental" data-id="${t.id}"><div class="trick-emoji">${t.emoji}</div><div class="trick-info"><div class="trick-title">${t.title}</div>${best !== undefined ? `<div class="trick-progress">✓ Meilleur score : ${best}%</div>` : ''}</div><div class="mode-arrow">→</div></div>`; }).join('');
+    return `<div class="screen"><button class="btn-back" data-action="go-home">← Retour</button><h1>🧠 Astuces calcul mental</h1><p class="subtitle">Niveau ${state.level === 'cm2' ? 'CM2' : '6ème'}</p>${cards}</div>`;
+  }
+  const d = getDomain(state.currentDomain);
+  const list = skillsForLevel(state.currentDomain, state.level);
+  const cards = list.map(s => { const best = getBest('skill-' + d.id + '-' + s.id + '-' + state.level); return `<div class="trick-card" data-action="open-skill" data-id="${s.id}"><div class="trick-emoji">${d.emoji}</div><div class="trick-info"><div class="trick-title">${s.title}</div>${best !== undefined ? `<div class="trick-progress">✓ Meilleur score : ${best}%</div>` : ''}</div><div class="mode-arrow">→</div></div>`; }).join('');
+  return `<div class="screen"><button class="btn-back" data-action="go-home">← Retour</button><h1>${d.emoji} ${d.title}</h1><p class="subtitle">Niveau ${state.level === 'cm2' ? 'CM2' : '6ème'}</p>${cards || '<p class="subtitle">Aucune compétence pour ce niveau pour le moment.</p>'}</div>`;
+}
+
+function renderMentalLesson() {
+  const t = getTrick(state.mentalTrickId);
+  const [ex1, ex2] = pickDistinct(() => t.gen(state.level), (e) => e.formula, 2);
+  return `<div class="screen"><button class="btn-back" data-action="back-to-list">← Retour</button>
+    <div class="lesson-hero"><div class="lesson-emoji">${t.emoji}</div><div class="lesson-title">${t.title}</div><div class="lesson-explanation">${t.explanation}</div></div>
+    <div class="section-label">Exemples</div>
+    ${[ex1, ex2].map(ex => `<div class="step-card"><div class="step-formula">${ex.formula}</div><div class="step-breakdown">${ex.breakdown}</div><div class="step-result">= ${formatNum(ex.result)}</div></div>`).join('')}
+    <div class="btn-stack" style="margin-top:0.5rem;"><button class="btn btn-secondary" data-action="regen">🔀 De nouveaux exemples</button><button class="btn btn-primary" data-action="start-mental-quiz">✨ Pratiquer (8 questions, chrono)</button></div>
+  </div>`;
+}
+
+function renderSkillLesson() {
+  const s = getSkill(state.currentDomain, state.currentSkill); const d = getDomain(state.currentDomain);
+  const [ex1, ex2] = pickDistinct(() => s.question(state.level), lessonKey, 2);
+  const exCard = (ex) => `<div class="step-card">${ex.formula ? `<div class="step-formula">${ex.formula}</div>` : `<div class="step-breakdown" style="margin-top:0;">${ex.prompt}</div>`}${ex.svg ? `<div class="step-shape">${ex.svg}</div>` : ''}<div class="step-result">Réponse : ${ex.answer}${ex.unit ? ' ' + ex.unit : ''}</div></div>`;
+  return `<div class="screen"><button class="btn-back" data-action="back-to-list">← Retour</button>
+    <div class="lesson-hero"><div class="lesson-emoji">${d.emoji}</div><div class="lesson-title">${s.title}</div><div class="lesson-explanation">${s.explanation}</div></div>
+    <div class="section-label">Exemples</div>
+    ${exCard(ex1)}${exCard(ex2)}
+    <div class="btn-stack" style="margin-top:0.5rem;"><button class="btn btn-secondary" data-action="regen">🔀 De nouveaux exemples</button><button class="btn btn-primary" data-action="start-skill-quiz">✨ Pratiquer (8 questions, chrono)</button></div>
+  </div>`;
+}
+
+function renderQuiz() {
+  const qz = state.quiz; const cur = qz.questions[qz.index]; const total = qz.questions.length;
+  const pctLeft = Math.max(0, Math.round((qz.timeLeft / cur.limit) * 100));
+  const low = qz.timeLeft <= Math.ceil(cur.limit * 0.3);
+  const optionsHtml = cur.options.map(opt => { let cls = 'option-btn'; if (qz.answered) { if (opt === cur.answer) cls += ' correct'; else if (opt === qz.lastChosen) cls += ' wrong'; } return `<button class="${cls}" data-action="answer-quiz" data-value="${opt}" ${qz.answered ? 'disabled' : ''}>${opt}</button>`; }).join('');
+  return `<div class="screen">
+    <div class="quiz-topbar"><div class="quiz-progress">${cur.category} · ${qz.index + 1}/${total}</div><div class="quiz-score">⭐ ${qz.score}</div></div>
+    <div class="timer-wrap"><div class="timer-bar-bg"><div class="timer-bar-fill ${low ? 'low' : ''}" style="width:${pctLeft}%"></div></div><div class="timer-num">${Math.max(0, qz.timeLeft)} s</div></div>
+    <div class="question-card">
+      ${cur.formula ? `<div class="question-label">${cur.prompt}</div><div class="question-formula">${cur.formula}</div>` : `<div class="question-label">${cur.prompt}</div>${cur.svg ? `<div class="question-shape">${cur.svg}</div>` : ''}${cur.unit ? `<div style="font-size:0.78rem;color:var(--text-secondary);">Réponse en ${cur.unit}</div>` : ''}`}
+    </div>
+    <div class="options-grid">${optionsHtml}</div>
+  </div>`;
+}
+
+function renderQuizResults() {
+  const qz = state.quiz; const total = qz.questions.length;
+  const pct = Math.round((qz.score / total) * 100);
+  const avgTime = Math.round((qz.times.reduce((a, b) => a + b, 0) / total) * 10) / 10;
+  const emoji = pct === 100 ? '🏆' : pct >= 80 ? '🌟' : pct >= 50 ? '👍' : '💪';
+  const title = pct === 100 ? 'Parfait !' : pct >= 80 ? 'Excellent !' : pct >= 50 ? 'Bien joué !' : "Continue à t'entraîner";
+  let verdictClass = 'verdict-good', verdictText = "Compétence maîtrisée ! Essaie-en une autre ou monte de niveau.";
+  if (pct < 50) { verdictClass = 'verdict-low'; verdictText = "Cette notion mérite d'être revue calmement. Relis la leçon puis réessaie."; }
+  else if (pct < 80) { verdictClass = 'verdict-mid'; verdictText = 'Bonne base ! Encore un peu de pratique pour bien maîtriser.'; }
+  const cats = Object.keys(qz.catStats);
+  const breakdownHtml = cats.length > 1 ? `<div class="breakdown-list">${cats.map(c => `<div class="breakdown-row"><span>${c}</span><span>${qz.catStats[c].correct}/${qz.catStats[c].total}</span></div>`).join('')}</div>` : '';
+  return `<div class="screen">
+    <div class="results-emoji">${emoji}</div><div class="results-title">${title}</div>
+    <div class="results-card"><div class="results-score">${qz.score} / ${total}</div><div class="results-meta">${pct}% de réussite · ${avgTime}s en moyenne par question</div></div>
+    ${breakdownHtml}
+    <div class="verdict-box ${verdictClass}">${verdictText}</div>
+    <div class="btn-stack"><button class="btn btn-primary" data-action="retry-quiz">🔄 Rejouer</button><button class="btn btn-secondary" data-action="go-home">← Retour à l'accueil</button></div>
+  </div>`;
+}
+
+/* ================= Actions ================= */
+function onAction(e) {
+  const a = e.currentTarget.dataset.action;
+  if (a === 'set-level') setLevel(e.currentTarget.dataset.level);
+  else if (a === 'go-home') { clearTimer(); state.screen = 'home'; state.quiz = null; render(); }
+  else if (a === 'open-domain') { state.currentDomain = e.currentTarget.dataset.id; state.screen = 'skillList'; render(); }
+  else if (a === 'back-to-list') { state.screen = 'skillList'; render(); }
+  else if (a === 'open-mental') { state.mentalTrickId = e.currentTarget.dataset.id; state.screen = 'mentalLesson'; render(); }
+  else if (a === 'open-skill') { state.currentSkill = e.currentTarget.dataset.id; state.screen = 'skillLesson'; render(); }
+  else if (a === 'regen') { render(); }
+  else if (a === 'start-mental-quiz') { const id = state.mentalTrickId; startQuiz('mental', () => buildMentalQuiz(id, 8), 'mental-' + id + '-' + state.level); }
+  else if (a === 'start-skill-quiz') { const dId = state.currentDomain, sId = state.currentSkill; startQuiz('skill', () => buildSkillQuiz(dId, sId, 8), 'skill-' + dId + '-' + sId + '-' + state.level); }
+  else if (a === 'answer-quiz') { state.quiz.lastChosen = e.currentTarget.dataset.value; answerQuiz(e.currentTarget.dataset.value); }
+  else if (a === 'retry-quiz') { startQuiz(state.quiz.kind, state.quiz.rebuild, state.quiz.bestKey); }
+}
+
+render();
+
+/* ================= PWA install ================= */
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; showInstallBanner(); });
+function showInstallBanner() {
+  if (document.getElementById('install-banner')) return;
+  const banner = document.createElement('div'); banner.id = 'install-banner'; banner.className = 'install-banner';
+  banner.innerHTML = `<div class="install-text">📲 Installe l'appli sur ton téléphone !</div><button class="install-btn">Installer</button><button class="dismiss-btn">✕</button>`;
+  document.body.appendChild(banner);
+  banner.querySelector('.install-btn').addEventListener('click', async () => { banner.remove(); if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; } });
+  banner.querySelector('.dismiss-btn').addEventListener('click', () => banner.remove());
+}
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); }); }
+</script>
+</body>
+</html>

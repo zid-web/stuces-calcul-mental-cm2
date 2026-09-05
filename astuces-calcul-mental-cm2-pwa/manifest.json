@@ -1,7 +1,7 @@
 {
-  "name": "Astuces Calcul Mental CM2",
-  "short_name": "Calcul CM2",
-  "description": "Apprends les astuces magiques du calcul mental pour le CM2",
+  "name": "Maths Malin — CM2 & 6ème",
+  "short_name": "Maths Malin",
+  "description": "Programme complet de maths pour CM2 et 6ème : nombres, fractions, décimaux, mesures, géométrie",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
