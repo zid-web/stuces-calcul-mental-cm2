@@ -7,13 +7,13 @@ Android installe une PWA depuis une adresse web en HTTPS (le service worker qui 
 
 ## Déploiement gratuit (Netlify Drop) — le plus simple
 1. Va sur https://app.netlify.com/drop
-2. Glisse-dépose le dossier `pwa` (ou son contenu : index.html, manifest.json, sw.js, icons/) directement sur la page
+2. Glisse-dépose le dossier `astuces-calcul-mental-cm2-pwa` (ou son contenu : index.html, manifest.json, sw.js, icons/) directement sur la page
 3. Netlify te donne une URL en `https://....netlify.app`
 4. Ouvre cette URL sur le téléphone Android avec Chrome
 5. Un bandeau "Installer" apparaît en bas — appuie dessus, ou utilise le menu ⋮ > "Installer l'application"
 
 ## Alternative : GitHub Pages
-1. Crée un dépôt GitHub et mets-y le contenu du dossier `pwa`
+1. Crée un dépôt GitHub et mets-y le contenu du dossier `astuces-calcul-mental-cm2-pwa`
 2. Dans Settings > Pages, active GitHub Pages sur la branche main
 3. Ton URL sera `https://tonpseudo.github.io/tondepot/`
 
