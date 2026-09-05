@@ -62,6 +62,30 @@
   .step-shape { display: flex; justify-content: center; margin: 0.5rem 0; }
 
   .quiz-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .btn-pause { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); font-weight: 700; font-size: 0.76rem; border-radius: 9px; padding: 0.32rem 0.6rem; cursor: pointer; }
+
+  .pause-panel { background: var(--card); border: 1px dashed var(--purple); border-radius: 16px; padding: 2.2rem 1.1rem; text-align: center; margin-bottom: 1.1rem; }
+  .pause-emoji { font-size: 2.2rem; margin-bottom: 0.5rem; }
+  .pause-title { font-weight: 700; font-size: 1.05rem; margin-bottom: 0.3rem; }
+  .pause-note { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; }
+
+  .reward-strip { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 0.8rem 0.9rem; margin-bottom: 1rem; }
+  .reward-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.5rem; gap: 8px; }
+  .reward-label { font-size: 0.82rem; font-weight: 700; }
+  .reward-count { font-size: 0.78rem; color: var(--text-secondary); font-weight: 600; white-space: nowrap; }
+  .token-row { display: flex; flex-wrap: wrap; gap: 5px; }
+  .token { font-size: 1.15rem; line-height: 1; }
+  .token.vide { opacity: 0.22; filter: grayscale(1); }
+  .reward-hamsters { margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid var(--border); font-size: 0.84rem; font-weight: 600; color: var(--purple); }
+
+  .gain-card { background: var(--success-bg); border: 1px solid #A6DFCB; border-radius: 16px; padding: 1rem; text-align: center; margin-bottom: 1rem; }
+  .gain-emoji { font-size: 1.9rem; line-height: 1.2; }
+  .gain-text { font-size: 0.88rem; font-weight: 700; color: #14795A; }
+  .gain-sub { font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px; }
+  .hamster-card { background: linear-gradient(135deg, #5B4FE8, #3B82D8); color: #FFFFFF; border-radius: 18px; padding: 1.5rem 1.1rem; text-align: center; margin-bottom: 1rem; }
+  .hamster-emoji { font-size: 3rem; line-height: 1.1; }
+  .hamster-title { font-size: 1.1rem; font-weight: 700; margin-top: 0.4rem; }
+  .hamster-note { font-size: 0.85rem; opacity: 0.9; margin-top: 0.3rem; line-height: 1.4; }
   .quiz-progress { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; }
   .quiz-score { font-size: 1.1rem; font-weight: 700; }
 
@@ -128,16 +152,59 @@ function numericOptions(answer, decimals) {
   }
   return shuffle([...opts]);
 }
+/* Des propositions de secours construites à partir de la réponse : un chiffre
+   voisin, un numérateur ou un dénominateur décalé. Sert quand les distracteurs
+   fournis se doublonnent ou tombent sur la bonne réponse. */
+function variantes(correct) {
+  const frac = /^(\d+)\/(\d+)$/.exec(correct);
+  if (frac) {
+    const a = +frac[1], b = +frac[2], out = [];
+    for (const [da, db] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [2, 0], [0, 2]]) {
+      const na = a + da, nb = b + db;
+      if (na > 0 && nb > 1 && na < nb) out.push(`${na}/${nb}`);
+    }
+    return out;
+  }
+  const n = parseFloat(String(correct).replace(',', '.'));
+  if (!isNaN(n) && String(correct).match(/^-?\d/)) {
+    const dec = String(correct).includes(',') ? 1 : 0;
+    return [1, -1, 2, -2, 3, -3].map(d => n + d).filter(v => v > 0)
+      .map(v => formatNum(dec ? Math.round(v * 10) / 10 : v));
+  }
+  return [];
+}
+
 function mkOptions(correct, distractors) {
   const uniq = [];
-  for (const d of distractors) { if (d !== correct && !uniq.includes(d)) uniq.push(d); if (uniq.length >= 3) break; }
-  while (uniq.length < 3) { const filler = correct + '_' + uniq.length; if (!uniq.includes(filler)) uniq.push(filler); }
+  const ajouter = (d) => { if (d !== correct && !uniq.includes(d) && uniq.length < 3) uniq.push(d); };
+  distractors.forEach(ajouter);
+  /* plutôt que de compléter avec du remplissage absurde (« 2/5_2 »), on
+     fabrique des variantes ; et s'il en manque encore, on propose moins de choix */
+  variantes(correct).forEach(ajouter);
   return shuffle([correct, ...uniq]);
 }
 function loadStore() { try { return JSON.parse(localStorage.getItem('cm_store') || '{}'); } catch { return {}; } }
 function saveStore(obj) { localStorage.setItem('cm_store', JSON.stringify(obj)); }
 function saveBest(key, pct) { const s = loadStore(); s[key] = Math.max(s[key] || 0, pct); saveStore(s); }
 function getBest(key) { return loadStore()[key]; }
+
+/* ---------- Jetons chatons et récompenses hamster ---------- */
+const SEUIL_JETON = 80;          // un quiz est réussi à partir de 80 % de bonnes réponses
+const JETONS_PAR_HAMSTER = 10;   // dix chatons donnent un hamster
+
+function getJetons() { return loadStore().jetons || 0; }
+function getHamsters() { return loadStore().hamsters || 0; }
+
+/* Appelée une seule fois, à la fin d'un quiz. Renvoie ce qui vient d'être
+   gagné pour que l'écran de résultat puisse l'annoncer. */
+function attribuerRecompense(pct) {
+  if (pct < SEUIL_JETON) return { jeton: false, hamster: false, jetons: getJetons(), hamsters: getHamsters() };
+  const s = loadStore();
+  let jetons = (s.jetons || 0) + 1, hamsters = s.hamsters || 0, hamster = false;
+  if (jetons >= JETONS_PAR_HAMSTER) { jetons -= JETONS_PAR_HAMSTER; hamsters++; hamster = true; }
+  s.jetons = jetons; s.hamsters = hamsters; saveStore(s);
+  return { jeton: true, hamster, jetons, hamsters };
+}
 
 /* ================= SVG helpers ================= */
 function svgWrap(inner) { return `<svg viewBox="0 0 220 180" style="width:190px;height:auto;">${inner}</svg>`; }
@@ -470,7 +537,19 @@ const DOMAINS = [
   ] },
   { id: 'espace', emoji: '🗺️', title: 'Espace et géométrie', skills: [
     { id: 'coordonnees', title: 'Coordonnées dans un repère', explanation: "Le premier nombre indique l'abscisse (horizontal), le second l'ordonnée (vertical).", levels: ['cm2', 'sixieme', 'singapour'],
-      question() { const size = 5, x = rnd(0, size), y = rnd(0, size); const correct = `(${x} ; ${y})`; const distract = [`(${y} ; ${x})`, `(${Math.min(size, x + 1)} ; ${y})`, `(${x} ; ${Math.min(size, y + 1)})`]; return q({ category: 'Coordonnées', prompt: 'Quelles sont les coordonnées du point ?', svg: svgGridPoint(x, y, size), answer: correct, options: mkOptions(correct, distract), limit: 20 }); } },
+      question() {
+        const size = 5, x = rnd(0, size), y = rnd(0, size), correct = `(${x} ; ${y})`;
+        /* des points réellement voisins : sur (5 ; 5) les décalages « + 1 » étaient
+           tous ramenés au point lui-même et il ne restait aucun distracteur */
+        const pts = new Set();
+        if (x !== y) pts.add(`(${y} ; ${x})`);   // l'inversion des coordonnées, l'erreur classique
+        for (const [dx, dy] of shuffle([[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [2, 0], [0, 2], [-2, 0], [0, -2]])) {
+          if (pts.size >= 3) break;
+          const nx = x + dx, ny = y + dy;
+          if (nx >= 0 && nx <= size && ny >= 0 && ny <= size) pts.add(`(${nx} ; ${ny})`);
+        }
+        return q({ category: 'Coordonnées', prompt: 'Quelles sont les coordonnées du point ?', svg: svgGridPoint(x, y, size), answer: correct, options: mkOptions(correct, [...pts]), limit: 20 });
+      } },
     { id: 'symetrie', title: 'Axe de symétrie', explanation: "Une figure a un axe de symétrie si on peut la plier en deux parts identiques le long de cette ligne.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const s = SYMMETRY_SHAPES[rnd(0, SYMMETRY_SHAPES.length - 1)]; const correct = s.symmetric ? 'Oui' : 'Non'; return q({ category: 'Symétrie', prompt: 'La ligne pointillée est-elle un axe de symétrie ?', svg: s.svg, answer: correct, options: ['Oui', 'Non'], limit: 18 }); } },
     { id: 'droites', title: 'Droites parallèles, perpendiculaires, sécantes', explanation: "Parallèles : ne se croisent jamais. Perpendiculaires : se croisent à angle droit. Sécantes : se croisent ailleurs.", levels: ['cm2', 'sixieme', 'singapour'],
@@ -703,13 +782,13 @@ function buildSkillQuiz(domainId, skillId, count) {
 function startQuiz(kind, builderFn, bestKey) {
   clearTimer();
   const questions = builderFn();
-  state.quiz = { kind, rebuild: builderFn, bestKey, index: 0, score: 0, questions, answered: false, lastChosen: null, timeLeft: questions[0].limit, timerHandle: null, times: [], catStats: {} };
+  state.quiz = { kind, rebuild: builderFn, bestKey, index: 0, score: 0, questions, answered: false, lastChosen: null, timeLeft: questions[0].limit, timerHandle: null, times: [], catStats: {}, pause: false, gain: null };
   state.screen = 'quiz'; render(); runTimer();
 }
 function runTimer() {
   clearTimer();
   state.quiz.timerHandle = setInterval(() => {
-    if (!state.quiz || state.quiz.answered) return;
+    if (!state.quiz || state.quiz.answered || state.quiz.pause) return;
     state.quiz.timeLeft--;
     if (state.quiz.timeLeft <= 0) { clearTimer(); answerQuiz(null); } else render();
   }, 1000);
@@ -726,7 +805,12 @@ function answerQuiz(chosen) {
   render();
   setTimeout(() => {
     if (qz.index < qz.questions.length - 1) { qz.index++; qz.answered = false; qz.lastChosen = null; qz.timeLeft = qz.questions[qz.index].limit; render(); runTimer(); }
-    else { const total = qz.questions.length; const pct = Math.round((qz.score / total) * 100); if (qz.bestKey) saveBest(qz.bestKey, pct); state.screen = 'quizResults'; render(); }
+    else {
+      const total = qz.questions.length; const pct = Math.round((qz.score / total) * 100);
+      if (qz.bestKey) saveBest(qz.bestKey, pct);
+      qz.gain = attribuerRecompense(pct);
+      state.screen = 'quizResults'; render();
+    }
   }, 1100);
 }
 
@@ -743,6 +827,18 @@ function render() {
 }
 function attachListeners() { document.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction)); }
 
+/* Le coffre à jetons, visible dès l'accueil : c'est ce qui donne envie de
+   relancer un quiz. Les jetons et les hamsters sont communs aux trois niveaux. */
+function renderRecompenses() {
+  const jetons = getJetons(), hamsters = getHamsters();
+  const cases = Array.from({ length: JETONS_PAR_HAMSTER }, (_, i) => `<span class="token${i < jetons ? '' : ' vide'}">🐱</span>`).join('');
+  return `<div class="reward-strip">
+    <div class="reward-head"><span class="reward-label">Mes jetons chatons</span><span class="reward-count">${jetons} / ${JETONS_PAR_HAMSTER}</span></div>
+    <div class="token-row">${cases}</div>
+    ${hamsters ? `<div class="reward-hamsters">🐹 ${hamsters} hamster${hamsters > 1 ? 's' : ''} gagné${hamsters > 1 ? 's' : ''} !</div>` : `<div class="reward-hamsters">Encore ${JETONS_PAR_HAMSTER - jetons} chaton${JETONS_PAR_HAMSTER - jetons > 1 ? 's' : ''} pour gagner un hamster 🐹</div>`}
+  </div>`;
+}
+
 function renderHome() {
   const cards = [...(tricksForLevel(state.level).length ? [{ id: 'astuces', emoji: '🧠', title: 'Astuces calcul mental', desc: "Des exercices générés à l'infini" }] : []),
     ...domainesPourNiveau(state.level).map(({ d, n }) => ({ id: d.id, emoji: d.emoji, title: d.title, desc: `${n} compétence${n > 1 ? 's' : ''}` }))]
@@ -750,6 +846,7 @@ function renderHome() {
   return `<div class="screen">
     <h1>🎓 Maths Malin</h1>
     <p class="subtitle">${state.level === 'singapour' ? 'Méthode de Singapour · Primary 6' : 'Programme complet CM2 &amp; 6ème'}</p>
+    ${renderRecompenses()}
     <div class="level-switch">${LEVELS.map(l => `<button class="level-btn ${state.level === l.id ? 'active' : ''}" data-action="set-level" data-level="${l.id}">${l.label}</button>`).join('')}</div>
     ${cards}
   </div>`;
@@ -794,15 +891,29 @@ function renderQuiz() {
   const qz = state.quiz; const cur = qz.questions[qz.index]; const total = qz.questions.length;
   const pctLeft = Math.max(0, Math.round((qz.timeLeft / cur.limit) * 100));
   const low = qz.timeLeft <= Math.ceil(cur.limit * 0.3);
-  const optionsHtml = cur.options.map(opt => { let cls = 'option-btn'; if (qz.answered) { if (opt === cur.answer) cls += ' correct'; else if (opt === qz.lastChosen) cls += ' wrong'; } return `<button class="${cls}" data-action="answer-quiz" data-value="${opt}" ${qz.answered ? 'disabled' : ''}>${opt}</button>`; }).join('');
-  return `<div class="screen">
-    <div class="quiz-topbar"><div class="quiz-progress">${cur.category} · ${qz.index + 1}/${total}</div><div class="quiz-score">⭐ ${qz.score}</div></div>
-    <div class="timer-wrap"><div class="timer-bar-bg"><div class="timer-bar-fill ${low ? 'low' : ''}" style="width:${pctLeft}%"></div></div><div class="timer-num">${Math.max(0, qz.timeLeft)} s</div></div>
-    <div class="question-card">
+  const optionsHtml = cur.options.map(opt => { let cls = 'option-btn'; if (qz.answered) { if (opt === cur.answer) cls += ' correct'; else if (opt === qz.lastChosen) cls += ' wrong'; } return `<button class="${cls}" data-action="answer-quiz" data-value="${opt}" ${qz.answered || qz.pause ? 'disabled' : ''}>${opt}</button>`; }).join('');
+  const carteQuestion = qz.pause
+    ? `<div class="pause-panel"><div class="pause-emoji">⏸️</div><div class="pause-title">Pause</div><div class="pause-note">Le chrono est arrêté. La question réapparaîtra quand tu reprendras.</div></div>`
+    : `<div class="question-card">
       ${cur.formula ? `<div class="question-label">${cur.prompt}</div><div class="question-formula">${cur.formula}</div>` : `<div class="question-label">${cur.prompt}</div>${cur.svg ? `<div class="question-shape">${cur.svg}</div>` : ''}${cur.unit ? `<div style="font-size:0.78rem;color:var(--text-secondary);">Réponse en ${cur.unit}</div>` : ''}`}
-    </div>
+    </div>`;
+  return `<div class="screen">
+    <div class="quiz-topbar"><div class="quiz-progress">${cur.category} · ${qz.index + 1}/${total}</div><button class="btn-pause" data-action="toggle-pause">${qz.pause ? '▶ Reprendre' : '⏸ Pause'}</button><div class="quiz-score">⭐ ${qz.score}</div></div>
+    <div class="timer-wrap"><div class="timer-bar-bg"><div class="timer-bar-fill ${low ? 'low' : ''}" style="width:${pctLeft}%"></div></div><div class="timer-num">${Math.max(0, qz.timeLeft)} s</div></div>
+    ${carteQuestion}
     <div class="options-grid">${optionsHtml}</div>
   </div>`;
+}
+
+/* Ce qui vient d'être gagné, annoncé juste sous le score. `gain` est calculé
+   une seule fois en fin de quiz, jamais au moment du rendu. */
+function renderGain(gain, pct) {
+  if (!gain) return '';
+  if (gain.hamster) return `<div class="hamster-card"><div class="hamster-emoji">🐹</div><div class="hamster-title">Tu as gagné un hamster !</div><div class="hamster-note">${JETONS_PAR_HAMSTER} jetons chatons échangés. Tu en as maintenant ${gain.hamsters} au total.</div></div>`;
+  if (gain.jeton) return `<div class="gain-card"><div class="gain-emoji">🐱</div><div class="gain-text">+1 jeton chaton !</div><div class="gain-sub">${gain.jetons} / ${JETONS_PAR_HAMSTER} — encore ${JETONS_PAR_HAMSTER - gain.jetons} pour un hamster 🐹</div></div>`;
+  /* « presque » n'a de sens que si le score en est vraiment proche */
+  const encouragement = pct >= SEUIL_JETON - 20 ? `Tu y es presque : ${pct} % cette fois.` : `Tu as obtenu ${pct} %. Relis la leçon, puis retente ta chance !`;
+  return `<div class="gain-card" style="background:var(--warning-bg);border-color:#E8C98A;"><div class="gain-text" style="color:#8A5510;">Il faut ${SEUIL_JETON} % pour gagner un jeton chaton 🐱</div><div class="gain-sub">${encouragement}</div></div>`;
 }
 
 function renderQuizResults() {
@@ -820,6 +931,7 @@ function renderQuizResults() {
     <div class="results-emoji">${emoji}</div><div class="results-title">${title}</div>
     <div class="results-card"><div class="results-score">${qz.score} / ${total}</div><div class="results-meta">${pct}% de réussite · ${avgTime}s en moyenne par question</div></div>
     ${breakdownHtml}
+    ${renderGain(qz.gain, pct)}
     <div class="verdict-box ${verdictClass}">${verdictText}</div>
     <div class="btn-stack"><button class="btn btn-primary" data-action="retry-quiz">🔄 Rejouer</button><button class="btn btn-secondary" data-action="go-home">← Retour à l'accueil</button></div>
   </div>`;
@@ -839,6 +951,7 @@ function onAction(e) {
   else if (a === 'start-skill-quiz') { const dId = state.currentDomain, sId = state.currentSkill; startQuiz('skill', () => buildSkillQuiz(dId, sId, 8), 'skill-' + dId + '-' + sId + '-' + state.level); }
   else if (a === 'answer-quiz') { state.quiz.lastChosen = e.currentTarget.dataset.value; answerQuiz(e.currentTarget.dataset.value); }
   else if (a === 'retry-quiz') { startQuiz(state.quiz.kind, state.quiz.rebuild, state.quiz.bestKey); }
+  else if (a === 'toggle-pause') { state.quiz.pause = !state.quiz.pause; render(); }
 }
 
 render();
