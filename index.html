@@ -166,6 +166,91 @@
   .install-banner .dismiss-btn { background: transparent; color: white; opacity: 0.8; }
   .install-text { flex: 1; font-size: 0.9rem; }
   .install-help { display: block; font-size: 0.78rem; opacity: 0.85; margin-top: 2px; }
+
+  /* ================= Figures ================= */
+  .fig { width: 190px; max-width: 100%; height: auto; }
+  .fig-large { width: 280px; }
+
+  /* ================= Téléphone en paysage =================
+     Peu de hauteur disponible : on resserre le vertical pour que la question
+     et ses réponses tiennent ensemble à l'écran. */
+  @media (orientation: landscape) and (max-height: 520px) {
+    .screen { padding-top: 0.7rem; padding-bottom: 1rem; }
+    h1 { font-size: 1.25rem; margin-bottom: 0.15rem; }
+    .subtitle { font-size: 0.8rem; margin-bottom: 0.7rem; }
+    .lesson-hero { padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .lesson-emoji { font-size: 1.6rem; margin-bottom: 0.25rem; }
+    .question-card { padding: 0.9rem; margin-bottom: 0.7rem; }
+    .question-formula { font-size: 1.5rem; }
+    .timer-wrap { margin-bottom: 0.7rem; }
+    .fig { width: 130px; }
+    .fig-large { width: 210px; }
+    .results-emoji { font-size: 2.2rem; }
+  }
+
+  /* ================= Tablette =================
+     À partir d'ici l'écran est assez large pour deux colonnes de cartes :
+     une seule colonne étirée sur une tablette laisse des marges énormes. */
+  @media (min-width: 700px) {
+    body { font-size: 15px; }
+    .screen { max-width: 780px; padding: 1.75rem 1.5rem 2.5rem; }
+    h1 { font-size: 1.9rem; }
+    .subtitle { font-size: 1rem; margin-bottom: 1.4rem; }
+    .level-btn { padding: 0.75rem; font-size: 1rem; }
+
+    .cartes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-content: start; }
+    .cartes > .mode-card, .cartes > .trick-card { margin-bottom: 0; }
+    .exemples { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-items: start; }
+    .exemples > .step-card { margin-bottom: 0; }
+
+    .mode-title, .trick-title { font-size: 1.02rem; }
+    .lesson-title { font-size: 1.35rem; }
+    .lesson-explanation { font-size: 1rem; }
+    .cours-card { font-size: 1rem; max-width: 68ch; }
+    .question-formula { font-size: 2.3rem; }
+    .option-btn { padding: 1.15rem; font-size: 1.1rem; }
+    .fig { width: 240px; }
+    .fig-large { width: 320px; }
+    .dictee-saisie { min-height: 190px; font-size: 1.05rem; }
+    .token { font-size: 1.35rem; }
+  }
+
+  /* ================= Tablette en paysage =================
+     La largeur devient la ressource abondante et la hauteur la ressource rare :
+     on met côte à côte ce qui était empilé, pour éviter de faire défiler. */
+  @media (min-width: 900px) and (orientation: landscape) {
+    .screen { max-width: 1080px; }
+    .cartes { grid-template-columns: repeat(3, 1fr); }
+
+    /* la troisième rangée prend toute la hauteur restante et son contenu se
+       centre : sinon question et réponses restent tassées en haut de l'écran */
+    .screen-quiz { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto 1fr; column-gap: 1.6rem; grid-template-areas: "barre barre" "chrono chrono" "question reponses"; }
+    .screen-quiz .quiz-topbar { grid-area: barre; }
+    .screen-quiz .timer-wrap { grid-area: chrono; }
+    .screen-quiz .question-card, .screen-quiz .pause-panel { grid-area: question; margin-bottom: 0; align-self: center; padding: 2rem 1.5rem; }
+    .screen-quiz .options-grid { grid-area: reponses; align-content: center; align-self: center; width: 100%; }
+    .screen-quiz .question-formula { font-size: 2.6rem; }
+    .screen-quiz .option-btn { padding: 1.4rem; font-size: 1.2rem; }
+    .screen-quiz .fig { width: 300px; }
+    .screen-quiz .fig-large { width: 100%; max-width: 420px; }
+
+    .screen-dictee { display: grid; grid-template-columns: 1fr 1fr; column-gap: 1.6rem; align-content: start; grid-template-areas: "retour retour" "titre titre" "ecoute ecriture"; }
+    .screen-dictee .btn-back { grid-area: retour; justify-self: start; }   /* en grille, il s'étirerait et son texte se centrerait */
+    .screen-dictee .lesson-hero { grid-area: titre; }
+    .dictee-ecoute { grid-area: ecoute; }
+    .dictee-ecriture { grid-area: ecriture; }
+    .dictee-ecriture .section-label { margin-top: 0; }
+    .dictee-saisie { min-height: 260px; }
+
+    .exemples { gap: 16px; }
+    .copie { font-size: 1.05rem; }
+  }
+
+  /* ================= Grand écran ================= */
+  @media (min-width: 1200px) {
+    .screen { max-width: 1180px; }
+    .cartes { grid-template-columns: repeat(4, 1fr); }
+  }
 </style>
 </head>
 <body>
@@ -248,7 +333,7 @@ function attribuerRecompense(pct) {
 }
 
 /* ================= SVG helpers ================= */
-function svgWrap(inner) { return `<svg viewBox="0 0 220 180" style="width:190px;height:auto;">${inner}</svg>`; }
+function svgWrap(inner) { return `<svg class="fig" viewBox="0 0 220 180">${inner}</svg>`; }
 function svgSquare(a) {
   return svgWrap(`<rect x="50" y="30" width="120" height="120" fill="none" stroke="#5B4FE8" stroke-width="4"/><text x="110" y="20" text-anchor="middle" font-size="15" fill="#232134">${formatNum(a)} cm</text>`);
 }
@@ -318,7 +403,7 @@ const SYMMETRY_SHAPES = [
 ];
 
 /* ---------- Dessins de la méthode de Singapour ---------- */
-function svgWide(inner, h) { return `<svg viewBox="0 0 300 ${h}" style="width:100%;max-width:280px;height:auto;">${inner}</svg>`; }
+function svgWide(inner, h) { return `<svg class="fig fig-large" viewBox="0 0 300 ${h}">${inner}</svg>`; }
 
 /* Le modèle en barres : une barre par personne, découpée en parts égales.
    `extra` ajoute un bloc distinct pour un écart (« 12 de plus »). */
@@ -1181,7 +1266,9 @@ function pickDistinct(makeFn, keyFn, count) {
   const out = [], seen = new Set();
   for (let i = 0; i < count; i++) {
     let item = makeFn(), key = keyFn(item);
-    for (let a = 0; a < 20 && seen.has(key); a++) { item = makeFn(); key = keyFn(item); }
+    /* 60 essais et non 20 : sur une banque de 10 questions dont 7 déjà tirées,
+       20 essais laissaient encore repasser un doublon dans un quiz sur quarante */
+    for (let a = 0; a < 60 && seen.has(key); a++) { item = makeFn(); key = keyFn(item); }
     seen.add(key); out.push(item);
   }
   return out;
@@ -1343,9 +1430,9 @@ function renderDicteeList() {
     return `<div class="trick-card" data-action="open-dictee" data-id="${d.id}"><div class="trick-emoji">✍️</div><div class="trick-info"><div class="trick-title">${d.titre}</div><div class="mode-desc">${motsDe(d.texte).length} mots · ${d.points}</div>${best !== undefined ? `<div class="trick-progress">✓ Meilleur score : ${best}%</div>` : ''}</div><div class="mode-arrow">→</div></div>`;
   }).join('');
   const alerte = lectureDisponible() ? '' : `<div class="voix-alerte">🔇 Aucune voix française n'a été trouvée sur cet appareil. La dictée peut être lue par un adulte : le texte reste caché jusqu'à la correction.</div>`;
-  return `<div class="screen"><button class="btn-back" data-action="go-home">← Retour</button>
+  return `<div class="screen screen-liste"><button class="btn-back" data-action="go-home">← Retour</button>
     <h1>✍️ Dictée</h1><p class="subtitle">Niveau ${levelLabel(state.level)}</p>
-    ${alerte}${cartes}</div>`;
+    ${alerte}<div class="cartes">${cartes}</div></div>`;
 }
 
 function renderDictee() {
@@ -1354,9 +1441,10 @@ function renderDictee() {
   const i = state.dictee.phrase;
   const lente = state.dictee.vitesse < 0.85;
   const dispo = lectureDisponible();
-  return `<div class="screen"><button class="btn-back" data-action="back-to-dictees">← Retour</button>
+  return `<div class="screen screen-dictee"><button class="btn-back" data-action="back-to-dictees">← Retour</button>
     <div class="lesson-hero"><div class="lesson-emoji">✍️</div><div class="lesson-title">${d.titre}</div><div class="lesson-explanation">Écoute, puis écris ce que tu entends. Tu peux réécouter autant de fois que tu veux.</div></div>
 
+    <div class="dictee-ecoute">
     <div class="dictee-lecteur">
       <div class="dictee-phrase-info">Phrase ${i + 1} sur ${phrases.length}</div>
       <div class="btn-stack">
@@ -1380,11 +1468,14 @@ function renderDictee() {
       ${phrases.map((ph, k) => `<div class="phrase-lire ${k === i ? 'courante' : ''}"><span class="phrase-num">${k + 1}.</span><span>${ph}</span></div>`).join('')}
       <div class="btn-stack" style="margin-top:0.7rem;"><button class="btn-parent" data-action="cacher-texte">Masquer le texte</button></div>
     </div>` : `<div class="btn-stack" style="margin-bottom:1.1rem;"><button class="btn-parent" data-action="afficher-texte">👀 Afficher le texte (parent) — pour dicter soi-même</button></div>`}
+    </div>
 
-    <div class="section-label">Ta dictée</div>
-    <textarea id="dictee-saisie" class="dictee-saisie" rows="7" placeholder="Écris ici ce que tu entends…" spellcheck="false" autocorrect="off" autocapitalize="off">${state.dictee.saisi.replace(/</g, '&lt;')}</textarea>
-    <div class="btn-stack" style="margin-top:0.6rem;">
-      <button class="btn btn-primary" data-action="corriger-dictee">✅ Corriger ma dictée</button>
+    <div class="dictee-ecriture">
+      <div class="section-label">Ta dictée</div>
+      <textarea id="dictee-saisie" class="dictee-saisie" rows="7" placeholder="Écris ici ce que tu entends…" spellcheck="false" autocorrect="off" autocapitalize="off">${state.dictee.saisi.replace(/</g, '&lt;')}</textarea>
+      <div class="btn-stack" style="margin-top:0.6rem;">
+        <button class="btn btn-primary" data-action="corriger-dictee">✅ Corriger ma dictée</button>
+      </div>
     </div>
   </div>`;
 }
@@ -1411,7 +1502,7 @@ function renderDicteeResult() {
     ajouts ? `${ajouts} mot${ajouts > 1 ? 's' : ''} en trop` : ''
   ].filter(Boolean).join(' · ') || 'Aucune erreur';
 
-  return `<div class="screen">
+  return `<div class="screen screen-resultat">
     <div class="results-emoji">${emoji}</div><div class="results-title">${titre}</div>
     <div class="results-card"><div class="results-score">${r.justes} / ${r.total}</div><div class="results-meta">${r.pct}% de mots justes · ${detail}</div></div>
     ${renderGain(state.dictee.gain, r.pct)}
@@ -1486,12 +1577,12 @@ function renderHome() {
     ...(dicteesPourNiveau(state.level).length ? [{ id: 'dictee', emoji: '✍️', title: 'Dictée', desc: `${dicteesPourNiveau(state.level).length} textes lus à voix haute` }] : []),
     ...domainesPourNiveau(state.level).map(({ d, n }) => ({ id: d.id, emoji: d.emoji, title: d.title, desc: `${n} compétence${n > 1 ? 's' : ''}` }))]
     .map(c => `<div class="mode-card" data-action="open-domain" data-id="${c.id}"><div class="mode-emoji">${c.emoji}</div><div class="mode-info"><div class="mode-title">${c.title}</div><div class="mode-desc">${c.desc}</div></div><div class="mode-arrow">→</div></div>`).join('');
-  return `<div class="screen">
+  return `<div class="screen screen-home">
     <h1>🎓 Révise Malin</h1>
-    <p class="subtitle">${state.level === 'singapour' ? 'Méthode de Singapour · Primary 6' : 'Programme complet CM2 &amp; 6ème'}</p>
+    <p class="subtitle">${state.level === 'singapour' ? 'Méthode de Singapour · Primary 6' : 'Maths, histoire, géographie et dictée'}</p>
     ${renderRecompenses()}
     <div class="level-switch">${LEVELS.map(l => `<button class="level-btn ${state.level === l.id ? 'active' : ''}" data-action="set-level" data-level="${l.id}">${l.label}</button>`).join('')}</div>
-    ${cards}
+    <div class="cartes">${cards}</div>
   </div>`;
 }
 
@@ -1499,21 +1590,21 @@ function renderSkillList() {
   if (state.currentDomain === 'astuces') {
     const list = tricksForLevel(state.level);
     const cards = list.map(t => { const best = getBest('mental-' + t.id + '-' + state.level); return `<div class="trick-card" data-action="open-mental" data-id="${t.id}"><div class="trick-emoji">${t.emoji}</div><div class="trick-info"><div class="trick-title">${t.title}</div>${best !== undefined ? `<div class="trick-progress">✓ Meilleur score : ${best}%</div>` : ''}</div><div class="mode-arrow">→</div></div>`; }).join('');
-    return `<div class="screen"><button class="btn-back" data-action="go-home">← Retour</button><h1>🧠 Astuces calcul mental</h1><p class="subtitle">Niveau ${levelLabel(state.level)}</p>${cards}</div>`;
+    return `<div class="screen screen-liste"><button class="btn-back" data-action="go-home">← Retour</button><h1>🧠 Astuces calcul mental</h1><p class="subtitle">Niveau ${levelLabel(state.level)}</p><div class="cartes">${cards}</div></div>`;
   }
   const d = getDomain(state.currentDomain);
   const list = skillsForLevel(state.currentDomain, state.level);
   const cards = list.map(s => { const best = getBest('skill-' + d.id + '-' + s.id + '-' + state.level); return `<div class="trick-card" data-action="open-skill" data-id="${s.id}"><div class="trick-emoji">${d.emoji}</div><div class="trick-info"><div class="trick-title">${s.title}</div>${best !== undefined ? `<div class="trick-progress">✓ Meilleur score : ${best}%</div>` : ''}</div><div class="mode-arrow">→</div></div>`; }).join('');
-  return `<div class="screen"><button class="btn-back" data-action="go-home">← Retour</button><h1>${d.emoji} ${d.title}</h1><p class="subtitle">Niveau ${levelLabel(state.level)}</p>${cards || '<p class="subtitle">Aucune compétence pour ce niveau pour le moment.</p>'}</div>`;
+  return `<div class="screen screen-liste"><button class="btn-back" data-action="go-home">← Retour</button><h1>${d.emoji} ${d.title}</h1><p class="subtitle">Niveau ${levelLabel(state.level)}</p><div class="cartes">${cards || '<p class="subtitle">Aucune compétence pour ce niveau pour le moment.</p>'}</div></div>`;
 }
 
 function renderMentalLesson() {
   const t = getTrick(state.mentalTrickId);
   const [ex1, ex2] = pickDistinct(() => t.gen(state.level), (e) => e.formula, 2);
-  return `<div class="screen"><button class="btn-back" data-action="back-to-list">← Retour</button>
+  return `<div class="screen screen-lecon"><button class="btn-back" data-action="back-to-list">← Retour</button>
     <div class="lesson-hero"><div class="lesson-emoji">${t.emoji}</div><div class="lesson-title">${t.title}</div><div class="lesson-explanation">${t.explanation}</div></div>
     <div class="section-label">Exemples</div>
-    ${[ex1, ex2].map(ex => `<div class="step-card"><div class="step-formula">${ex.formula}</div><div class="step-breakdown">${ex.breakdown}</div><div class="step-result">= ${formatNum(ex.result)}</div></div>`).join('')}
+    <div class="exemples">${[ex1, ex2].map(ex => `<div class="step-card"><div class="step-formula">${ex.formula}</div><div class="step-breakdown">${ex.breakdown}</div><div class="step-result">= ${formatNum(ex.result)}</div></div>`).join('')}</div>
     <div class="btn-stack" style="margin-top:0.5rem;"><button class="btn btn-secondary" data-action="regen">🔀 De nouveaux exemples</button><button class="btn btn-primary" data-action="start-mental-quiz">✨ Pratiquer (8 questions, chrono)</button></div>
   </div>`;
 }
@@ -1522,7 +1613,7 @@ function renderMentalLesson() {
    retenir, puis le quiz. Pas d'exemples générés ici, il n'y a rien à tirer. */
 function renderCours(s, d) {
   const reperes = s.reperes ? `<div class="reperes">${s.reperes.map(r => `<div class="repere"><span class="repere-cle">${r[0]}</span><span>${r[1]}</span></div>`).join('')}</div>` : '';
-  return `<div class="screen"><button class="btn-back" data-action="back-to-list">← Retour</button>
+  return `<div class="screen screen-lecon"><button class="btn-back" data-action="back-to-list">← Retour</button>
     <div class="lesson-hero"><div class="lesson-emoji">${d.emoji}</div><div class="lesson-title">${s.title}</div><div class="lesson-explanation">${s.explanation}</div></div>
     <div class="section-label">La leçon</div>
     <div class="cours-card">${s.cours.map(par => `<p>${par}</p>`).join('')}${reperes}</div>
@@ -1535,10 +1626,10 @@ function renderSkillLesson() {
   if (s.cours) return renderCours(s, d);
   const [ex1, ex2] = pickDistinct(() => s.question(state.level), lessonKey, 2);
   const exCard = (ex) => `<div class="step-card">${ex.formula ? `<div class="step-formula">${ex.formula}</div>` : `<div class="step-breakdown" style="margin-top:0;">${ex.prompt}</div>`}${ex.svg ? `<div class="step-shape">${ex.svg}</div>` : ''}<div class="step-result">Réponse : ${ex.answer}${ex.unit ? ' ' + ex.unit : ''}</div></div>`;
-  return `<div class="screen"><button class="btn-back" data-action="back-to-list">← Retour</button>
+  return `<div class="screen screen-lecon"><button class="btn-back" data-action="back-to-list">← Retour</button>
     <div class="lesson-hero"><div class="lesson-emoji">${d.emoji}</div><div class="lesson-title">${s.title}</div><div class="lesson-explanation">${s.explanation}</div></div>
     <div class="section-label">Exemples</div>
-    ${exCard(ex1)}${exCard(ex2)}
+    <div class="exemples">${exCard(ex1)}${exCard(ex2)}</div>
     <div class="btn-stack" style="margin-top:0.5rem;"><button class="btn btn-secondary" data-action="regen">🔀 De nouveaux exemples</button><button class="btn btn-primary" data-action="start-skill-quiz">✨ Pratiquer (8 questions, chrono)</button></div>
   </div>`;
 }
@@ -1553,7 +1644,7 @@ function renderQuiz() {
     : `<div class="question-card">
       ${cur.formula ? `<div class="question-label">${cur.prompt}</div><div class="question-formula">${cur.formula}</div>` : `<div class="question-label">${cur.prompt}</div>${cur.svg ? `<div class="question-shape">${cur.svg}</div>` : ''}${cur.unit ? `<div style="font-size:0.78rem;color:var(--text-secondary);">Réponse en ${cur.unit}</div>` : ''}`}
     </div>`;
-  return `<div class="screen">
+  return `<div class="screen screen-quiz">
     <div class="quiz-topbar"><div class="quiz-progress">${cur.category} · ${qz.index + 1}/${total}</div><button class="btn-pause" data-action="toggle-pause">${qz.pause ? '▶ Reprendre' : '⏸ Pause'}</button><div class="quiz-score">⭐ ${qz.score}</div></div>
     <div class="timer-wrap"><div class="timer-bar-bg"><div class="timer-bar-fill ${low ? 'low' : ''}" style="width:${pctLeft}%"></div></div><div class="timer-num">${Math.max(0, qz.timeLeft)} s</div></div>
     ${carteQuestion}
@@ -1583,7 +1674,7 @@ function renderQuizResults() {
   else if (pct < 80) { verdictClass = 'verdict-mid'; verdictText = 'Bonne base ! Encore un peu de pratique pour bien maîtriser.'; }
   const cats = Object.keys(qz.catStats);
   const breakdownHtml = cats.length > 1 ? `<div class="breakdown-list">${cats.map(c => `<div class="breakdown-row"><span>${c}</span><span>${qz.catStats[c].correct}/${qz.catStats[c].total}</span></div>`).join('')}</div>` : '';
-  return `<div class="screen">
+  return `<div class="screen screen-resultat">
     <div class="results-emoji">${emoji}</div><div class="results-title">${title}</div>
     <div class="results-card"><div class="results-score">${qz.score} / ${total}</div><div class="results-meta">${pct}% de réussite · ${avgTime}s en moyenne par question</div></div>
     ${breakdownHtml}
