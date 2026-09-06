@@ -2,6 +2,18 @@
 
 Application de révision pour le CM2 et la 6ème : **maths**, **histoire**, **géographie** et **dictée**. Fonctionne hors-ligne une fois installée.
 
+### Téléphone, tablette et rotation
+
+L'affichage s'adapte à trois formats :
+
+- **Téléphone en portrait** : une colonne, comme avant.
+- **Tablette** (à partir de 700 px de large) : les rubriques passent en deux colonnes, les textes et les figures grossissent, les deux exemples d'une leçon se mettent côte à côte.
+- **Tablette en paysage** (à partir de 900 px) : trois colonnes de rubriques, et surtout deux colonnes utiles — la question à gauche et les réponses à droite pour un quiz, l'écoute à gauche et la saisie à droite pour une dictée. Tout tient à l'écran sans défiler.
+
+Un téléphone tenu à l'horizontale bénéficie d'un réglage à part : les marges verticales se resserrent pour que la question et ses réponses restent visibles ensemble malgré le peu de hauteur.
+
+Le manifeste déclare `"orientation": "any"`. C'est indispensable : avec `portrait`, l'application installée ignore purement et simplement la rotation de la tablette. L'adaptation se fait entièrement en CSS, donc tourner l'appareil en plein quiz ne perd ni la question en cours, ni le chrono, ni le texte déjà saisi dans une dictée.
+
 ### Histoire et géographie
 
 Chaque chapitre commence par une leçon à lire, avec ses repères à retenir, puis un quiz de 8 questions tirées d'une banque écrite à la main (10 à 12 questions par chapitre). Quatre chapitres d'histoire et quatre de géographie en CM2, trois et quatre en 6ème.
