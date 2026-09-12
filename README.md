@@ -1,4 +1,4 @@
-# Révise Malin — CM2 & 6ème (PWA)
+# Maths Malin — CM2 & 6ème (PWA)
 
 Application de révision pour le CM2 et la 6ème : **maths**, **histoire**, **géographie** et **dictée**. Fonctionne hors-ligne une fois installée.
 

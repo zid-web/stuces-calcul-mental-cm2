@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Révise Malin — CM2 &amp; 6ème</title>
+<title>Maths Malin — CM2 &amp; 6ème</title>
 <meta name="theme-color" content="#5B4FE8">
 <meta name="description" content="Réviser en CM2 et 6ème : maths, histoire, géographie et dictée. Méthode de Singapour incluse.">
 <link rel="manifest" href="manifest.json">
@@ -1578,7 +1578,7 @@ function renderHome() {
     ...domainesPourNiveau(state.level).map(({ d, n }) => ({ id: d.id, emoji: d.emoji, title: d.title, desc: `${n} compétence${n > 1 ? 's' : ''}` }))]
     .map(c => `<div class="mode-card" data-action="open-domain" data-id="${c.id}"><div class="mode-emoji">${c.emoji}</div><div class="mode-info"><div class="mode-title">${c.title}</div><div class="mode-desc">${c.desc}</div></div><div class="mode-arrow">→</div></div>`).join('');
   return `<div class="screen screen-home">
-    <h1>🎓 Révise Malin</h1>
+    <h1>🎓 Maths Malin</h1>
     <p class="subtitle">${state.level === 'singapour' ? 'Méthode de Singapour · Primary 6' : 'Maths, histoire, géographie et dictée'}</p>
     ${renderRecompenses()}
     <div class="level-switch">${LEVELS.map(l => `<button class="level-btn ${state.level === l.id ? 'active' : ''}" data-action="set-level" data-level="${l.id}">${l.label}</button>`).join('')}</div>
