@@ -1,6 +1,6 @@
 {
-  "name": "Révise Malin — CM2 & 6ème",
-  "short_name": "Révise Malin",
+  "name": "Maths Malin — CM2 & 6ème",
+  "short_name": "Maths Malin",
   "description": "Réviser en CM2 et 6ème : maths, histoire, géographie et dictée. Méthode de Singapour incluse.",
   "start_url": "./index.html",
   "scope": "./",
