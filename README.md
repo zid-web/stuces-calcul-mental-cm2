@@ -2,6 +2,18 @@
 
 Application de révision pour le CM2 et la 6ème : **maths** (méthode de Singapour incluse), **histoire**, **géographie**, **sciences et technologie**, **éducation civique** et **dictée**. Fonctionne hors-ligne une fois installée.
 
+### Correction et explication de chaque erreur
+
+Une réponse fausse — ou un chrono écoulé — **arrête le quiz** sur une carte de correction : la réponse donnée barrée, la bonne réponse, et un « Pourquoi ? » qui explique. C'est l'enfant qui appuie sur « J'ai compris, continuer » : il lit à son rythme, sans que le quiz défile. Une bonne réponse, elle, enchaîne toute seule comme avant.
+
+À la fin du quiz, une section **À revoir** reprend chaque erreur : l'énoncé, la réponse donnée, la bonne réponse et l'explication. C'est là que se fait le vrai travail, une fois la pression du chrono retombée.
+
+Les explications viennent de trois sources, de la plus précise à la plus générale :
+
+1. Une explication **écrite pour cette question** — les 262 questions d'histoire, de géographie, de sciences et d'éducation civique en ont une, et les problèmes de la méthode de Singapour affichent le calcul détaillé avec leurs propres nombres.
+2. La **décomposition de l'astuce** pour le calcul mental (« On ajoute un zéro : 36 → 360 »).
+3. Sinon, la **règle de la compétence**, qui est la méthode à appliquer.
+
 ### La séance du jour
 
 En haut de l'accueil, une **séance du jour** de trois étapes, à faire en une dizaine de minutes :
@@ -94,4 +106,4 @@ Chaque envoi sur la branche `main` redéploie automatiquement le site.
 ## Personnalisation
 Les leçons et exercices sont définis dans les données en haut du `<script>` d'`index.html` : `TRICKS` pour les astuces, `DOMAINS` pour les matières, `DICTEES` pour les textes de dictée. Tu peux en ajouter d'autres en suivant le même format.
 
-Après chaque modification des fichiers, pense à incrémenter `CACHE_NAME` dans `sw.js` (`calcul-cm2-v7` → `v8`, etc.) pour que les appareils déjà installés récupèrent bien la nouvelle version.
+Après chaque modification des fichiers, pense à incrémenter `CACHE_NAME` dans `sw.js` (`calcul-cm2-v8` → `v9`, etc.) pour que les appareils déjà installés récupèrent bien la nouvelle version.
