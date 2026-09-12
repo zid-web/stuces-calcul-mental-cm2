@@ -110,6 +110,22 @@
   .pause-title { font-weight: 700; font-size: 1.05rem; margin-bottom: 0.3rem; }
   .pause-note { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; }
 
+  .seance { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1rem; margin-bottom: 1rem; }
+  .seance-finie { border-color: #A6DFCB; background: var(--success-bg); }
+  .seance-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 0.7rem; }
+  .seance-titre { font-weight: 700; font-size: 1rem; }
+  .seance-sous { font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px; }
+  .serie { font-size: 1rem; font-weight: 700; color: var(--danger); white-space: nowrap; }
+  .seance-barre { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; margin-bottom: 0.8rem; }
+  .seance-barre-jauge { height: 100%; background: var(--purple); border-radius: 3px; transition: width 0.3s; }
+  .etape { display: flex; align-items: center; gap: 10px; padding: 0.6rem 0; border-top: 1px solid var(--border); cursor: pointer; }
+  .etape:active { opacity: 0.7; }
+  .etape-coche { width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); }
+  .etape.faite .etape-coche { background: var(--success); border-color: var(--success); color: #FFFFFF; }
+  .etape.faite .etape-titre { text-decoration: line-through; color: var(--text-secondary); }
+  .etape-info { flex: 1; min-width: 0; }
+  .etape-titre { font-weight: 600; font-size: 0.92rem; }
+  .etape-detail { font-size: 0.76rem; color: var(--text-secondary); }
   .reward-strip { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 0.8rem 0.9rem; margin-bottom: 1rem; }
   .reward-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.5rem; gap: 8px; }
   .reward-label { font-size: 0.82rem; font-weight: 700; }
@@ -1190,6 +1206,223 @@ const DOMAINS = [
         { cat: 'Monde habité', prompt: "La population mondiale est-elle répartie de façon égale ?", answer: 'Non, très inégalement', faux: ['Oui, partout pareil', 'Oui, sauf en Europe', 'Oui, depuis 2000'] }
       ]); } }
   ] },
+
+  /* ========== Sciences et technologie ========== */
+  { id: 'sciences', emoji: '🔬', title: 'Sciences et technologie', skills: [
+    { id: 'sci-matiere', title: 'La matière et ses états', explanation: "Solide, liquide, gaz : reconnaître les états de la matière et les changements qui font passer de l'un à l'autre.", levels: ['cm2', 'sixieme'],
+      cours: [
+        "La matière existe sous trois <strong>états</strong> : <strong>solide</strong> (il a sa forme propre), <strong>liquide</strong> (il prend la forme du récipient et sa surface est plane) et <strong>gazeux</strong> (il occupe tout l'espace disponible).",
+        "L'eau change d'état selon la température. À <strong>0 °C</strong> elle gèle : c'est la <strong>solidification</strong>. La glace qui redevient liquide, c'est la <strong>fusion</strong>. À <strong>100 °C</strong> l'eau bout et devient vapeur : c'est la <strong>vaporisation</strong>. La vapeur qui redevient liquide, c'est la <strong>condensation</strong>.",
+        "Lors d'un changement d'état, la <strong>masse ne change pas</strong> : un litre d'eau congelé pèse toujours autant. Le <strong>volume</strong>, lui, peut changer — l'eau prend plus de place en gelant, c'est pourquoi une bouteille pleine éclate au congélateur.",
+        "Un <strong>mélange</strong> peut être <strong>homogène</strong> (on ne distingue pas les constituants, comme l'eau salée) ou <strong>hétérogène</strong> (on les distingue, comme l'eau et le sable). Pour séparer, on utilise la <strong>décantation</strong>, la <strong>filtration</strong> ou l'<strong>évaporation</strong>."
+      ],
+      reperes: [['0 °C', "L'eau gèle"], ['100 °C', "L'eau bout"], ['Fusion', 'Solide vers liquide'], ['Homogène', 'On ne distingue pas les constituants']],
+      question() { return questionDeBanque([
+        { cat: 'Matière', prompt: "Combien y a-t-il d'états de la matière ?", answer: 'Trois', faux: ['Deux', 'Quatre', 'Cinq'] },
+        { cat: 'Matière', prompt: "À quelle température l'eau gèle-t-elle ?", answer: '0 °C', faux: ['100 °C', '10 °C', '-100 °C'] },
+        { cat: 'Matière', prompt: "À quelle température l'eau bout-elle ?", answer: '100 °C', faux: ['0 °C', '50 °C', '200 °C'] },
+        { cat: 'Matière', prompt: "Comment appelle-t-on le passage de solide à liquide ?", answer: 'La fusion', faux: ['La solidification', "L'évaporation", 'La condensation'] },
+        { cat: 'Matière', prompt: "Que devient la masse de l'eau quand elle gèle ?", answer: 'Elle ne change pas', faux: ['Elle augmente', 'Elle diminue', 'Elle double'] },
+        { cat: 'Matière', prompt: "Pourquoi une bouteille pleine éclate-t-elle au congélateur ?", answer: "L'eau prend plus de place en gelant", faux: ['Le verre rétrécit', "L'eau devient plus lourde", 'Le froid dilate le plastique'] },
+        { cat: 'Matière', prompt: "L'eau salée est un mélange...", answer: 'Homogène', faux: ['Hétérogène', 'Solide', 'Gazeux'] },
+        { cat: 'Matière', prompt: "Quelle technique sépare le sable de l'eau ?", answer: 'La filtration', faux: ['La fusion', 'La vaporisation', 'La condensation'] },
+        { cat: 'Matière', prompt: "Comment récupérer le sel d'une eau salée ?", answer: 'Par évaporation', faux: ['Par filtration', 'Par congélation', 'Par décantation'] },
+        { cat: 'Matière', prompt: "Quelle est la particularité d'un gaz ?", answer: "Il occupe tout l'espace disponible", faux: ['Il a sa forme propre', 'Sa surface est plane', 'Il ne pèse rien'] },
+        { cat: 'Matière', prompt: "La buée sur une vitre froide est due à...", answer: 'La condensation', faux: ['La fusion', 'La solidification', 'La filtration'] }
+      ]); } },
+
+    { id: 'sci-energie', title: "L'énergie et ses formes", explanation: "D'où vient l'énergie que nous utilisons, et comment elle se transforme.", levels: ['cm2', 'sixieme'],
+      cours: [
+        "L'<strong>énergie</strong> est ce qui permet d'agir : chauffer, éclairer, mettre en mouvement. Elle existe sous plusieurs formes — <strong>lumineuse</strong>, <strong>thermique</strong> (chaleur), <strong>électrique</strong>, <strong>mécanique</strong> (mouvement), <strong>chimique</strong> (dans les aliments et les carburants).",
+        "On distingue les sources <strong>renouvelables</strong>, qui se reconstituent sans cesse — <strong>soleil</strong>, <strong>vent</strong>, <strong>eau</strong>, <strong>biomasse</strong>, <strong>géothermie</strong> — et les sources <strong>non renouvelables</strong>, en quantité limitée : <strong>charbon</strong>, <strong>pétrole</strong>, <strong>gaz</strong>, <strong>uranium</strong>.",
+        "L'énergie ne se crée pas et ne disparaît pas : elle se <strong>transforme</strong>. Une lampe transforme l'énergie électrique en lumière et en chaleur ; une éolienne transforme le mouvement du vent en électricité.",
+        "Un <strong>circuit électrique</strong> simple a besoin d'un <strong>générateur</strong> (la pile), de <strong>fils conducteurs</strong> et d'un <strong>récepteur</strong> (la lampe). Le circuit doit être <strong>fermé</strong> pour que le courant circule. Les métaux sont <strong>conducteurs</strong> ; le plastique, le bois et le verre sont <strong>isolants</strong>."
+      ],
+      reperes: [['Renouvelable', 'Soleil, vent, eau, biomasse, géothermie'], ['Non renouvelable', 'Charbon, pétrole, gaz, uranium'], ['Circuit fermé', 'Condition pour que le courant passe'], ['Conducteur', 'Les métaux laissent passer le courant']],
+      question() { return questionDeBanque([
+        { cat: 'Énergie', prompt: "Laquelle de ces sources d'énergie est renouvelable ?", answer: 'Le vent', faux: ['Le charbon', 'Le pétrole', "L'uranium"] },
+        { cat: 'Énergie', prompt: "Laquelle de ces sources d'énergie n'est pas renouvelable ?", answer: 'Le pétrole', faux: ['Le soleil', "L'eau", 'Le vent'] },
+        { cat: 'Énergie', prompt: "Que fait l'énergie : elle se crée ou elle se transforme ?", answer: 'Elle se transforme', faux: ['Elle se crée', 'Elle disparaît', 'Elle se multiplie'] },
+        { cat: 'Énergie', prompt: "Que transforme une éolienne ?", answer: "Le mouvement du vent en électricité", faux: ['La lumière en chaleur', "L'eau en vapeur", 'Le charbon en gaz'] },
+        { cat: 'Énergie', prompt: "De quoi a besoin un circuit électrique simple ?", answer: "D'un générateur, de fils et d'un récepteur", faux: ["D'un aimant seulement", "D'eau et de sel", "D'un miroir"] },
+        { cat: 'Énergie', prompt: "Pour que le courant circule, le circuit doit être...", answer: 'Fermé', faux: ['Ouvert', 'Coupé', 'Mouillé'] },
+        { cat: 'Énergie', prompt: "Lequel de ces matériaux est isolant ?", answer: 'Le plastique', faux: ['Le cuivre', 'Le fer', "L'aluminium"] },
+        { cat: 'Énergie', prompt: "Lequel de ces matériaux conduit le courant ?", answer: 'Le cuivre', faux: ['Le bois', 'Le verre', 'Le plastique'] },
+        { cat: 'Énergie', prompt: "Quelle énergie contiennent les aliments ?", answer: "De l'énergie chimique", faux: ["De l'énergie électrique", "De l'énergie lumineuse", "De l'énergie nucléaire"] },
+        { cat: 'Énergie', prompt: "Une lampe allumée produit de la lumière et...", answer: 'De la chaleur', faux: ['Du son', 'Du vent', "De l'eau"] },
+        { cat: 'Énergie', prompt: "D'où vient la quasi-totalité de l'énergie sur Terre à l'origine ?", answer: 'Du Soleil', faux: ['De la Lune', 'Du centre de la Terre', 'Des océans'] }
+      ]); } },
+
+    { id: 'sci-corps', title: 'Le corps humain', explanation: "Digestion, respiration, circulation : comment le corps se nourrit et fonctionne.", levels: ['cm2', 'sixieme'],
+      cours: [
+        "La <strong>digestion</strong> transforme les aliments en nutriments assimilables. Le trajet suit le <strong>tube digestif</strong> : bouche, œsophage, <strong>estomac</strong>, <strong>intestin grêle</strong>, gros intestin. C'est dans l'<strong>intestin grêle</strong> que les nutriments passent dans le sang.",
+        "La <strong>respiration</strong> apporte le <strong>dioxygène</strong> de l'air. Il entre par le nez et la bouche, descend par la trachée jusqu'aux <strong>poumons</strong>. Le sang y prend le dioxygène et y rejette le <strong>dioxyde de carbone</strong>.",
+        "La <strong>circulation</strong> distribue tout cela. Le <strong>cœur</strong> est un muscle qui pompe le sang en permanence. Les <strong>artères</strong> partent du cœur, les <strong>veines</strong> y ramènent le sang.",
+        "Pour rester en bonne santé, il faut une alimentation <strong>variée et équilibrée</strong>, une <strong>activité physique</strong> régulière et un <strong>sommeil</strong> suffisant — un enfant de cet âge a besoin d'environ <strong>9 à 11 heures</strong> de sommeil par nuit."
+      ],
+      reperes: [['Intestin grêle', 'Le passage des nutriments dans le sang'], ['Poumons', 'Échange dioxygène / dioxyde de carbone'], ['Cœur', 'Le muscle qui pompe le sang'], ['Artères', 'Elles partent du cœur']],
+      question() { return questionDeBanque([
+        { cat: 'Corps humain', prompt: "Dans quel organe les nutriments passent-ils dans le sang ?", answer: "L'intestin grêle", faux: ["L'estomac", 'Le foie', 'Le poumon'] },
+        { cat: 'Corps humain', prompt: "Quel gaz le corps prend-il dans l'air ?", answer: 'Le dioxygène', faux: ['Le dioxyde de carbone', "L'azote", "L'hydrogène"] },
+        { cat: 'Corps humain', prompt: "Quel gaz le corps rejette-t-il en respirant ?", answer: 'Le dioxyde de carbone', faux: ['Le dioxygène', "L'azote", 'La vapeur seule'] },
+        { cat: 'Corps humain', prompt: "Quel organe pompe le sang dans tout le corps ?", answer: 'Le cœur', faux: ['Le poumon', "L'estomac", 'Le cerveau'] },
+        { cat: 'Corps humain', prompt: "Les artères transportent le sang...", answer: 'En partant du cœur', faux: ['Vers le cœur', 'Vers l\'estomac seulement', 'Dans les deux sens'] },
+        { cat: 'Corps humain', prompt: "Par quoi commence le tube digestif ?", answer: 'La bouche', faux: ["L'estomac", "L'intestin", "L'œsophage"] },
+        { cat: 'Corps humain', prompt: "De combien d'heures de sommeil un enfant de 11 ans a-t-il besoin ?", answer: 'Environ 9 à 11 heures', faux: ['Environ 4 heures', 'Environ 6 heures', 'Environ 14 heures'] },
+        { cat: 'Corps humain', prompt: "Où arrive l'air après la trachée ?", answer: 'Dans les poumons', faux: ["Dans l'estomac", 'Dans le cœur', 'Dans le foie'] },
+        { cat: 'Corps humain', prompt: "Qu'est-ce qu'une alimentation équilibrée ?", answer: 'Variée, avec des aliments de chaque groupe', faux: ['Uniquement des légumes', 'Uniquement des protéines', 'Sans jamais de féculents'] },
+        { cat: 'Corps humain', prompt: "Que fait la digestion aux aliments ?", answer: 'Elle les transforme en nutriments', faux: ['Elle les fait disparaître', 'Elle les refroidit', 'Elle les transforme en air'] }
+      ]); } },
+
+    { id: 'sci-vivant', title: 'Le monde vivant', explanation: "Classer les êtres vivants et comprendre ce dont ils ont besoin pour vivre.", levels: ['cm2', 'sixieme'],
+      cours: [
+        "Un <strong>être vivant</strong> naît, se nourrit, grandit, se reproduit et meurt. On classe les êtres vivants d'après ce qu'ils <strong>possèdent en commun</strong>, et non d'après ce qui leur manque.",
+        "Les <strong>vertébrés</strong> ont une colonne vertébrale. On y trouve cinq groupes : <strong>mammifères</strong>, <strong>oiseaux</strong>, <strong>reptiles</strong>, <strong>amphibiens</strong> et <strong>poissons</strong>. Les autres animaux sont des <strong>invertébrés</strong> : insectes, araignées, mollusques, vers.",
+        "Les <strong>végétaux verts</strong> fabriquent eux-mêmes leur matière organique à partir d'eau, de <strong>dioxyde de carbone</strong> et de <strong>lumière</strong> : c'est la <strong>photosynthèse</strong>. On les appelle des <strong>producteurs</strong>.",
+        "Dans une <strong>chaîne alimentaire</strong>, chaque être vivant mange le précédent. Elle commence toujours par un <strong>végétal</strong>. Un animal qui ne mange que des végétaux est <strong>herbivore</strong>, celui qui ne mange que des animaux est <strong>carnivore</strong>, celui qui mange les deux est <strong>omnivore</strong>."
+      ],
+      reperes: [['Vertébrés', 'Mammifères, oiseaux, reptiles, amphibiens, poissons'], ['Photosynthèse', 'Les végétaux produisent grâce à la lumière'], ['Chaîne alimentaire', 'Elle commence par un végétal'], ['Omnivore', 'Il mange végétaux et animaux']],
+      question() { return questionDeBanque([
+        { cat: 'Le vivant', prompt: "Combien de groupes de vertébrés distingue-t-on ?", answer: 'Cinq', faux: ['Trois', 'Sept', 'Dix'] },
+        { cat: 'Le vivant', prompt: "Lequel de ces animaux est un invertébré ?", answer: "L'araignée", faux: ['Le chat', 'La grenouille', 'Le saumon'] },
+        { cat: 'Le vivant', prompt: "Comment appelle-t-on la fabrication de matière par les végétaux verts ?", answer: 'La photosynthèse', faux: ['La digestion', 'La respiration', 'La germination'] },
+        { cat: 'Le vivant', prompt: "De quoi les végétaux verts ont-ils besoin pour la photosynthèse ?", answer: "D'eau, de dioxyde de carbone et de lumière", faux: ["De viande et d'eau", "De dioxygène seulement", "De terre uniquement"] },
+        { cat: 'Le vivant', prompt: "Par quoi commence toujours une chaîne alimentaire ?", answer: 'Un végétal', faux: ['Un carnivore', 'Un omnivore', 'Un champignon'] },
+        { cat: 'Le vivant', prompt: "Comment appelle-t-on un animal qui ne mange que des végétaux ?", answer: 'Un herbivore', faux: ['Un carnivore', 'Un omnivore', 'Un producteur'] },
+        { cat: 'Le vivant', prompt: "La grenouille appartient au groupe des...", answer: 'Amphibiens', faux: ['Reptiles', 'Poissons', 'Mammifères'] },
+        { cat: 'Le vivant', prompt: "Sur quoi la classification du vivant se fonde-t-elle ?", answer: 'Sur ce que les êtres vivants ont en commun', faux: ['Sur leur taille', 'Sur ce qui leur manque', 'Sur leur couleur'] },
+        { cat: 'Le vivant', prompt: "Qu'est-ce qui caractérise un vertébré ?", answer: 'Il a une colonne vertébrale', faux: ['Il a des poils', 'Il pond des œufs', 'Il vit dans l\'eau'] },
+        { cat: 'Le vivant', prompt: "La baleine appartient au groupe des...", answer: 'Mammifères', faux: ['Poissons', 'Reptiles', 'Amphibiens'] }
+      ]); } },
+
+    { id: 'sci-terre', title: 'La Terre et le ciel', explanation: "Le système solaire, les saisons et les mouvements de notre planète.", levels: ['cm2', 'sixieme'],
+      cours: [
+        "Le <strong>système solaire</strong> compte <strong>huit planètes</strong> qui tournent autour du <strong>Soleil</strong>, une étoile. Dans l'ordre : Mercure, Vénus, <strong>la Terre</strong>, Mars, Jupiter, Saturne, Uranus, Neptune. La Terre est la <strong>troisième</strong>.",
+        "La Terre tourne sur elle-même en <strong>24 heures</strong> : c'est la <strong>rotation</strong>, qui explique l'alternance du <strong>jour et de la nuit</strong>. Elle tourne aussi autour du Soleil en <strong>365 jours et un quart</strong> : c'est la <strong>révolution</strong>, qui donne l'année.",
+        "L'<strong>axe de la Terre est incliné</strong>. C'est cette inclinaison, et non la distance au Soleil, qui explique les <strong>saisons</strong> : selon le moment de l'année, un hémisphère reçoit les rayons plus directement que l'autre.",
+        "La <strong>Lune</strong> est le <strong>satellite</strong> naturel de la Terre : elle tourne autour d'elle. Elle ne produit pas de lumière, elle <strong>réfléchit</strong> celle du Soleil. C'est pourquoi on la voit changer de forme au fil du mois."
+      ],
+      reperes: [['8', 'Nombre de planètes du système solaire'], ['24 h', 'Rotation de la Terre : le jour et la nuit'], ['365 jours ¼', "Révolution autour du Soleil : l'année"], ['Inclinaison', "La cause des saisons"]],
+      question() { return questionDeBanque([
+        { cat: 'La Terre', prompt: "Combien de planètes compte le système solaire ?", answer: 'Huit', faux: ['Neuf', 'Sept', 'Douze'] },
+        { cat: 'La Terre', prompt: "Quelle est la position de la Terre par rapport au Soleil ?", answer: 'La troisième planète', faux: ['La première', 'La deuxième', 'La cinquième'] },
+        { cat: 'La Terre', prompt: "En combien de temps la Terre tourne-t-elle sur elle-même ?", answer: '24 heures', faux: ['365 jours', 'Un mois', '12 heures'] },
+        { cat: 'La Terre', prompt: "Qu'est-ce qui explique l'alternance du jour et de la nuit ?", answer: 'La rotation de la Terre', faux: ['La révolution autour du Soleil', 'Les phases de la Lune', "L'inclinaison de l'axe"] },
+        { cat: 'La Terre', prompt: "Qu'est-ce qui explique les saisons ?", answer: "L'inclinaison de l'axe de la Terre", faux: ['La distance au Soleil', 'La rotation en 24 h', 'La Lune'] },
+        { cat: 'La Terre', prompt: "Le Soleil est...", answer: 'Une étoile', faux: ['Une planète', 'Un satellite', 'Une comète'] },
+        { cat: 'La Terre', prompt: "La Lune est le satellite de quelle planète ?", answer: 'La Terre', faux: ['Mars', 'Vénus', 'Jupiter'] },
+        { cat: 'La Terre', prompt: "Pourquoi voit-on la Lune briller ?", answer: 'Elle réfléchit la lumière du Soleil', faux: ['Elle produit sa propre lumière', 'Elle est en feu', 'Elle réfléchit la lumière de la Terre'] },
+        { cat: 'La Terre', prompt: "En combien de temps la Terre fait-elle le tour du Soleil ?", answer: 'Environ 365 jours', faux: ['24 heures', '30 jours', '10 ans'] },
+        { cat: 'La Terre', prompt: "Quelle planète suit la Terre en s'éloignant du Soleil ?", answer: 'Mars', faux: ['Vénus', 'Mercure', 'Jupiter'] }
+      ]); } },
+
+    { id: 'sci-objets', title: 'Objets techniques et matériaux', explanation: "À quoi sert un objet, en quoi il est fait, et comment il fonctionne.", levels: ['cm2', 'sixieme'],
+      cours: [
+        "Un <strong>objet technique</strong> est fabriqué par l'humain pour répondre à un <strong>besoin</strong>. Sa <strong>fonction d'usage</strong> est ce à quoi il sert : la fonction d'usage d'un vélo est de se déplacer.",
+        "Chaque objet est fait de <strong>matériaux</strong> choisis pour leurs propriétés : le <strong>métal</strong> est résistant, le <strong>plastique</strong> est léger et isolant, le <strong>bois</strong> est solide et renouvelable, le <strong>verre</strong> est transparent mais fragile.",
+        "Un objet se décompose en <strong>éléments</strong> qui remplissent chacun une <strong>fonction technique</strong> : sur un vélo, les freins servent à ralentir, la chaîne à transmettre le mouvement, le guidon à diriger.",
+        "Fabriquer un objet consomme des <strong>ressources</strong> et de l'<strong>énergie</strong>. Pour limiter cet impact, on peut <strong>réparer</strong>, <strong>réutiliser</strong> et <strong>recycler</strong> plutôt que jeter."
+      ],
+      reperes: [['Fonction d\'usage', "Ce à quoi l'objet sert"], ['Fonction technique', 'Le rôle de chaque élément'], ['Matériau', 'Choisi pour ses propriétés'], ['Réparer, réutiliser, recycler', "Limiter l'impact"]],
+      question() { return questionDeBanque([
+        { cat: 'Objets techniques', prompt: "Qu'est-ce que la fonction d'usage d'un objet ?", answer: "Ce à quoi il sert", faux: ['Sa couleur', 'Son prix', 'Son poids'] },
+        { cat: 'Objets techniques', prompt: "Quelle est la fonction d'usage d'un vélo ?", answer: 'Se déplacer', faux: ['Faire du bruit', 'Éclairer', 'Mesurer le temps'] },
+        { cat: 'Objets techniques', prompt: "Quel matériau est transparent mais fragile ?", answer: 'Le verre', faux: ['Le métal', 'Le bois', 'Le plastique'] },
+        { cat: 'Objets techniques', prompt: "Quel matériau est léger et isolant ?", answer: 'Le plastique', faux: ['Le fer', 'Le cuivre', "L'acier"] },
+        { cat: 'Objets techniques', prompt: "Sur un vélo, à quoi sert la chaîne ?", answer: 'À transmettre le mouvement', faux: ['À freiner', 'À diriger', 'À éclairer'] },
+        { cat: 'Objets techniques', prompt: "Comment appelle-t-on le rôle de chaque élément d'un objet ?", answer: 'Sa fonction technique', faux: ['Sa fonction d\'usage', 'Son matériau', 'Son besoin'] },
+        { cat: 'Objets techniques', prompt: "Quel matériau est renouvelable ?", answer: 'Le bois', faux: ['Le pétrole', 'Le fer', 'Le verre'] },
+        { cat: 'Objets techniques', prompt: "Que vaut-il mieux faire avant de jeter un objet cassé ?", answer: 'Essayer de le réparer', faux: ['Le brûler', "L'enterrer", 'En racheter deux'] },
+        { cat: 'Objets techniques', prompt: "Pourquoi fabrique-t-on un objet technique ?", answer: 'Pour répondre à un besoin', faux: ['Par hasard', 'Pour décorer seulement', 'Pour consommer des ressources'] },
+        { cat: 'Objets techniques', prompt: "Pourquoi choisit-on le métal pour une casserole ?", answer: 'Il résiste à la chaleur et la conduit', faux: ['Il est transparent', 'Il est très léger', 'Il est isolant'] }
+      ]); } }
+  ] },
+  /* ========== Enseignement moral et civique ========== */
+  { id: 'emc', emoji: '🏛️', title: 'Éducation civique', skills: [
+    { id: 'emc-regles', title: 'Les règles et la loi', explanation: "Pourquoi il existe des règles, qui les fait, et ce qu'elles protègent.", levels: ['cm2', 'sixieme'],
+      cours: [
+        "Partout où l'on vit ensemble, il existe des <strong>règles</strong>. À l'école, c'est le <strong>règlement intérieur</strong> ; dans le pays, ce sont les <strong>lois</strong>. Les règles ne servent pas à embêter : elles protègent chacun et rendent la vie commune possible.",
+        "En France, les lois sont votées par le <strong>Parlement</strong>, composé de l'<strong>Assemblée nationale</strong> et du <strong>Sénat</strong>. Les députés et les sénateurs sont élus : ce sont donc les citoyens qui, indirectement, font la loi.",
+        "La loi est la <strong>même pour tous</strong>. Quand elle n'est pas respectée, c'est la <strong>justice</strong> qui tranche, avec des <strong>juges</strong>, et toute personne a le droit d'être <strong>défendue</strong> et d'être considérée innocente tant que sa culpabilité n'est pas prouvée.",
+        "À chaque <strong>droit</strong> correspond un <strong>devoir</strong>. Tu as le droit d'être respecté, et le devoir de respecter les autres. Tu as le droit d'aller à l'école, et le devoir d'y travailler et d'en respecter les règles."
+      ],
+      reperes: [['Règlement intérieur', "Les règles de l'école"], ['Parlement', 'Assemblée nationale et Sénat'], ['La loi', 'La même pour tous'], ['Droit et devoir', "L'un ne va pas sans l'autre"]],
+      question() { return questionDeBanque([
+        { cat: 'Règles et loi', prompt: "Comment s'appellent les règles de l'école ?", answer: 'Le règlement intérieur', faux: ['La Constitution', 'Le code civil', 'La charte des droits'] },
+        { cat: 'Règles et loi', prompt: "Qui vote les lois en France ?", answer: 'Le Parlement', faux: ['Le président seul', 'Les juges', 'Les maires'] },
+        { cat: 'Règles et loi', prompt: "De quoi le Parlement est-il composé ?", answer: "De l'Assemblée nationale et du Sénat", faux: ['Du gouvernement et des juges', 'Des maires et des préfets', 'Du président et des ministres'] },
+        { cat: 'Règles et loi', prompt: "La loi s'applique-t-elle à tout le monde ?", answer: 'Oui, elle est la même pour tous', faux: ['Non, seulement aux adultes', 'Non, seulement aux pauvres', 'Seulement le jour'] },
+        { cat: 'Règles et loi', prompt: "Qui tranche quand la loi n'est pas respectée ?", answer: 'La justice', faux: ['Le maire', "L'école", 'Les voisins'] },
+        { cat: 'Règles et loi', prompt: "Une personne accusée est considérée comme...", answer: "Innocente tant que ce n'est pas prouvé", faux: ['Coupable dès l\'accusation', 'Coupable si elle se tait', 'Toujours libre'] },
+        { cat: 'Règles et loi', prompt: "À quoi correspond chaque droit ?", answer: 'À un devoir', faux: ['À une récompense', 'À une punition', 'À un privilège'] },
+        { cat: 'Règles et loi', prompt: "À quoi servent les règles de vie commune ?", answer: 'À protéger chacun', faux: ['À punir les enfants', 'À faire plaisir aux adultes', 'À compliquer la vie'] },
+        { cat: 'Règles et loi', prompt: "Comment les députés arrivent-ils au Parlement ?", answer: 'Ils sont élus par les citoyens', faux: ['Ils sont nommés par le roi', 'Ils héritent du poste', 'Ils sont tirés au sort'] },
+        { cat: 'Règles et loi', prompt: "Tu as le droit d'aller à l'école. Quel est le devoir qui l'accompagne ?", answer: "En respecter les règles et y travailler", faux: ['Y aller quand tu veux', "Choisir tes professeurs", "N'y aller que le lundi"] }
+      ]); } },
+
+    { id: 'emc-republique', title: 'Les valeurs de la République', explanation: "Liberté, Égalité, Fraternité, et la laïcité : ce que ces mots veulent dire concrètement.", levels: ['cm2', 'sixieme'],
+      cours: [
+        "La devise de la France est <strong>Liberté, Égalité, Fraternité</strong>. La <strong>liberté</strong>, c'est pouvoir penser, croire et s'exprimer — dans la limite du respect des autres. L'<strong>égalité</strong>, c'est les mêmes droits pour tous, quelles que soient l'origine, la religion ou le sexe. La <strong>fraternité</strong>, c'est l'entraide.",
+        "La <strong>laïcité</strong> garantit la liberté de croire ou de ne pas croire. L'<strong>État</strong> ne favorise aucune religion et reste <strong>neutre</strong>. À l'<strong>école publique</strong>, cela permet à des enfants de toutes convictions d'apprendre ensemble.",
+        "La France est une <strong>démocratie</strong> : les citoyens choisissent leurs représentants en <strong>votant</strong>. Le vote est <strong>secret</strong>, et chaque voix compte autant qu'une autre. On vote à partir de <strong>18 ans</strong>.",
+        "Les symboles de la République sont le <strong>drapeau tricolore</strong>, <strong>La Marseillaise</strong>, <strong>Marianne</strong> et la fête nationale du <strong>14 juillet</strong>."
+      ],
+      reperes: [['Devise', 'Liberté, Égalité, Fraternité'], ['Laïcité', "L'État est neutre, chacun est libre de croire"], ['18 ans', "L'âge pour voter"], ['Vote secret', 'Personne ne sait pour qui tu votes']],
+      question() { return questionDeBanque([
+        { cat: 'République', prompt: "Quelle est la devise de la France ?", answer: 'Liberté, Égalité, Fraternité', faux: ['Travail, Famille, Patrie', 'Paix, Justice, Honneur', 'Unité, Force, Courage'] },
+        { cat: 'République', prompt: "Que garantit la laïcité ?", answer: 'La liberté de croire ou de ne pas croire', faux: ["L'interdiction de toute religion", 'Une religion officielle', "L'obligation d'être croyant"] },
+        { cat: 'République', prompt: "À partir de quel âge vote-t-on en France ?", answer: '18 ans', faux: ['16 ans', '21 ans', '15 ans'] },
+        { cat: 'République', prompt: "Le vote est-il public ou secret ?", answer: 'Secret', faux: ['Public', 'Affiché en mairie', 'Communiqué aux voisins'] },
+        { cat: 'République', prompt: "Que signifie l'égalité ?", answer: 'Les mêmes droits pour tous', faux: ['Tout le monde est identique', 'Tout le monde gagne pareil', 'Personne n\'a de droits'] },
+        { cat: 'République', prompt: "Que signifie la fraternité ?", answer: "L'entraide entre les personnes", faux: ['Avoir un frère', 'Vivre en famille', 'Se ressembler'] },
+        { cat: 'République', prompt: "La liberté d'expression permet-elle de tout dire ?", answer: 'Non, elle s\'arrête au respect des autres', faux: ['Oui, sans aucune limite', 'Non, il faut se taire', 'Oui, mais seulement à l\'école'] },
+        { cat: 'République', prompt: "Quel personnage symbolise la République ?", answer: 'Marianne', faux: ['Jeanne d\'Arc', 'Napoléon', 'Vercingétorix'] },
+        { cat: 'République', prompt: "Dans une démocratie, qui détient le pouvoir ?", answer: 'Les citoyens, par leurs représentants élus', faux: ['Un roi', "L'armée", 'Une seule famille'] },
+        { cat: 'République', prompt: "L'État français favorise-t-il une religion ?", answer: 'Non, il est neutre', faux: ['Oui, le catholicisme', 'Oui, celle du président', 'Oui, celle de la majorité'] }
+      ]); } },
+
+    { id: 'emc-enfant', title: "Les droits de l'enfant", explanation: "Ce que tout enfant du monde a le droit d'avoir, et qui le garantit.", levels: ['cm2', 'sixieme'],
+      cours: [
+        "En <strong>1989</strong>, les pays du monde ont adopté la <strong>Convention internationale des droits de l'enfant</strong>. La France l'a signée en 1990. On la célèbre chaque année le <strong>20 novembre</strong>.",
+        "Tout enfant a le droit d'avoir un <strong>nom</strong> et une <strong>nationalité</strong>, d'être <strong>soigné</strong> et <strong>nourri</strong>, d'aller à l'<strong>école</strong>, de <strong>jouer</strong> et de se reposer.",
+        "Il a aussi le droit d'être <strong>protégé</strong> de toute violence et de toute maltraitance, et d'être <strong>écouté</strong> : son avis compte dans les décisions qui le concernent.",
+        "Ces droits valent pour <strong>tous les enfants</strong>, sans distinction d'origine, de religion, de sexe ou de fortune. Dans le monde, ils ne sont pas partout respectés : des enfants travaillent au lieu d'aller à l'école."
+      ],
+      reperes: [['1989', "Convention internationale des droits de l'enfant"], ['20 novembre', "Journée des droits de l'enfant"], ['Être écouté', "Un droit, pas une faveur"], ['Sans distinction', 'Les mêmes droits pour tous les enfants']],
+      question() { return questionDeBanque([
+        { cat: "Droits de l'enfant", prompt: "En quelle année la Convention des droits de l'enfant a-t-elle été adoptée ?", answer: '1989', faux: ['1905', '1945', '2001'] },
+        { cat: "Droits de l'enfant", prompt: "Quelle date célèbre les droits de l'enfant ?", answer: '20 novembre', faux: ['14 juillet', '1er mai', '11 novembre'] },
+        { cat: "Droits de l'enfant", prompt: "Lequel de ces éléments est un droit de l'enfant ?", answer: "Aller à l'école", faux: ['Travailler à l\'usine', 'Conduire une voiture', 'Voter aux élections'] },
+        { cat: "Droits de l'enfant", prompt: "Jouer est-il un droit de l'enfant ?", answer: 'Oui, c\'est un droit', faux: ['Non, c\'est une récompense', 'Non, c\'est interdit', 'Seulement le dimanche'] },
+        { cat: "Droits de l'enfant", prompt: "Les droits de l'enfant concernent...", answer: 'Tous les enfants, sans distinction', faux: ['Seulement les enfants français', 'Seulement les garçons', 'Seulement les plus de 10 ans'] },
+        { cat: "Droits de l'enfant", prompt: "Un enfant a-t-il le droit de donner son avis ?", answer: "Oui, il a le droit d'être écouté", faux: ['Non, jamais', 'Seulement à 18 ans', 'Seulement à la maison'] },
+        { cat: "Droits de l'enfant", prompt: "De quoi tout enfant doit-il être protégé ?", answer: 'De la violence et de la maltraitance', faux: ['Du travail scolaire', 'Des jeux', 'Des livres'] },
+        { cat: "Droits de l'enfant", prompt: "En quelle année la France a-t-elle signé cette Convention ?", answer: '1990', faux: ['1789', '1958', '2010'] },
+        { cat: "Droits de l'enfant", prompt: "Les droits de l'enfant sont-ils respectés partout dans le monde ?", answer: 'Non, pas partout', faux: ['Oui, partout', 'Oui, depuis 1989', 'Oui, sauf en Europe'] },
+        { cat: "Droits de l'enfant", prompt: "Avoir un nom et une nationalité, est-ce un droit ?", answer: 'Oui', faux: ['Non', 'Seulement pour les adultes', 'Seulement en France'] }
+      ]); } },
+
+    { id: 'emc-ensemble', title: 'Le respect et le vivre-ensemble', explanation: "Harcèlement, discriminations, entraide : savoir reconnaître et savoir réagir.", levels: ['cm2', 'sixieme'],
+      cours: [
+        "Le <strong>respect</strong> commence par des gestes simples : écouter sans couper la parole, ne pas se moquer, accepter les différences. Se moquer de quelqu'un pour son apparence, son origine ou sa religion, c'est une <strong>discrimination</strong>, et c'est interdit par la loi.",
+        "Le <strong>harcèlement</strong> est une violence <strong>répétée</strong> contre une même personne : moqueries, insultes, mises à l'écart, coups, messages blessants. Ce n'est jamais un jeu et ce n'est jamais la faute de celui qui le subit.",
+        "Face au harcèlement, il ne faut pas rester seul. On en parle à un <strong>adulte de confiance</strong> : un parent, un professeur, l'infirmière. En France, le numéro <strong>3020</strong> répond gratuitement pour le harcèlement à l'école, et le <strong>3018</strong> pour le harcèlement en ligne.",
+        "Celui qui regarde sans rien dire laisse faire. Le <strong>témoin</strong> a un rôle : refuser de rire, aller vers la victime, prévenir un adulte. C'est aussi cela, la <strong>fraternité</strong>."
+      ],
+      reperes: [['Discrimination', "Traiter quelqu'un moins bien pour ce qu'il est"], ['Harcèlement', 'Une violence répétée'], ['3020', "Le numéro contre le harcèlement à l'école"], ['3018', 'Le numéro contre le harcèlement en ligne']],
+      question() { return questionDeBanque([
+        { cat: 'Vivre ensemble', prompt: "Qu'est-ce qui caractérise le harcèlement ?", answer: "C'est une violence répétée", faux: ['Une seule dispute', 'Un jeu entre amis', 'Une punition'] },
+        { cat: 'Vivre ensemble', prompt: "Quel numéro appeler en cas de harcèlement à l'école ?", answer: 'Le 3020', faux: ['Le 15', 'Le 18', 'Le 112'] },
+        { cat: 'Vivre ensemble', prompt: "Quel numéro appeler en cas de harcèlement en ligne ?", answer: 'Le 3018', faux: ['Le 3020', 'Le 17', 'Le 115'] },
+        { cat: 'Vivre ensemble', prompt: "Le harcèlement est-il la faute de la victime ?", answer: 'Non, jamais', faux: ['Oui, si elle est différente', 'Oui, si elle se laisse faire', 'Parfois'] },
+        { cat: 'Vivre ensemble', prompt: "Qu'est-ce qu'une discrimination ?", answer: "Traiter quelqu'un moins bien pour ce qu'il est", faux: ['Choisir son équipe', 'Préférer un plat', 'Avoir des goûts différents'] },
+        { cat: 'Vivre ensemble', prompt: "Que doit faire un témoin de harcèlement ?", answer: 'Prévenir un adulte et aider la victime', faux: ['Rire avec les autres', 'Ne rien dire', 'Filmer la scène'] },
+        { cat: 'Vivre ensemble', prompt: "La discrimination est-elle autorisée par la loi ?", answer: 'Non, elle est interdite', faux: ['Oui, à l\'école', 'Oui, entre enfants', 'Cela dépend'] },
+        { cat: 'Vivre ensemble', prompt: "À qui parler quand on subit du harcèlement ?", answer: 'À un adulte de confiance', faux: ['À personne', 'Seulement à ses amis', 'À celui qui harcèle'] },
+        { cat: 'Vivre ensemble', prompt: "Mettre quelqu'un à l'écart tous les jours, c'est...", answer: 'Du harcèlement', faux: ['Un jeu', 'Une préférence', 'Un droit'] },
+        { cat: 'Vivre ensemble', prompt: "Par quoi commence le respect ?", answer: 'Écouter et ne pas se moquer', faux: ['Avoir raison', 'Parler plus fort', 'Être le plus fort'] }
+      ]); } }
+  ] },
 ];
 
 /* ================= Dictées ================= */
@@ -1316,6 +1549,7 @@ function answerQuiz(chosen) {
       const total = qz.questions.length; const pct = Math.round((qz.score / total) * 100);
       if (qz.bestKey) saveBest(qz.bestKey, pct);
       qz.gain = attribuerRecompense(pct);
+      if (qz.etapeSeance !== undefined) marquerEtape(qz.etapeSeance);
       state.screen = 'quizResults'; render();
     }
   }, 1100);
@@ -1537,6 +1771,117 @@ function corrigerEtAfficher() {
   state.screen = 'dicteeResult'; render();
 }
 
+
+/* ================= La séance du jour ================= */
+/* Trois étapes tirées au sort mais STABLES pour la journée : l'enfant doit
+   retrouver la même séance s'il ferme et rouvre l'app. On sème donc le tirage
+   avec la date, au lieu d'utiliser Math.random. */
+function jourCle(d) {
+  const x = d || new Date();
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+}
+function veilleDe(cle) {
+  const [a, m, j] = cle.split('-').map(Number);
+  const d = new Date(a, m - 1, j); d.setDate(d.getDate() - 1);
+  return jourCle(d);
+}
+/* générateur pseudo-aléatoire semé : même date, même séance */
+function semeur(graine) {
+  let h = 2166136261;
+  for (let i = 0; i < graine.length; i++) { h ^= graine.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+
+const MATIERES_CULTURE = ['histoire', 'geographie', 'sciences', 'emc'];
+
+/* La séance mélange CM2 et 6ème dans la même journée, comme demandé : une
+   étape de maths, une leçon à relire, et le quiz de cette leçon. */
+function construireSeance(cle) {
+  const rnd01 = semeur(cle);
+  const tire = (arr) => arr[Math.floor(rnd01() * arr.length)];
+  const niveaux = ['cm2', 'sixieme'];
+
+  /* Maths : on privilégie les domaines de la méthode de Singapour, c'est la
+     façon de raisonner qu'on veut installer. */
+  const nivMaths = tire(niveaux);
+  const domsSg = ['barres', 'rapports', 'vitesse', 'cercle', 'algebre', 'volume', 'diagrammes'];
+  const sgDispo = domsSg.filter(d => skillsForLevel(d, 'singapour').length);
+  const versSingapour = rnd01() < 0.5 && sgDispo.length;
+  const domMaths = versSingapour ? tire(sgDispo) : tire(['nombres', 'multiplication', 'division', 'fractions', 'decimaux', 'calculs', 'pourcentages', 'mesures'].filter(d => skillsForLevel(d, nivMaths).length));
+  const nivEtape1 = versSingapour ? 'singapour' : nivMaths;
+  const skMaths = tire(skillsForLevel(domMaths, nivEtape1));
+
+  /* Culture : l'autre niveau que celui des maths, pour couvrir les deux dans
+     la même séance. */
+  const nivCulture = nivMaths === 'cm2' ? 'sixieme' : 'cm2';
+  const domsCulture = MATIERES_CULTURE.filter(d => skillsForLevel(d, nivCulture).length);
+  const domCulture = tire(domsCulture);
+  const skCulture = tire(skillsForLevel(domCulture, nivCulture));
+
+  return [
+    { id: 'maths', titre: 'Maths', detail: `${getDomain(domMaths).title} · ${skMaths.title}`, emoji: getDomain(domMaths).emoji,
+      niveau: nivEtape1, domaine: domMaths, skill: skMaths.id, type: 'quiz' },
+    { id: 'lecon', titre: 'La leçon du jour', detail: `${getDomain(domCulture).title} · ${skCulture.title}`, emoji: getDomain(domCulture).emoji,
+      niveau: nivCulture, domaine: domCulture, skill: skCulture.id, type: 'lecon' },
+    { id: 'quiz-culture', titre: 'Le quiz de la leçon', detail: `${getDomain(domCulture).title} · ${skCulture.title}`, emoji: '✅',
+      niveau: nivCulture, domaine: domCulture, skill: skCulture.id, type: 'quiz' }
+  ];
+}
+
+function etatSeance() {
+  const cle = jourCle(), s = loadStore();
+  /* un nouveau jour remet les étapes à zéro, sans toucher à la série */
+  if (!s.seance || s.seance.date !== cle) return { date: cle, faits: [false, false, false] };
+  return s.seance;
+}
+function marquerEtape(i) {
+  const cle = jourCle(), s = loadStore();
+  const seance = (s.seance && s.seance.date === cle) ? s.seance : { date: cle, faits: [false, false, false] };
+  if (seance.faits[i]) return;
+  seance.faits[i] = true;
+  s.seance = seance;
+  /* Série de jours : elle ne s'incrémente qu'une fois les trois étapes faites,
+     et repart à 1 si un jour a été sauté. */
+  if (seance.faits.every(Boolean) && s.serieJour !== cle) {
+    s.serie = (s.serieDernier === veilleDe(cle)) ? (s.serie || 0) + 1 : 1;
+    s.serieDernier = cle; s.serieJour = cle;
+  }
+  saveStore(s);
+}
+function getSerie() { const s = loadStore(); if (!s.serieDernier) return 0; return (s.serieDernier === jourCle() || s.serieDernier === veilleDe(jourCle())) ? (s.serie || 0) : 0; }
+
+function renderSeance() {
+  const etapes = construireSeance(jourCle()), etat = etatSeance();
+  const faits = etat.faits.filter(Boolean).length;
+  const fini = faits === etapes.length;
+  const serie = getSerie();
+  const lignes = etapes.map((e, i) => `<div class="etape ${etat.faits[i] ? 'faite' : ''}" data-action="etape-seance" data-i="${i}">
+      <div class="etape-coche">${etat.faits[i] ? '✓' : i + 1}</div>
+      <div class="etape-info"><div class="etape-titre">${e.emoji} ${e.titre}</div><div class="etape-detail">${e.detail} · ${levelLabel(e.niveau)}</div></div>
+      <div class="mode-arrow">${etat.faits[i] ? '' : '→'}</div>
+    </div>`).join('');
+  return `<div class="seance ${fini ? 'seance-finie' : ''}">
+    <div class="seance-head">
+      <div><div class="seance-titre">${fini ? '🎉 Séance du jour terminée !' : '📅 Ta séance du jour'}</div><div class="seance-sous">${fini ? 'Reviens demain pour continuer ta série.' : `${faits} sur ${etapes.length} · environ 10 minutes`}</div></div>
+      ${serie ? `<div class="serie" title="jours d'affilée">🔥 ${serie}</div>` : ''}
+    </div>
+    <div class="seance-barre"><div class="seance-barre-jauge" style="width:${Math.round(faits / etapes.length * 100)}%"></div></div>
+    ${lignes}
+  </div>`;
+}
+
+/* Ouvre l'étape demandée. L'étape « leçon » est validée à la lecture, les
+   étapes « quiz » le sont à la fin du quiz. */
+function ouvrirEtape(i) {
+  const e = construireSeance(jourCle())[i];
+  setLevel(e.niveau);
+  state.currentDomain = e.domaine; state.currentSkill = e.skill;
+  if (e.type === 'lecon') { marquerEtape(i); state.screen = 'skillLesson'; render(); return; }
+  state.screen = 'skillLesson'; render();
+  startQuiz('skill', () => buildSkillQuiz(e.domaine, e.skill, 8), 'skill-' + e.domaine + '-' + e.skill + '-' + e.niveau);
+  state.quiz.etapeSeance = i;
+}
+
 /* ================= Rendu ================= */
 function render() {
   const app = document.getElementById('app');
@@ -1580,6 +1925,7 @@ function renderHome() {
   return `<div class="screen screen-home">
     <h1>🎓 Maths Malin</h1>
     <p class="subtitle">${state.level === 'singapour' ? 'Méthode de Singapour · Primary 6' : 'Maths, histoire, géographie et dictée'}</p>
+    ${renderSeance()}
     ${renderRecompenses()}
     <div class="level-switch">${LEVELS.map(l => `<button class="level-btn ${state.level === l.id ? 'active' : ''}" data-action="set-level" data-level="${l.id}">${l.label}</button>`).join('')}</div>
     <div class="cartes">${cards}</div>
@@ -1694,6 +2040,7 @@ function onAction(e) {
     if (id === 'dictee') { state.screen = 'dicteeList'; render(); return; }
     state.currentDomain = id; state.screen = 'skillList'; render();
   }
+  else if (a === 'etape-seance') ouvrirEtape(Number(e.currentTarget.dataset.i));
   else if (a === 'open-dictee') ouvrirDictee(e.currentTarget.dataset.id);
   else if (a === 'back-to-dictees') { stopperVoix(); state.screen = 'dicteeList'; render(); }
   else if (a === 'dire-phrase') direTexte(phrasesDe(getDictee(state.dictee.id).texte)[state.dictee.phrase], state.dictee.vitesse);
@@ -1713,7 +2060,7 @@ function onAction(e) {
   else if (a === 'start-mental-quiz') { const id = state.mentalTrickId; startQuiz('mental', () => buildMentalQuiz(id, 8), 'mental-' + id + '-' + state.level); }
   else if (a === 'start-skill-quiz') { const dId = state.currentDomain, sId = state.currentSkill; startQuiz('skill', () => buildSkillQuiz(dId, sId, 8), 'skill-' + dId + '-' + sId + '-' + state.level); }
   else if (a === 'answer-quiz') { state.quiz.lastChosen = e.currentTarget.dataset.value; answerQuiz(e.currentTarget.dataset.value); }
-  else if (a === 'retry-quiz') { startQuiz(state.quiz.kind, state.quiz.rebuild, state.quiz.bestKey); }
+  else if (a === 'retry-quiz') { const etape = state.quiz.etapeSeance; startQuiz(state.quiz.kind, state.quiz.rebuild, state.quiz.bestKey); state.quiz.etapeSeance = etape; }
   else if (a === 'toggle-pause') { state.quiz.pause = !state.quiz.pause; render(); }
 }
 

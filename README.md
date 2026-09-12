@@ -1,6 +1,28 @@
 # Maths Malin — CM2 & 6ème (PWA)
 
-Application de révision pour le CM2 et la 6ème : **maths**, **histoire**, **géographie** et **dictée**. Fonctionne hors-ligne une fois installée.
+Application de révision pour le CM2 et la 6ème : **maths** (méthode de Singapour incluse), **histoire**, **géographie**, **sciences et technologie**, **éducation civique** et **dictée**. Fonctionne hors-ligne une fois installée.
+
+### La séance du jour
+
+En haut de l'accueil, une **séance du jour** de trois étapes, à faire en une dizaine de minutes :
+
+1. **Maths** — un quiz, en privilégiant une notion de la méthode de Singapour une fois sur deux.
+2. **La leçon du jour** — un chapitre d'histoire, de géographie, de sciences ou d'éducation civique, à relire.
+3. **Le quiz de cette leçon.**
+
+Les deux niveaux sont mêlés dans la même séance : si les maths tombent en CM2, la leçon tombe en 6ème, et inversement.
+
+La séance est **tirée au sort à partir de la date**, donc identique toute la journée même si l'on ferme l'application, et différente le lendemain. Une fois les trois étapes faites, le compteur de **jours consécutifs** 🔥 augmente. Il repart à 1 si un jour est sauté, et ne compte jamais deux fois le même jour.
+
+> Il n'y a pas de notification qui sonne toute seule : une application web sans serveur ne peut pas le faire de façon fiable, et pas du tout sur iPhone. La séance et la série jouent le rôle du rappel quand l'enfant ouvre l'application. Pour un rappel qui sonne vraiment, le plus sûr reste une alarme quotidienne dans l'horloge du téléphone.
+
+### Fonctionnement sans connexion
+
+L'application ne dépend d'**aucune ressource extérieure** : pas de bibliothèque distante, pas de police en ligne, pas d'image téléchargée. Tout tient dans `index.html`, et le service worker met en cache les cinq fichiers du site.
+
+Vérifié réseau coupé : chargement de l'app, séance du jour, quiz de maths, sciences, EMC et histoire, dictée et sa correction, jetons et série, changement de niveau — tout fonctionne, sans une seule requête en échec.
+
+Seule réserve : la **lecture à voix haute** des dictées passe par la synthèse vocale du téléphone. Sur certains appareils Android, la voix par défaut est téléchargée à la demande. Si la dictée doit fonctionner sans réseau, il faut installer une voix française hors-ligne dans les réglages du téléphone (Paramètres, Synthèse vocale). Le reste de l'application n'est pas concerné.
 
 ### Téléphone, tablette et rotation
 
@@ -72,4 +94,4 @@ Chaque envoi sur la branche `main` redéploie automatiquement le site.
 ## Personnalisation
 Les leçons et exercices sont définis dans les données en haut du `<script>` d'`index.html` : `TRICKS` pour les astuces, `DOMAINS` pour les matières, `DICTEES` pour les textes de dictée. Tu peux en ajouter d'autres en suivant le même format.
 
-Après chaque modification des fichiers, pense à incrémenter `CACHE_NAME` dans `sw.js` (`calcul-cm2-v6` → `v7`, etc.) pour que les appareils déjà installés récupèrent bien la nouvelle version.
+Après chaque modification des fichiers, pense à incrémenter `CACHE_NAME` dans `sw.js` (`calcul-cm2-v7` → `v8`, etc.) pour que les appareils déjà installés récupèrent bien la nouvelle version.
