@@ -102,6 +102,19 @@
   .step-result { font-size: 1.05rem; font-weight: 700; color: var(--purple); }
   .step-shape { display: flex; justify-content: center; margin: 0.5rem 0; }
 
+  .correction { background: var(--danger-bg); border: 1px solid #F0BCA6; border-radius: 16px; padding: 1rem; margin-bottom: 1rem; }
+  .correction-titre { font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--danger); margin-bottom: 0.6rem; }
+  .correction-ligne { font-size: 0.92rem; line-height: 1.5; margin-bottom: 0.35rem; }
+  .correction-ligne s { color: var(--text-secondary); }
+  .correction-bonne { font-weight: 700; color: var(--success); }
+  .correction-expl { background: var(--card); border-radius: 10px; padding: 0.7rem 0.8rem; font-size: 0.88rem; line-height: 1.5; margin-top: 0.6rem; }
+  .correction-expl-titre { font-weight: 700; color: var(--purple); margin-bottom: 2px; }
+
+  .revoir { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 0.9rem; margin-bottom: 10px; }
+  .revoir-num { font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+  .revoir-question { font-weight: 600; font-size: 0.92rem; margin: 0.3rem 0 0.5rem; line-height: 1.4; }
+  .revoir-reponses { font-size: 0.88rem; line-height: 1.6; }
+  .revoir-expl { background: var(--bg); border-radius: 9px; padding: 0.6rem 0.7rem; font-size: 0.85rem; line-height: 1.5; margin-top: 0.5rem; }
   .quiz-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
   .btn-pause { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); font-weight: 700; font-size: 0.76rem; border-radius: 9px; padding: 0.32rem 0.6rem; cursor: pointer; }
 
@@ -716,7 +729,8 @@ const DOMAINS = [
         const qui = cherche ? n1 : n2, rep = (cherche ? a : b) * part;
         return q({ category: 'Parts et total', prompt: `${n1} et ${n2} ont ${total} ${obj} en tout. ${n1} en a ${a} part${a > 1 ? 's' : ''}, ${n2} en a ${b}. Combien ${qui} en a-t-il ?`,
           svg: svgBarModel([{ name: n1, units: a, label: cherche ? '?' : '' }, { name: n2, units: b, label: cherche ? '' : '?' }], `${total} ${obj}`),
-          answer: formatNum(rep), options: spreadOptions(rep, 0), limit: 30 });
+          answer: formatNum(rep), options: spreadOptions(rep, 0), limit: 30,
+          expl: `En tout ${a + b} parts égales. Une part vaut ${total} ÷ ${a + b} = ${part}. ${qui} en a ${cherche ? a : b}, soit ${cherche ? a : b} × ${part} = ${formatNum(rep)}.` });
       } },
     { id: 'barres-comparaison', title: 'Un écart entre deux parts', explanation: "Retire d'abord l'écart du total. Ce qui reste se partage en deux parts égales : c'est la plus petite des deux quantités.", levels: ['singapour'],
       question() {
@@ -724,7 +738,8 @@ const DOMAINS = [
         const petit = rnd(5, 60), ecart = rnd(2, 30), total = 2 * petit + ecart;
         return q({ category: 'Écart', prompt: `${n1} et ${n2} ont ${total} ${obj} en tout. ${n2} en a ${ecart} de plus que ${n1}. Combien ${n1} en a-t-il ?`,
           svg: svgBarModel([{ name: n1, units: 1, label: '?' }, { name: n2, units: 1, extra: `${ecart}` }], `${total} ${obj}`),
-          answer: formatNum(petit), options: spreadOptions(petit, 0), limit: 30 });
+          answer: formatNum(petit), options: spreadOptions(petit, 0), limit: 30,
+          expl: `On retire d'abord l'écart : ${total} − ${ecart} = ${total - ecart}. Il reste deux parts égales : ${total - ecart} ÷ 2 = ${formatNum(petit)}.` });
       } },
     { id: 'barres-fraction', title: "Une fraction d'une quantité", explanation: "Partage la barre en autant de parts que le dénominateur. Une part vaut le total divisé par le dénominateur. Multiplie ensuite par le numérateur.", levels: ['singapour'],
       question() {
@@ -763,7 +778,8 @@ const DOMAINS = [
         const grande = Math.random() < 0.5, rep = (grande ? r : p) * part;
         return q({ category: 'Partage', prompt: `Partage ${total} € selon le rapport ${p} : ${r}. Quelle est la ${grande ? 'plus grande' : 'plus petite'} part ?`,
           svg: svgBarModel([{ name: 'Part 1', units: p, label: grande ? '' : '?' }, { name: 'Part 2', units: r, label: grande ? '?' : '' }], `${total} €`),
-          answer: formatNum(rep), options: spreadOptions(rep, 0), limit: 30 });
+          answer: formatNum(rep), options: spreadOptions(rep, 0), limit: 30,
+          expl: `Le rapport ${p} : ${r} fait ${p + r} parts. Une part vaut ${total} ÷ ${p + r} = ${part} €. La part cherchée en compte ${grande ? r : p}, soit ${formatNum(rep)} €.` });
       } },
     { id: 'ratio-fraction', title: 'Du rapport à la fraction', explanation: "Le rapport compare deux groupes entre eux. Pour la fraction du tout, mets le groupe cherché au numérateur et la somme des deux au dénominateur.", levels: ['singapour'],
       question() {
@@ -776,17 +792,21 @@ const DOMAINS = [
 
   { id: 'vitesse', emoji: '🚗', title: 'Vitesse', skills: [
     { id: 'vitesse-calcul', title: 'Calculer une vitesse', explanation: "La vitesse est la distance divisée par le temps. En 3 heures pour 150 km : 150 ÷ 3 = 50 km/h.", levels: ['singapour'],
-      question() { const v = rnd(4, 20) * 5, tps = rnd(2, 6), d = v * tps; return q({ category: 'Vitesse', prompt: `Un car parcourt ${d} km en ${tps} heures. Quelle est sa vitesse ?`, answer: formatNum(v), unit: 'km/h', options: spreadOptions(v, 0), limit: 25 }); } },
+      question() { const v = rnd(4, 20) * 5, tps = rnd(2, 6), d = v * tps; return q({ category: 'Vitesse', prompt: `Un car parcourt ${d} km en ${tps} heures. Quelle est sa vitesse ?`, answer: formatNum(v), unit: 'km/h', options: spreadOptions(v, 0), limit: 25,
+        expl: `On divise la distance par le temps : ${d} ÷ ${tps} = ${formatNum(v)} km/h.` }); } },
     { id: 'vitesse-distance', title: 'Calculer une distance', explanation: "La distance est la vitesse multipliée par le temps. À 60 km/h pendant 3 heures : 60 × 3 = 180 km.", levels: ['singapour'],
-      question() { const v = rnd(4, 20) * 5, tps = rnd(2, 6), d = v * tps; return q({ category: 'Distance', prompt: `Un train roule à ${v} km/h pendant ${tps} heures. Quelle distance parcourt-il ?`, answer: formatNum(d), unit: 'km', options: spreadOptions(d, 0), limit: 25 }); } },
+      question() { const v = rnd(4, 20) * 5, tps = rnd(2, 6), d = v * tps; return q({ category: 'Distance', prompt: `Un train roule à ${v} km/h pendant ${tps} heures. Quelle distance parcourt-il ?`, answer: formatNum(d), unit: 'km', options: spreadOptions(d, 0), limit: 25,
+        expl: `On multiplie la vitesse par le temps : ${v} × ${tps} = ${formatNum(d)} km.` }); } },
     { id: 'vitesse-temps', title: 'Calculer une durée', explanation: "Le temps est la distance divisée par la vitesse. 240 km à 60 km/h : 240 ÷ 60 = 4 heures.", levels: ['singapour'],
-      question() { const v = rnd(4, 20) * 5, tps = rnd(2, 8), d = v * tps; return q({ category: 'Durée', prompt: `Un cycliste parcourt ${d} km à ${v} km/h. Combien de temps met-il ?`, answer: formatNum(tps), unit: 'heures', options: spreadOptions(tps, 0), limit: 25 }); } },
+      question() { const v = rnd(4, 20) * 5, tps = rnd(2, 8), d = v * tps; return q({ category: 'Durée', prompt: `Un cycliste parcourt ${d} km à ${v} km/h. Combien de temps met-il ?`, answer: formatNum(tps), unit: 'heures', options: spreadOptions(tps, 0), limit: 25,
+        expl: `On divise la distance par la vitesse : ${d} ÷ ${v} = ${formatNum(tps)} heures.` }); } },
     { id: 'vitesse-moyenne', title: 'Vitesse moyenne', explanation: "La vitesse moyenne n'est pas la moyenne des vitesses. Additionne toutes les distances, additionne toutes les durées, puis divise.", levels: ['singapour'],
       question() {
         const t1 = rnd(1, 4), t2 = rnd(1, 4), moy = rnd(4, 16) * 5, dTot = moy * (t1 + t2);
         const d1 = rnd(1, (dTot / 10 | 0) - 1) * 10, d2 = dTot - d1;   /* les deux étapes doivent être non nulles */
         return q({ category: 'Vitesse moyenne', prompt: `Un automobiliste parcourt ${d1} km en ${t1} h, puis ${d2} km en ${t2} h. Quelle est sa vitesse moyenne ?`,
-          answer: formatNum(moy), unit: 'km/h', options: spreadOptions(moy, 0), limit: 35 });
+          answer: formatNum(moy), unit: 'km/h', options: spreadOptions(moy, 0), limit: 35,
+          expl: `Distance totale : ${d1} + ${d2} = ${d1 + d2} km. Temps total : ${t1} + ${t2} = ${t1 + t2} h. Puis ${d1 + d2} ÷ ${t1 + t2} = ${formatNum(moy)} km/h.` });
       } }
   ] },
   { id: 'cercle', emoji: '⭕', title: 'Le cercle', skills: [
@@ -795,14 +815,16 @@ const DOMAINS = [
         const r = rnd(2, 30), versDiametre = Math.random() < 0.5;
         const donne = versDiametre ? r : 2 * r, rep = versDiametre ? 2 * r : r;
         return q({ category: 'Rayon et diamètre', prompt: `Le ${versDiametre ? 'rayon' : 'diamètre'} de ce cercle mesure ${donne} cm. Quel est son ${versDiametre ? 'diamètre' : 'rayon'} ?`,
-          svg: svgCircleLabeled(donne, versDiametre ? 'rayon' : 'diamètre'), answer: formatNum(rep), unit: 'cm', options: spreadOptions(rep, 0), limit: 20 });
+          svg: svgCircleLabeled(donne, versDiametre ? 'rayon' : 'diamètre'), answer: formatNum(rep), unit: 'cm', options: spreadOptions(rep, 0), limit: 20,
+          expl: versDiametre ? `Le diamètre vaut deux fois le rayon : ${donne} × 2 = ${formatNum(rep)} cm.` : `Le rayon vaut la moitié du diamètre : ${donne} ÷ 2 = ${formatNum(rep)} cm.` });
       } },
     { id: 'cercle-circonference', title: 'Circonférence du cercle', explanation: "La circonférence est π × diamètre. On prend π ≈ 3,14. Pour un diamètre de 10 cm : 3,14 × 10 = 31,4 cm.", levels: ['singapour'],
-      question() { const k = rnd(1, 12), d = 10 * k, rep = Math.round(3.14 * d * 10) / 10; return q({ category: 'Circonférence', prompt: `Un cercle a un diamètre de ${d} cm. Quelle est sa circonférence ? (π ≈ 3,14)`, svg: svgCircleLabeled(d, 'diamètre'), answer: formatNum(rep), unit: 'cm', options: spreadOptions(rep, 1), limit: 30 }); } },
+      question() { const k = rnd(1, 12), d = 10 * k, rep = Math.round(3.14 * d * 10) / 10; return q({ category: 'Circonférence', prompt: `Un cercle a un diamètre de ${d} cm. Quelle est sa circonférence ? (π ≈ 3,14)`, svg: svgCircleLabeled(d, 'diamètre'), answer: formatNum(rep), unit: 'cm', options: spreadOptions(rep, 1), limit: 30, expl: `Circonférence = π × diamètre : 3,14 × ${d} = ${formatNum(rep)} cm.` }); } },
     { id: 'cercle-aire', title: 'Aire du disque', explanation: "L'aire est π × rayon × rayon. Attention : c'est le rayon qu'on multiplie par lui-même, pas le diamètre.", levels: ['singapour'],
-      question() { const r = rnd(1, 6) * 10, rep = Math.round(3.14 * r * r); return q({ category: 'Aire du disque', prompt: `Un disque a un rayon de ${r} cm. Quelle est son aire ? (π ≈ 3,14)`, svg: svgCircleLabeled(r, 'rayon'), answer: formatNum(rep), unit: 'cm²', options: spreadOptions(rep, 0), limit: 35 }); } },
+      question() { const r = rnd(1, 6) * 10, rep = Math.round(3.14 * r * r); return q({ category: 'Aire du disque', prompt: `Un disque a un rayon de ${r} cm. Quelle est son aire ? (π ≈ 3,14)`, svg: svgCircleLabeled(r, 'rayon'), answer: formatNum(rep), unit: 'cm²', options: spreadOptions(rep, 0), limit: 35, expl: `Aire = π × rayon × rayon : 3,14 × ${r} × ${r} = ${formatNum(rep)} cm². Attention, c'est le rayon, pas le diamètre.` }); } },
     { id: 'cercle-demi', title: 'Périmètre d\'un demi-disque', explanation: "Le tour d'un demi-disque, c'est la moitié du cercle plus le diamètre qui le ferme : π × rayon + 2 × rayon.", levels: ['singapour'],
-      question() { const r = rnd(1, 10) * 10, rep = Math.round((3.14 * r + 2 * r) * 10) / 10; return q({ category: 'Demi-disque', prompt: `Un demi-disque a un rayon de ${r} cm. Quel est son périmètre complet ? (π ≈ 3,14)`, answer: formatNum(rep), unit: 'cm', options: spreadOptions(rep, 1), limit: 35 }); } }
+      question() { const r = rnd(1, 10) * 10, rep = Math.round((3.14 * r + 2 * r) * 10) / 10; return q({ category: 'Demi-disque', prompt: `Un demi-disque a un rayon de ${r} cm. Quel est son périmètre complet ? (π ≈ 3,14)`, answer: formatNum(rep), unit: 'cm', options: spreadOptions(rep, 1), limit: 35,
+        expl: `Le demi-cercle mesure π × rayon = 3,14 × ${r} = ${formatNum(3.14 * r)} cm, et le diamètre qui le ferme mesure ${2 * r} cm. Total : ${formatNum(rep)} cm.` }); } }
   ] },
 
   { id: 'algebre', emoji: '🔤', title: 'Algèbre', skills: [
@@ -834,11 +856,12 @@ const DOMAINS = [
 
   { id: 'volume', emoji: '🧊', title: 'Volume', skills: [
     { id: 'volume-cube', title: 'Volume d\'un cube', explanation: "Toutes les arêtes d'un cube sont égales. Son volume est arête × arête × arête.", levels: ['singapour'],
-      question() { const a = rnd(2, 12), rep = a * a * a; return q({ category: 'Cube', prompt: `Un cube a une arête de ${a} cm. Quel est son volume ?`, svg: svgCuboid(a, a, a), answer: formatNum(rep), unit: 'cm³', options: spreadOptions(rep, 0), limit: 25 }); } },
+      question() { const a = rnd(2, 12), rep = a * a * a; return q({ category: 'Cube', prompt: `Un cube a une arête de ${a} cm. Quel est son volume ?`, svg: svgCuboid(a, a, a), answer: formatNum(rep), unit: 'cm³', options: spreadOptions(rep, 0), limit: 25, expl: `Toutes les arêtes sont égales : ${a} × ${a} × ${a} = ${formatNum(rep)} cm³.` }); } },
     { id: 'volume-pave', title: 'Volume d\'un pavé droit', explanation: "Le volume d'un pavé droit est longueur × largeur × hauteur.", levels: ['singapour'],
-      question() { const L = rnd(2, 15), l = rnd(2, 12), h = rnd(2, 10), rep = L * l * h; return q({ category: 'Pavé droit', prompt: 'Quel est le volume de ce pavé droit ?', svg: svgCuboid(L, l, h), answer: formatNum(rep), unit: 'cm³', options: spreadOptions(rep, 0), limit: 30 }); } },
+      question() { const L = rnd(2, 15), l = rnd(2, 12), h = rnd(2, 10), rep = L * l * h; return q({ category: 'Pavé droit', prompt: 'Quel est le volume de ce pavé droit ?', svg: svgCuboid(L, l, h), answer: formatNum(rep), unit: 'cm³', options: spreadOptions(rep, 0), limit: 30, expl: `Longueur × largeur × hauteur : ${L} × ${l} × ${h} = ${formatNum(rep)} cm³.` }); } },
     { id: 'volume-arete', title: 'Retrouver une dimension', explanation: "Divise le volume par les deux dimensions connues : il reste la troisième.", levels: ['singapour'],
-      question() { const L = rnd(2, 15), l = rnd(2, 12), h = rnd(2, 10), V = L * l * h; return q({ category: 'Dimension manquante', prompt: `Un pavé droit a un volume de ${V} cm³. Sa longueur est ${L} cm et sa largeur ${l} cm. Quelle est sa hauteur ?`, answer: formatNum(h), unit: 'cm', options: spreadOptions(h, 0), limit: 30 }); } },
+      question() { const L = rnd(2, 15), l = rnd(2, 12), h = rnd(2, 10), V = L * l * h; return q({ category: 'Dimension manquante', prompt: `Un pavé droit a un volume de ${V} cm³. Sa longueur est ${L} cm et sa largeur ${l} cm. Quelle est sa hauteur ?`, answer: formatNum(h), unit: 'cm', options: spreadOptions(h, 0), limit: 30,
+        expl: `On divise le volume par les deux dimensions connues : ${V} ÷ (${L} × ${l}) = ${V} ÷ ${L * l} = ${formatNum(h)} cm.` }); } },
     { id: 'volume-litres', title: 'Des cm³ aux litres', explanation: "Un litre occupe exactement 1000 cm³. Pour passer des cm³ aux litres, divise par 1000.", levels: ['singapour'],
       question() {
         const litres = rnd(1, 30), cm3 = litres * 1000, versLitres = Math.random() < 0.5;
@@ -888,18 +911,18 @@ const DOMAINS = [
       ],
       reperes: [['1870', 'Proclamation de la Troisième République'], ['1881-1882', "Lois de Jules Ferry sur l'école"], ['1905', 'Loi de séparation des Églises et de l\'État'], ['1944', 'Droit de vote accordé aux femmes']],
       question() { return questionDeBanque([
-        { cat: 'La République', prompt: "En quelle année la Troisième République est-elle proclamée ?", answer: '1870', faux: ['1789', '1848', '1914'] },
-        { cat: 'La République', prompt: "Qui a fait voter les lois rendant l'école gratuite et obligatoire ?", answer: 'Jules Ferry', faux: ['Jules Verne', 'Victor Hugo', 'Léon Gambetta'] },
-        { cat: 'La République', prompt: "Quelle est la devise de la République française ?", answer: 'Liberté, Égalité, Fraternité', faux: ['Travail, Famille, Patrie', 'Unité, Force, Justice', 'Paix, Liberté, Égalité'] },
-        { cat: 'La République', prompt: "Quelle est la fête nationale française ?", answer: '14 juillet', faux: ['1er mai', '11 novembre', '8 mai'] },
-        { cat: 'La République', prompt: "Comment s'appelle l'hymne national français ?", answer: 'La Marseillaise', faux: ['La Parisienne', "Le Chant du départ", "L'Internationale"] },
-        { cat: 'La République', prompt: "Quel personnage représente la République française ?", answer: 'Marianne', faux: ['Jeanne d\'Arc', 'Joséphine', 'Clémence'] },
-        { cat: 'La République', prompt: "En quelle année la loi de séparation des Églises et de l'État est-elle votée ?", answer: '1905', faux: ['1881', '1918', '1946'] },
-        { cat: 'La République', prompt: "Quelles sont les trois couleurs du drapeau français ?", answer: 'Bleu, blanc, rouge', faux: ['Bleu, blanc, vert', 'Rouge, blanc, noir', 'Bleu, jaune, rouge'] },
-        { cat: 'La République', prompt: "Comment appelle-t-on le principe selon lequel l'État ne reconnaît aucune religion ?", answer: 'La laïcité', faux: ['La démocratie', 'La monarchie', 'La citoyenneté'] },
-        { cat: 'La République', prompt: "En quelle année les femmes obtiennent-elles le droit de vote en France ?", answer: '1944', faux: ['1789', '1905', '1968'] },
-        { cat: 'La République', prompt: "L'école rendue obligatoire par Jules Ferry concernait-elle les filles ?", answer: 'Oui, filles et garçons', faux: ['Non, seulement les garçons', 'Non, seulement les riches', 'Oui, mais seulement en ville'] },
-        { cat: 'La République', prompt: "Dans une République, qui choisit les dirigeants ?", answer: 'Les citoyens, par le vote', faux: ['Le roi', "L'armée", 'Le fils du président'] }
+        { cat: 'La République', prompt: "En quelle année la Troisième République est-elle proclamée ?", answer: '1870', faux: ['1789', '1848', '1914'], expl: "Elle est proclamée en 1870, après la défaite face à la Prusse et la chute de Napoléon III." },
+        { cat: 'La République', prompt: "Qui a fait voter les lois rendant l'école gratuite et obligatoire ?", answer: 'Jules Ferry', faux: ['Jules Verne', 'Victor Hugo', 'Léon Gambetta'], expl: "Jules Ferry, ministre de l'Instruction publique, fait voter ces lois en 1881 et 1882." },
+        { cat: 'La République', prompt: "Quelle est la devise de la République française ?", answer: 'Liberté, Égalité, Fraternité', faux: ['Travail, Famille, Patrie', 'Unité, Force, Justice', 'Paix, Liberté, Égalité'], expl: "Ces trois mots viennent de la Révolution de 1789 et figurent sur les mairies." },
+        { cat: 'La République', prompt: "Quelle est la fête nationale française ?", answer: '14 juillet', faux: ['1er mai', '11 novembre', '8 mai'], expl: "Le 14 juillet rappelle la prise de la Bastille en 1789 et la Fête de la Fédération en 1790." },
+        { cat: 'La République', prompt: "Comment s'appelle l'hymne national français ?", answer: 'La Marseillaise', faux: ['La Parisienne', "Le Chant du départ", "L'Internationale"], expl: "Chant écrit par Rouget de Lisle en 1792, devenu l'hymne national en 1795." },
+        { cat: 'La République', prompt: "Quel personnage représente la République française ?", answer: 'Marianne', faux: ['Jeanne d\'Arc', 'Joséphine', 'Clémence'], expl: "Marianne, coiffée du bonnet phrygien, symbolise la liberté ; son buste est dans chaque mairie." },
+        { cat: 'La République', prompt: "En quelle année la loi de séparation des Églises et de l'État est-elle votée ?", answer: '1905', faux: ['1881', '1918', '1946'], expl: "La loi de 1905 instaure la laïcité : l'État ne reconnaît ni ne finance aucun culte." },
+        { cat: 'La République', prompt: "Quelles sont les trois couleurs du drapeau français ?", answer: 'Bleu, blanc, rouge', faux: ['Bleu, blanc, vert', 'Rouge, blanc, noir', 'Bleu, jaune, rouge'], expl: "Le bleu et le rouge sont les couleurs de Paris, le blanc celle du roi : un drapeau né de la Révolution." },
+        { cat: 'La République', prompt: "Comment appelle-t-on le principe selon lequel l'État ne reconnaît aucune religion ?", answer: 'La laïcité', faux: ['La démocratie', 'La monarchie', 'La citoyenneté'], expl: "La laïcité garantit la liberté de croire ou de ne pas croire, et la neutralité de l'État." },
+        { cat: 'La République', prompt: "En quelle année les femmes obtiennent-elles le droit de vote en France ?", answer: '1944', faux: ['1789', '1905', '1968'], expl: "Une ordonnance de 1944 leur accorde ce droit ; elles votent pour la première fois en 1945." },
+        { cat: 'La République', prompt: "L'école rendue obligatoire par Jules Ferry concernait-elle les filles ?", answer: 'Oui, filles et garçons', faux: ['Non, seulement les garçons', 'Non, seulement les riches', 'Oui, mais seulement en ville'], expl: "L'école devient obligatoire pour tous les enfants de 6 à 13 ans, filles comme garçons." },
+        { cat: 'La République', prompt: "Dans une République, qui choisit les dirigeants ?", answer: 'Les citoyens, par le vote', faux: ['Le roi', "L'armée", 'Le fils du président'], expl: "Dans une République, le pouvoir vient des citoyens, qui élisent leurs représentants." }
       ]); } },
 
     { id: 'hist-industriel', title: "L'âge industriel", explanation: "Les machines, les usines et les grandes transformations de la vie au XIXe siècle.", levels: ['cm2'],
@@ -911,16 +934,16 @@ const DOMAINS = [
       ],
       reperes: [['XIXe siècle', "L'âge industriel en France"], ['1804', 'Première locomotive à vapeur'], ['Charbon', "L'énergie des usines et des trains"], ['Exode rural', 'Départ des campagnes vers les villes']],
       question() { return questionDeBanque([
-        { cat: 'Âge industriel', prompt: "Quelle invention transforme le travail au XIXe siècle ?", answer: 'La machine à vapeur', faux: ["L'ordinateur", 'Le moteur électrique', 'Le télégraphe'] },
-        { cat: 'Âge industriel', prompt: "Quelle énergie fait fonctionner les usines de l'âge industriel ?", answer: 'Le charbon', faux: ["Le pétrole", "Le gaz naturel", "L'électricité solaire"] },
-        { cat: 'Âge industriel', prompt: "Comment appelle-t-on le départ des paysans vers les villes ?", answer: "L'exode rural", faux: ["L'exode urbain", "La colonisation", "L'émigration"] },
-        { cat: 'Âge industriel', prompt: "Quel moyen de transport se développe beaucoup au XIXe siècle ?", answer: 'Le chemin de fer', faux: ["L'avion", "L'automobile électrique", 'Le métro'] },
-        { cat: 'Âge industriel', prompt: "Où travaillent les ouvriers de l'âge industriel ?", answer: 'Dans des usines', faux: ['Dans des châteaux', 'Dans des monastères', 'Dans des bureaux'] },
-        { cat: 'Âge industriel', prompt: "Les enfants travaillaient-ils dans les usines au XIXe siècle ?", answer: 'Oui, très jeunes', faux: ['Non, jamais', 'Seulement le dimanche', 'Seulement après 18 ans'] },
-        { cat: 'Âge industriel', prompt: "Quel métal est produit en grande quantité à l'âge industriel ?", answer: "L'acier", faux: ["L'or", "L'aluminium", 'Le bronze'] },
-        { cat: 'Âge industriel', prompt: "En quel siècle se situe l'âge industriel en France ?", answer: 'Le XIXe siècle', faux: ['Le XVIe siècle', 'Le XVIIIe siècle', 'Le XXe siècle'] },
-        { cat: 'Âge industriel', prompt: "Avant les usines, qui fabriquait les objets ?", answer: 'Des artisans, à la main', faux: ['Des robots', 'Des ingénieurs', 'Personne'] },
-        { cat: 'Âge industriel', prompt: "Comment appelle-t-on ceux qui travaillent dans les usines ?", answer: 'Les ouvriers', faux: ['Les paysans', 'Les seigneurs', 'Les commerçants'] }
+        { cat: 'Âge industriel', prompt: "Quelle invention transforme le travail au XIXe siècle ?", answer: 'La machine à vapeur', faux: ["L'ordinateur", 'Le moteur électrique', 'Le télégraphe'], expl: "La machine à vapeur permet de faire tourner les machines des usines et les locomotives." },
+        { cat: 'Âge industriel', prompt: "Quelle énergie fait fonctionner les usines de l'âge industriel ?", answer: 'Le charbon', faux: ["Le pétrole", "Le gaz naturel", "L'électricité solaire"], expl: "Le charbon, brûlé dans les chaudières, produit la vapeur qui actionne les machines." },
+        { cat: 'Âge industriel', prompt: "Comment appelle-t-on le départ des paysans vers les villes ?", answer: "L'exode rural", faux: ["L'exode urbain", "La colonisation", "L'émigration"], expl: "L'exode rural vide les campagnes : on quitte la ferme pour l'usine." },
+        { cat: 'Âge industriel', prompt: "Quel moyen de transport se développe beaucoup au XIXe siècle ?", answer: 'Le chemin de fer', faux: ["L'avion", "L'automobile électrique", 'Le métro'], expl: "Le chemin de fer relie les villes et transporte marchandises et voyageurs bien plus vite." },
+        { cat: 'Âge industriel', prompt: "Où travaillent les ouvriers de l'âge industriel ?", answer: 'Dans des usines', faux: ['Dans des châteaux', 'Dans des monastères', 'Dans des bureaux'], expl: "L'usine remplace l'atelier : on y produit en série avec des machines." },
+        { cat: 'Âge industriel', prompt: "Les enfants travaillaient-ils dans les usines au XIXe siècle ?", answer: 'Oui, très jeunes', faux: ['Non, jamais', 'Seulement le dimanche', 'Seulement après 18 ans'], expl: "Oui, dès 8 ou 10 ans, et de longues journées. Des lois les protégeront peu à peu." },
+        { cat: 'Âge industriel', prompt: "Quel métal est produit en grande quantité à l'âge industriel ?", answer: "L'acier", faux: ["L'or", "L'aluminium", 'Le bronze'], expl: "L'acier, obtenu dans les hauts fourneaux, sert aux rails, aux ponts et aux machines." },
+        { cat: 'Âge industriel', prompt: "En quel siècle se situe l'âge industriel en France ?", answer: 'Le XIXe siècle', faux: ['Le XVIe siècle', 'Le XVIIIe siècle', 'Le XXe siècle'], expl: "Le XIXe siècle, celui des usines, du charbon et du chemin de fer." },
+        { cat: 'Âge industriel', prompt: "Avant les usines, qui fabriquait les objets ?", answer: 'Des artisans, à la main', faux: ['Des robots', 'Des ingénieurs', 'Personne'], expl: "Les artisans fabriquaient à la main, pièce par pièce, dans de petits ateliers." },
+        { cat: 'Âge industriel', prompt: "Comment appelle-t-on ceux qui travaillent dans les usines ?", answer: 'Les ouvriers', faux: ['Les paysans', 'Les seigneurs', 'Les commerçants'], expl: "Les ouvriers forment une nouvelle classe sociale née de l'industrialisation." }
       ]); } },
 
     { id: 'hist-guerres', title: 'Les deux guerres mondiales', explanation: "1914-1918 et 1939-1945 : deux conflits qui ont bouleversé la France et le monde.", levels: ['cm2'],
@@ -932,18 +955,18 @@ const DOMAINS = [
       ],
       reperes: [['1914-1918', 'Première Guerre mondiale'], ['11 novembre 1918', 'Armistice'], ['18 juin 1940', 'Appel du général de Gaulle'], ['6 juin 1944', 'Débarquement en Normandie'], ['8 mai 1945', 'Fin de la guerre en Europe']],
       question() { return questionDeBanque([
-        { cat: 'Guerres mondiales', prompt: "Quelles sont les dates de la Première Guerre mondiale ?", answer: '1914-1918', faux: ['1939-1945', '1870-1871', '1900-1910'] },
-        { cat: 'Guerres mondiales', prompt: "Comment appelait-on les soldats français de 1914-1918 ?", answer: 'Les Poilus', faux: ['Les Sans-culottes', 'Les Résistants', 'Les Gaulois'] },
-        { cat: 'Guerres mondiales', prompt: "Dans quoi les soldats de 14-18 vivaient-ils au front ?", answer: 'Des tranchées', faux: ['Des châteaux', 'Des sous-marins', 'Des casernes chauffées'] },
-        { cat: 'Guerres mondiales', prompt: "Quelle date marque l'armistice de la Première Guerre mondiale ?", answer: '11 novembre 1918', faux: ['8 mai 1945', '14 juillet 1918', '1er septembre 1939'] },
-        { cat: 'Guerres mondiales', prompt: "Quelle grande bataille de 1916 est restée célèbre ?", answer: 'Verdun', faux: ['Waterloo', 'Austerlitz', 'Normandie'] },
-        { cat: 'Guerres mondiales', prompt: "En quelle année commence la Seconde Guerre mondiale ?", answer: '1939', faux: ['1914', '1940', '1945'] },
-        { cat: 'Guerres mondiales', prompt: "Qui lance l'appel du 18 juin 1940 depuis Londres ?", answer: 'Le général de Gaulle', faux: ['Le maréchal Pétain', 'Georges Clemenceau', 'Winston Churchill'] },
-        { cat: 'Guerres mondiales', prompt: "Comment appelle-t-on ceux qui ont combattu l'occupant de l'intérieur ?", answer: 'Les résistants', faux: ['Les Poilus', 'Les Alliés', 'Les collaborateurs'] },
-        { cat: 'Guerres mondiales', prompt: "Où les Alliés débarquent-ils le 6 juin 1944 ?", answer: 'En Normandie', faux: ['En Bretagne', 'En Provence', 'En Belgique'] },
-        { cat: 'Guerres mondiales', prompt: "Quelle date marque la fin de la Seconde Guerre mondiale en Europe ?", answer: '8 mai 1945', faux: ['11 novembre 1918', '6 juin 1944', '14 juillet 1945'] },
-        { cat: 'Guerres mondiales', prompt: "Comment appelle-t-on l'extermination des Juifs par les nazis ?", answer: 'La Shoah', faux: ['La Résistance', "L'armistice", "L'exode"] },
-        { cat: 'Guerres mondiales', prompt: "Quel pays occupe la France à partir de 1940 ?", answer: "L'Allemagne", faux: ["L'Italie", "L'Angleterre", "L'Espagne"] }
+        { cat: 'Guerres mondiales', prompt: "Quelles sont les dates de la Première Guerre mondiale ?", answer: '1914-1918', faux: ['1939-1945', '1870-1871', '1900-1910'], expl: "Elle éclate en 1914 et s'achève par l'armistice du 11 novembre 1918." },
+        { cat: 'Guerres mondiales', prompt: "Comment appelait-on les soldats français de 1914-1918 ?", answer: 'Les Poilus', faux: ['Les Sans-culottes', 'Les Résistants', 'Les Gaulois'], expl: "Les Poilus, surnommés ainsi pour leur barbe, faute de pouvoir se raser au front." },
+        { cat: 'Guerres mondiales', prompt: "Dans quoi les soldats de 14-18 vivaient-ils au front ?", answer: 'Des tranchées', faux: ['Des châteaux', 'Des sous-marins', 'Des casernes chauffées'], expl: "Les tranchées : des fossés creusés face à l'ennemi, dans la boue et le froid." },
+        { cat: 'Guerres mondiales', prompt: "Quelle date marque l'armistice de la Première Guerre mondiale ?", answer: '11 novembre 1918', faux: ['8 mai 1945', '14 juillet 1918', '1er septembre 1939'], expl: "Le 11 novembre 1918 : c'est aujourd'hui un jour férié en mémoire des morts." },
+        { cat: 'Guerres mondiales', prompt: "Quelle grande bataille de 1916 est restée célèbre ?", answer: 'Verdun', faux: ['Waterloo', 'Austerlitz', 'Normandie'], expl: "Verdun, où l'armée française résista pendant dix mois, au prix de pertes énormes." },
+        { cat: 'Guerres mondiales', prompt: "En quelle année commence la Seconde Guerre mondiale ?", answer: '1939', faux: ['1914', '1940', '1945'], expl: "En 1939, avec l'invasion de la Pologne par l'Allemagne nazie." },
+        { cat: 'Guerres mondiales', prompt: "Qui lance l'appel du 18 juin 1940 depuis Londres ?", answer: 'Le général de Gaulle', faux: ['Le maréchal Pétain', 'Georges Clemenceau', 'Winston Churchill'], expl: "Le général de Gaulle appelle à refuser la défaite et à poursuivre le combat." },
+        { cat: 'Guerres mondiales', prompt: "Comment appelle-t-on ceux qui ont combattu l'occupant de l'intérieur ?", answer: 'Les résistants', faux: ['Les Poilus', 'Les Alliés', 'Les collaborateurs'], expl: "Les résistants : ils sabotaient, renseignaient les Alliés et cachaient des personnes traquées." },
+        { cat: 'Guerres mondiales', prompt: "Où les Alliés débarquent-ils le 6 juin 1944 ?", answer: 'En Normandie', faux: ['En Bretagne', 'En Provence', 'En Belgique'], expl: "En Normandie, sur les plages du Calvados et de la Manche : c'est le jour J." },
+        { cat: 'Guerres mondiales', prompt: "Quelle date marque la fin de la Seconde Guerre mondiale en Europe ?", answer: '8 mai 1945', faux: ['11 novembre 1918', '6 juin 1944', '14 juillet 1945'], expl: "Le 8 mai 1945, jour de la capitulation allemande." },
+        { cat: 'Guerres mondiales', prompt: "Comment appelle-t-on l'extermination des Juifs par les nazis ?", answer: 'La Shoah', faux: ['La Résistance', "L'armistice", "L'exode"], expl: "La Shoah : six millions de Juifs d'Europe assassinés, dont des enfants déportés de France." },
+        { cat: 'Guerres mondiales', prompt: "Quel pays occupe la France à partir de 1940 ?", answer: "L'Allemagne", faux: ["L'Italie", "L'Angleterre", "L'Espagne"], expl: "L'Allemagne nazie occupe le pays après la défaite de juin 1940." }
       ]); } },
 
     { id: 'hist-europe', title: "De l'après-guerre à l'Europe", explanation: "La reconstruction, les progrès de la vie quotidienne et la construction européenne.", levels: ['cm2'],
@@ -955,16 +978,16 @@ const DOMAINS = [
       ],
       reperes: [['1945-1975', 'Les Trente Glorieuses'], ['1957', 'Traité de Rome'], ['2002', "L'euro remplace le franc"], ['Drapeau européen', 'Douze étoiles dorées sur fond bleu']],
       question() { return questionDeBanque([
-        { cat: 'Après-guerre', prompt: "Comment appelle-t-on les années de forte croissance après 1945 ?", answer: 'Les Trente Glorieuses', faux: ['La Belle Époque', 'Les Années folles', 'La Renaissance'] },
-        { cat: 'Après-guerre', prompt: "En quelle année l'euro remplace-t-il le franc dans les porte-monnaie ?", answer: '2002', faux: ['1957', '1992', '2010'] },
-        { cat: 'Après-guerre', prompt: "Quel traité de 1957 lance la construction européenne ?", answer: 'Le traité de Rome', faux: ['Le traité de Versailles', "Le traité de l'Élysée", 'Le traité de Paris'] },
-        { cat: 'Après-guerre', prompt: "Combien d'étoiles compte le drapeau européen ?", answer: 'Douze', faux: ['Vingt-sept', 'Six', 'Cinquante'] },
-        { cat: 'Après-guerre', prompt: "Quelle est la monnaie de la France aujourd'hui ?", answer: "L'euro", faux: ['Le franc', 'La livre', 'Le dollar'] },
-        { cat: 'Après-guerre', prompt: "Quel appareil entre dans les foyers français dans les années 1950-1960 ?", answer: 'La télévision', faux: ["L'ordinateur", 'Le téléphone portable', 'Internet'] },
-        { cat: 'Après-guerre', prompt: "Pourquoi les pays européens ont-ils décidé de coopérer après 1945 ?", answer: 'Pour éviter une nouvelle guerre', faux: ['Pour conquérir des colonies', 'Pour parler la même langue', 'Pour supprimer les frontières maritimes'] },
-        { cat: 'Après-guerre', prompt: "En quelle année les Françaises votent-elles pour la première fois ?", answer: '1945', faux: ['1918', '1936', '1968'] },
-        { cat: 'Après-guerre', prompt: "Comment s'appelle aujourd'hui l'union des pays européens ?", answer: "L'Union européenne", faux: ["L'ONU", "L'OTAN", 'Le Commonwealth'] },
-        { cat: 'Après-guerre', prompt: "Combien de pays signent le traité de Rome en 1957 ?", answer: 'Six', faux: ['Douze', 'Vingt-sept', 'Trois'] }
+        { cat: 'Après-guerre', prompt: "Comment appelle-t-on les années de forte croissance après 1945 ?", answer: 'Les Trente Glorieuses', faux: ['La Belle Époque', 'Les Années folles', 'La Renaissance'], expl: "Les Trente Glorieuses, de 1945 à 1975 : plein emploi et hausse du niveau de vie." },
+        { cat: 'Après-guerre', prompt: "En quelle année l'euro remplace-t-il le franc dans les porte-monnaie ?", answer: '2002', faux: ['1957', '1992', '2010'], expl: "Les pièces et billets en euros arrivent le 1er janvier 2002." },
+        { cat: 'Après-guerre', prompt: "Quel traité de 1957 lance la construction européenne ?", answer: 'Le traité de Rome', faux: ['Le traité de Versailles', "Le traité de l'Élysée", 'Le traité de Paris'], expl: "Le traité de Rome crée le Marché commun entre six pays." },
+        { cat: 'Après-guerre', prompt: "Combien d'étoiles compte le drapeau européen ?", answer: 'Douze', faux: ['Vingt-sept', 'Six', 'Cinquante'], expl: "Douze étoiles en cercle : un nombre symbole d'unité, sans rapport avec le nombre de pays." },
+        { cat: 'Après-guerre', prompt: "Quelle est la monnaie de la France aujourd'hui ?", answer: "L'euro", faux: ['Le franc', 'La livre', 'Le dollar'], expl: "L'euro, partagé avec une vingtaine de pays européens." },
+        { cat: 'Après-guerre', prompt: "Quel appareil entre dans les foyers français dans les années 1950-1960 ?", answer: 'La télévision', faux: ["L'ordinateur", 'Le téléphone portable', 'Internet'], expl: "La télévision, qui transforme les loisirs et l'information." },
+        { cat: 'Après-guerre', prompt: "Pourquoi les pays européens ont-ils décidé de coopérer après 1945 ?", answer: 'Pour éviter une nouvelle guerre', faux: ['Pour conquérir des colonies', 'Pour parler la même langue', 'Pour supprimer les frontières maritimes'], expl: "Après deux guerres mondiales, unir les économies devait rendre la guerre impossible." },
+        { cat: 'Après-guerre', prompt: "En quelle année les Françaises votent-elles pour la première fois ?", answer: '1945', faux: ['1918', '1936', '1968'], expl: "En 1945, aux élections municipales, un an après l'ordonnance de 1944." },
+        { cat: 'Après-guerre', prompt: "Comment s'appelle aujourd'hui l'union des pays européens ?", answer: "L'Union européenne", faux: ["L'ONU", "L'OTAN", 'Le Commonwealth'], expl: "L'Union européenne, qui regroupe aujourd'hui 27 pays." },
+        { cat: 'Après-guerre', prompt: "Combien de pays signent le traité de Rome en 1957 ?", answer: 'Six', faux: ['Douze', 'Vingt-sept', 'Trois'], expl: "Six : France, Allemagne, Italie, Belgique, Pays-Bas et Luxembourg." }
       ]); } },
 
     { id: 'hist-prehistoire', title: 'Préhistoire et Néolithique', explanation: "Des premiers humains aux premiers villages : la plus longue période de notre histoire.", levels: ['sixieme'],
@@ -976,16 +999,16 @@ const DOMAINS = [
       ],
       reperes: [['Paléolithique', 'Nomades, chasseurs-cueilleurs'], ['Néolithique', 'Agriculture, élevage, villages'], ['vers -10 000', 'Début du Néolithique'], ['vers -3300', "Invention de l'écriture"]],
       question() { return questionDeBanque([
-        { cat: 'Préhistoire', prompt: "Sur quel continent les premiers êtres humains sont-ils apparus ?", answer: "L'Afrique", faux: ["L'Europe", "L'Asie", "L'Amérique"] },
-        { cat: 'Préhistoire', prompt: "Comment vivaient les humains du Paléolithique ?", answer: 'Nomades, ils se déplaçaient', faux: ['Sédentaires, dans des villages', 'Dans des villes fortifiées', 'Dans des fermes'] },
-        { cat: 'Préhistoire', prompt: "De quoi vivaient les humains du Paléolithique ?", answer: 'Chasse, pêche et cueillette', faux: ["Agriculture et élevage", 'Commerce', 'Artisanat'] },
-        { cat: 'Préhistoire', prompt: "Quelles sont les deux grandes inventions du Néolithique ?", answer: "L'agriculture et l'élevage", faux: ["L'écriture et la roue", 'Le feu et les outils', 'La poterie et le bronze'] },
-        { cat: 'Préhistoire', prompt: "Que signifie « devenir sédentaire » ?", answer: 'Se fixer à un endroit', faux: ['Se déplacer sans cesse', 'Vivre dans une grotte', 'Chasser en groupe'] },
-        { cat: 'Préhistoire', prompt: "Quelle grotte française est célèbre pour ses peintures ?", answer: 'Lascaux', faux: ['Versailles', 'Carnac', 'Alésia'] },
-        { cat: 'Préhistoire', prompt: "Quelle invention marque la fin de la Préhistoire ?", answer: "L'écriture", faux: ['Le feu', 'La roue', "L'agriculture"] },
-        { cat: 'Préhistoire', prompt: "Vers quelle date commence le Néolithique ?", answer: 'Vers 10 000 avant J.-C.', faux: ['Vers 3 000 après J.-C.', 'Vers 500 avant J.-C.', 'Vers 1 000 après J.-C.'] },
-        { cat: 'Préhistoire', prompt: "Dans quelle région l'écriture a-t-elle été inventée ?", answer: 'En Mésopotamie', faux: ['En Gaule', 'En Chine', 'Au Pérou'] },
-        { cat: 'Préhistoire', prompt: "Quelle maîtrise a permis aux humains de se réchauffer et de cuire ?", answer: 'Le feu', faux: ["L'électricité", 'Le charbon', 'La vapeur'] }
+        { cat: 'Préhistoire', prompt: "Sur quel continent les premiers êtres humains sont-ils apparus ?", answer: "L'Afrique", faux: ["L'Europe", "L'Asie", "L'Amérique"], expl: "En Afrique, il y a environ 3 millions d'années ; ils ont ensuite peuplé la planète." },
+        { cat: 'Préhistoire', prompt: "Comment vivaient les humains du Paléolithique ?", answer: 'Nomades, ils se déplaçaient', faux: ['Sédentaires, dans des villages', 'Dans des villes fortifiées', 'Dans des fermes'], expl: "Nomades, ils suivaient le gibier et ne restaient jamais longtemps au même endroit." },
+        { cat: 'Préhistoire', prompt: "De quoi vivaient les humains du Paléolithique ?", answer: 'Chasse, pêche et cueillette', faux: ["Agriculture et élevage", 'Commerce', 'Artisanat'], expl: "De ce qu'ils trouvaient : chasse, pêche et cueillette." },
+        { cat: 'Préhistoire', prompt: "Quelles sont les deux grandes inventions du Néolithique ?", answer: "L'agriculture et l'élevage", faux: ["L'écriture et la roue", 'Le feu et les outils', 'La poterie et le bronze'], expl: "Cultiver la terre et élever des animaux : on produit sa nourriture au lieu de la chercher." },
+        { cat: 'Préhistoire', prompt: "Que signifie « devenir sédentaire » ?", answer: 'Se fixer à un endroit', faux: ['Se déplacer sans cesse', 'Vivre dans une grotte', 'Chasser en groupe'], expl: "Se fixer en un lieu, parce qu'il faut rester près de ses champs et de ses troupeaux." },
+        { cat: 'Préhistoire', prompt: "Quelle grotte française est célèbre pour ses peintures ?", answer: 'Lascaux', faux: ['Versailles', 'Carnac', 'Alésia'], expl: "Lascaux, en Dordogne, décorée il y a environ 18 000 ans." },
+        { cat: 'Préhistoire', prompt: "Quelle invention marque la fin de la Préhistoire ?", answer: "L'écriture", faux: ['Le feu', 'La roue', "L'agriculture"], expl: "L'écriture : à partir de là, les hommes laissent des traces écrites, c'est l'Histoire." },
+        { cat: 'Préhistoire', prompt: "Vers quelle date commence le Néolithique ?", answer: 'Vers 10 000 avant J.-C.', faux: ['Vers 3 000 après J.-C.', 'Vers 500 avant J.-C.', 'Vers 1 000 après J.-C.'], expl: "Vers 10 000 avant J.-C., au Proche-Orient, avec l'agriculture." },
+        { cat: 'Préhistoire', prompt: "Dans quelle région l'écriture a-t-elle été inventée ?", answer: 'En Mésopotamie', faux: ['En Gaule', 'En Chine', 'Au Pérou'], expl: "En Mésopotamie, entre le Tigre et l'Euphrate, vers 3300 avant J.-C." },
+        { cat: 'Préhistoire', prompt: "Quelle maîtrise a permis aux humains de se réchauffer et de cuire ?", answer: 'Le feu', faux: ["L'électricité", 'Le charbon', 'La vapeur'], expl: "Le feu : il réchauffe, éclaire, cuit les aliments et éloigne les prédateurs." }
       ]); } },
 
     { id: 'hist-antiquite', title: "La Méditerranée antique", explanation: "Grecs et Romains : leurs cités, leurs dieux et leurs récits fondateurs.", levels: ['sixieme'],
@@ -997,18 +1020,18 @@ const DOMAINS = [
       ],
       reperes: [['Athènes', 'Naissance de la démocratie'], ['Homère', "L'Iliade et l'Odyssée"], ['-753', 'Fondation légendaire de Rome'], ['-27', 'Auguste, premier empereur romain']],
       question() { return questionDeBanque([
-        { cat: 'Antiquité', prompt: "Dans quelle cité grecque naît la démocratie ?", answer: 'Athènes', faux: ['Sparte', 'Rome', 'Olympie'] },
-        { cat: 'Antiquité', prompt: "Que veut dire « polythéiste » ?", answer: 'Croire en plusieurs dieux', faux: ['Croire en un seul dieu', 'Ne croire en aucun dieu', 'Croire aux ancêtres'] },
-        { cat: 'Antiquité', prompt: "Quel poète grec a composé l'Iliade et l'Odyssée ?", answer: 'Homère', faux: ['Platon', 'Socrate', 'Hérodote'] },
-        { cat: 'Antiquité', prompt: "Qui est le roi des dieux chez les Grecs ?", answer: 'Zeus', faux: ['Jupiter', 'Poséidon', 'Apollon'] },
-        { cat: 'Antiquité', prompt: "Où se déroulaient les Jeux olympiques dans l'Antiquité ?", answer: 'À Olympie', faux: ['À Athènes', 'À Rome', 'À Sparte'] },
-        { cat: 'Antiquité', prompt: "Selon la légende, qui a fondé Rome ?", answer: 'Romulus', faux: ['Jules César', 'Auguste', 'Rémus et Numa'] },
-        { cat: 'Antiquité', prompt: "En quelle année Rome aurait-elle été fondée ?", answer: '753 avant J.-C.', faux: ['27 avant J.-C.', '476 après J.-C.', '1000 avant J.-C.'] },
-        { cat: 'Antiquité', prompt: "Qui devient le premier empereur romain en 27 avant J.-C. ?", answer: 'Auguste', faux: ['Jules César', 'Néron', 'Romulus'] },
-        { cat: 'Antiquité', prompt: "Comment appelle-t-on les petites villes-États grecques indépendantes ?", answer: 'Des cités', faux: ['Des empires', 'Des provinces', 'Des royaumes'] },
-        { cat: 'Antiquité', prompt: "À Athènes, qui pouvait voter ?", answer: 'Les citoyens hommes seulement', faux: ['Tous les habitants', 'Les femmes seulement', 'Les esclaves aussi'] },
-        { cat: 'Antiquité', prompt: "Quelle cité grecque était surtout réputée pour ses guerriers ?", answer: 'Sparte', faux: ['Athènes', 'Corinthe', 'Olympie'] },
-        { cat: 'Antiquité', prompt: "Quelle déesse grecque protège la cité d'Athènes ?", answer: 'Athéna', faux: ['Héra', 'Aphrodite', 'Artémis'] }
+        { cat: 'Antiquité', prompt: "Dans quelle cité grecque naît la démocratie ?", answer: 'Athènes', faux: ['Sparte', 'Rome', 'Olympie'], expl: "À Athènes, où les citoyens votaient eux-mêmes les lois sur l'Agora." },
+        { cat: 'Antiquité', prompt: "Que veut dire « polythéiste » ?", answer: 'Croire en plusieurs dieux', faux: ['Croire en un seul dieu', 'Ne croire en aucun dieu', 'Croire aux ancêtres'], expl: "Poly veut dire plusieurs et théos veut dire dieu : croire en plusieurs dieux." },
+        { cat: 'Antiquité', prompt: "Quel poète grec a composé l'Iliade et l'Odyssée ?", answer: 'Homère', faux: ['Platon', 'Socrate', 'Hérodote'], expl: "Homère, à qui l'on attribue ces deux grands récits fondateurs." },
+        { cat: 'Antiquité', prompt: "Qui est le roi des dieux chez les Grecs ?", answer: 'Zeus', faux: ['Jupiter', 'Poséidon', 'Apollon'], expl: "Zeus, maître de la foudre, qui règne sur l'Olympe. Les Romains l'appelleront Jupiter." },
+        { cat: 'Antiquité', prompt: "Où se déroulaient les Jeux olympiques dans l'Antiquité ?", answer: 'À Olympie', faux: ['À Athènes', 'À Rome', 'À Sparte'], expl: "À Olympie, tous les quatre ans, en l'honneur de Zeus." },
+        { cat: 'Antiquité', prompt: "Selon la légende, qui a fondé Rome ?", answer: 'Romulus', faux: ['Jules César', 'Auguste', 'Rémus et Numa'], expl: "Romulus, qui aurait tué son frère Rémus lors de la fondation." },
+        { cat: 'Antiquité', prompt: "En quelle année Rome aurait-elle été fondée ?", answer: '753 avant J.-C.', faux: ['27 avant J.-C.', '476 après J.-C.', '1000 avant J.-C.'], expl: "753 avant J.-C., selon la légende : les Romains comptaient les années à partir de cette date." },
+        { cat: 'Antiquité', prompt: "Qui devient le premier empereur romain en 27 avant J.-C. ?", answer: 'Auguste', faux: ['Jules César', 'Néron', 'Romulus'], expl: "Auguste, petit-neveu de Jules César : la République laisse place à l'Empire." },
+        { cat: 'Antiquité', prompt: "Comment appelle-t-on les petites villes-États grecques indépendantes ?", answer: 'Des cités', faux: ['Des empires', 'Des provinces', 'Des royaumes'], expl: "Les cités : chacune avait ses lois, son armée et ses dieux protecteurs." },
+        { cat: 'Antiquité', prompt: "À Athènes, qui pouvait voter ?", answer: 'Les citoyens hommes seulement', faux: ['Tous les habitants', 'Les femmes seulement', 'Les esclaves aussi'], expl: "Seuls les hommes libres nés de parents athéniens : femmes, esclaves et étrangers en étaient exclus." },
+        { cat: 'Antiquité', prompt: "Quelle cité grecque était surtout réputée pour ses guerriers ?", answer: 'Sparte', faux: ['Athènes', 'Corinthe', 'Olympie'], expl: "Sparte, où les garçons étaient formés au combat dès l'enfance." },
+        { cat: 'Antiquité', prompt: "Quelle déesse grecque protège la cité d'Athènes ?", answer: 'Athéna', faux: ['Héra', 'Aphrodite', 'Artémis'], expl: "Athéna, déesse de la sagesse, qui a donné son nom à la cité." }
       ]); } },
 
     { id: 'hist-empire-romain', title: "L'Empire romain", explanation: "Un empire immense autour de la Méditerranée, et la naissance du christianisme.", levels: ['sixieme'],
@@ -1020,17 +1043,17 @@ const DOMAINS = [
       ],
       reperes: [['-52', 'Alésia : César bat Vercingétorix'], ['Ier siècle', 'Naissance du christianisme'], ['IIe siècle', "Apogée de l'Empire romain"], ['476', "Chute de l'Empire romain d'Occident"]],
       question() { return questionDeBanque([
-        { cat: 'Empire romain', prompt: "Quelle mer l'Empire romain entoure-t-il entièrement ?", answer: 'La Méditerranée', faux: ["L'Atlantique", 'La mer Noire', 'La mer du Nord'] },
-        { cat: 'Empire romain', prompt: "Quel général romain conquiert la Gaule ?", answer: 'Jules César', faux: ['Auguste', 'Vercingétorix', 'Romulus'] },
-        { cat: 'Empire romain', prompt: "Quel chef gaulois est vaincu à Alésia ?", answer: 'Vercingétorix', faux: ['Astérix', 'Brennus', 'Clovis'] },
-        { cat: 'Empire romain', prompt: "En quelle année a lieu la bataille d'Alésia ?", answer: '52 avant J.-C.', faux: ['476 après J.-C.', '753 avant J.-C.', '27 avant J.-C.'] },
-        { cat: 'Empire romain', prompt: "À quoi servaient les aqueducs romains ?", answer: "À amener l'eau dans les villes", faux: ['À faire passer les armées', 'À défendre les frontières', 'À stocker le grain'] },
-        { cat: 'Empire romain', prompt: "Comment s'appelle le grand amphithéâtre de Rome ?", answer: 'Le Colisée', faux: ['Le Panthéon', 'Le Forum', "L'Acropole"] },
-        { cat: 'Empire romain', prompt: "Comment appelle-t-on l'adoption du mode de vie romain par les Gaulois ?", answer: 'La romanisation', faux: ['La colonisation', 'La christianisation', 'La migration'] },
-        { cat: 'Empire romain', prompt: "Où naît le christianisme au Ier siècle ?", answer: 'En Palestine', faux: ['À Rome', 'En Grèce', 'En Gaule'] },
-        { cat: 'Empire romain', prompt: "En quelle année tombe l'Empire romain d'Occident ?", answer: '476', faux: ['52 avant J.-C.', '1492', '800'] },
-        { cat: 'Empire romain', prompt: "Quelle est la capitale de l'Empire romain ?", answer: 'Rome', faux: ['Athènes', 'Constantinople', 'Alexandrie'] },
-        { cat: 'Empire romain', prompt: "Quel événement marque la fin de l'Antiquité ?", answer: "La chute de l'Empire romain d'Occident", faux: ["L'invention de l'écriture", 'La bataille d\'Alésia', 'La fondation de Rome'] }
+        { cat: 'Empire romain', prompt: "Quelle mer l'Empire romain entoure-t-il entièrement ?", answer: 'La Méditerranée', faux: ["L'Atlantique", 'La mer Noire', 'La mer du Nord'], expl: "La Méditerranée, que les Romains appelaient Mare Nostrum, « notre mer »." },
+        { cat: 'Empire romain', prompt: "Quel général romain conquiert la Gaule ?", answer: 'Jules César', faux: ['Auguste', 'Vercingétorix', 'Romulus'], expl: "Jules César, entre 58 et 51 avant J.-C." },
+        { cat: 'Empire romain', prompt: "Quel chef gaulois est vaincu à Alésia ?", answer: 'Vercingétorix', faux: ['Astérix', 'Brennus', 'Clovis'], expl: "Vercingétorix, qui avait réuni les peuples gaulois contre César." },
+        { cat: 'Empire romain', prompt: "En quelle année a lieu la bataille d'Alésia ?", answer: '52 avant J.-C.', faux: ['476 après J.-C.', '753 avant J.-C.', '27 avant J.-C.'], expl: "En 52 avant J.-C. : la Gaule devient romaine." },
+        { cat: 'Empire romain', prompt: "À quoi servaient les aqueducs romains ?", answer: "À amener l'eau dans les villes", faux: ['À faire passer les armées', 'À défendre les frontières', 'À stocker le grain'], expl: "À conduire l'eau des sources jusqu'aux villes, parfois sur des dizaines de kilomètres." },
+        { cat: 'Empire romain', prompt: "Comment s'appelle le grand amphithéâtre de Rome ?", answer: 'Le Colisée', faux: ['Le Panthéon', 'Le Forum', "L'Acropole"], expl: "Le Colisée, où se déroulaient combats de gladiateurs et spectacles." },
+        { cat: 'Empire romain', prompt: "Comment appelle-t-on l'adoption du mode de vie romain par les Gaulois ?", answer: 'La romanisation', faux: ['La colonisation', 'La christianisation', 'La migration'], expl: "La romanisation : langue latine, villes, thermes et routes s'imposent peu à peu." },
+        { cat: 'Empire romain', prompt: "Où naît le christianisme au Ier siècle ?", answer: 'En Palestine', faux: ['À Rome', 'En Grèce', 'En Gaule'], expl: "En Palestine, alors province de l'Empire romain." },
+        { cat: 'Empire romain', prompt: "En quelle année tombe l'Empire romain d'Occident ?", answer: '476', faux: ['52 avant J.-C.', '1492', '800'], expl: "En 476 : cette date marque la fin de l'Antiquité." },
+        { cat: 'Empire romain', prompt: "Quelle est la capitale de l'Empire romain ?", answer: 'Rome', faux: ['Athènes', 'Constantinople', 'Alexandrie'], expl: "Rome, d'où partaient toutes les routes de l'Empire." },
+        { cat: 'Empire romain', prompt: "Quel événement marque la fin de l'Antiquité ?", answer: "La chute de l'Empire romain d'Occident", faux: ["L'invention de l'écriture", 'La bataille d\'Alésia', 'La fondation de Rome'], expl: "La chute de l'Empire romain d'Occident en 476." }
       ]); } }
   ] },
   /* ========== Géographie ========== */
@@ -1044,18 +1067,18 @@ const DOMAINS = [
       ],
       reperes: [['Mont Blanc', '4 806 m, dans les Alpes'], ['Loire', 'Le plus long fleuve de France'], ['Seine', 'Traverse Paris'], ['Rhône', 'Se jette en Méditerranée'], ['Hexagone', 'La forme de la France métropolitaine']],
       question() { return questionDeBanque([
-        { cat: 'La France', prompt: "Quel est le plus long fleuve de France ?", answer: 'La Loire', faux: ['La Seine', 'Le Rhône', 'La Garonne'] },
-        { cat: 'La France', prompt: "Quel fleuve traverse Paris ?", answer: 'La Seine', faux: ['La Loire', 'Le Rhône', 'La Garonne'] },
-        { cat: 'La France', prompt: "Quel est le plus haut sommet des Alpes françaises ?", answer: 'Le mont Blanc', faux: ['Le pic du Midi', 'Le puy de Dôme', 'Le mont Ventoux'] },
-        { cat: 'La France', prompt: "Quelle est l'altitude du mont Blanc ?", answer: '4 806 m', faux: ['2 500 m', '3 200 m', '6 000 m'] },
-        { cat: 'La France', prompt: "Quelle chaîne de montagnes sépare la France de l'Espagne ?", answer: 'Les Pyrénées', faux: ['Les Alpes', 'Le Jura', 'Les Vosges'] },
-        { cat: 'La France', prompt: "Dans quelle mer le Rhône se jette-t-il ?", answer: 'La mer Méditerranée', faux: ["L'océan Atlantique", 'La Manche', 'La mer du Nord'] },
-        { cat: 'La France', prompt: "Quelle forme géométrique évoque la France métropolitaine ?", answer: 'Un hexagone', faux: ['Un carré', 'Un triangle', 'Un pentagone'] },
-        { cat: 'La France', prompt: "Quel fleuve arrose Bordeaux ?", answer: 'La Garonne', faux: ['La Loire', 'La Seine', 'Le Rhin'] },
-        { cat: 'La France', prompt: "Quel massif ancien se trouve au centre de la France ?", answer: 'Le Massif central', faux: ['Les Alpes', 'Les Pyrénées', 'Les Vosges'] },
-        { cat: 'La France', prompt: "Dans quel océan la Loire se jette-t-elle ?", answer: "L'océan Atlantique", faux: ['La Méditerranée', 'La mer du Nord', "L'océan Indien"] },
-        { cat: 'La France', prompt: "Quelle mer sépare la France de l'Angleterre ?", answer: 'La Manche', faux: ['La mer du Nord', 'La Méditerranée', 'La mer Baltique'] },
-        { cat: 'La France', prompt: "Quelle partie du territoire français est surtout occupée par des plaines ?", answer: 'Le nord et l\'ouest', faux: ['Le sud et l\'est', 'Le centre uniquement', 'Les côtes seulement'] }
+        { cat: 'La France', prompt: "Quel est le plus long fleuve de France ?", answer: 'La Loire', faux: ['La Seine', 'Le Rhône', 'La Garonne'], expl: "La Loire, environ 1 000 km, de l'Ardèche à l'océan Atlantique." },
+        { cat: 'La France', prompt: "Quel fleuve traverse Paris ?", answer: 'La Seine', faux: ['La Loire', 'Le Rhône', 'La Garonne'], expl: "La Seine, qui rejoint ensuite la Manche au Havre." },
+        { cat: 'La France', prompt: "Quel est le plus haut sommet des Alpes françaises ?", answer: 'Le mont Blanc', faux: ['Le pic du Midi', 'Le puy de Dôme', 'Le mont Ventoux'], expl: "Le mont Blanc, à la frontière italienne : le plus haut d'Europe occidentale." },
+        { cat: 'La France', prompt: "Quelle est l'altitude du mont Blanc ?", answer: '4 806 m', faux: ['2 500 m', '3 200 m', '6 000 m'], expl: "4 806 mètres, un chiffre à retenir tel quel." },
+        { cat: 'La France', prompt: "Quelle chaîne de montagnes sépare la France de l'Espagne ?", answer: 'Les Pyrénées', faux: ['Les Alpes', 'Le Jura', 'Les Vosges'], expl: "Les Pyrénées forment une frontière naturelle d'une mer à l'autre." },
+        { cat: 'La France', prompt: "Dans quelle mer le Rhône se jette-t-il ?", answer: 'La mer Méditerranée', faux: ["L'océan Atlantique", 'La Manche', 'La mer du Nord'], expl: "En Méditerranée, où il forme le delta de la Camargue." },
+        { cat: 'La France', prompt: "Quelle forme géométrique évoque la France métropolitaine ?", answer: 'Un hexagone', faux: ['Un carré', 'Un triangle', 'Un pentagone'], expl: "Six côtés, d'où le surnom d'Hexagone." },
+        { cat: 'La France', prompt: "Quel fleuve arrose Bordeaux ?", answer: 'La Garonne', faux: ['La Loire', 'La Seine', 'Le Rhin'], expl: "La Garonne, qui descend des Pyrénées et rejoint l'Atlantique par l'estuaire de la Gironde." },
+        { cat: 'La France', prompt: "Quel massif ancien se trouve au centre de la France ?", answer: 'Le Massif central', faux: ['Les Alpes', 'Les Pyrénées', 'Les Vosges'], expl: "Le Massif central : des montagnes anciennes, usées et arrondies, avec d'anciens volcans." },
+        { cat: 'La France', prompt: "Dans quel océan la Loire se jette-t-elle ?", answer: "L'océan Atlantique", faux: ['La Méditerranée', 'La mer du Nord', "L'océan Indien"], expl: "Dans l'Atlantique, près de Saint-Nazaire." },
+        { cat: 'La France', prompt: "Quelle mer sépare la France de l'Angleterre ?", answer: 'La Manche', faux: ['La mer du Nord', 'La Méditerranée', 'La mer Baltique'], expl: "La Manche, large de seulement 34 km au pas de Calais." },
+        { cat: 'La France', prompt: "Quelle partie du territoire français est surtout occupée par des plaines ?", answer: 'Le nord et l\'ouest', faux: ['Le sud et l\'est', 'Le centre uniquement', 'Les côtes seulement'], expl: "Les plaines dominent au nord et à l'ouest ; les montagnes sont au sud et à l'est." }
       ]); } },
 
     { id: 'geo-europe', title: "La France dans l'Europe", explanation: "Les pays voisins, l'Union européenne et les grandes villes du continent.", levels: ['cm2'],
@@ -1067,17 +1090,17 @@ const DOMAINS = [
       ],
       reperes: [['Paris', 'Capitale de la France'], ['27', "Nombre de pays de l'Union européenne"], ['Euro', 'La monnaie commune'], ['Outre-mer', 'Guadeloupe, Martinique, Guyane, La Réunion, Mayotte']],
       question() { return questionDeBanque([
-        { cat: "L'Europe", prompt: "Quelle est la capitale de la France ?", answer: 'Paris', faux: ['Lyon', 'Marseille', 'Bordeaux'] },
-        { cat: "L'Europe", prompt: "Combien de pays compte l'Union européenne aujourd'hui ?", answer: '27', faux: ['12', '15', '50'] },
-        { cat: "L'Europe", prompt: "Lequel de ces pays est un voisin de la France ?", answer: "L'Italie", faux: ['Le Portugal', 'La Pologne', 'La Grèce'] },
-        { cat: "L'Europe", prompt: "Quel très petit État est enclavé entre la France et l'Espagne ?", answer: 'Andorre', faux: ['Monaco', 'Le Luxembourg', 'Malte'] },
-        { cat: "L'Europe", prompt: "Quelle est la capitale de l'Espagne ?", answer: 'Madrid', faux: ['Barcelone', 'Lisbonne', 'Séville'] },
-        { cat: "L'Europe", prompt: "Quelle est la capitale de l'Italie ?", answer: 'Rome', faux: ['Milan', 'Venise', 'Naples'] },
-        { cat: "L'Europe", prompt: "Quelle est la capitale de l'Allemagne ?", answer: 'Berlin', faux: ['Munich', 'Francfort', 'Hambourg'] },
-        { cat: "L'Europe", prompt: "Laquelle de ces îles est un territoire français d'outre-mer ?", answer: 'La Réunion', faux: ['La Sardaigne', 'Les Baléares', 'La Sicile'] },
-        { cat: "L'Europe", prompt: "Sur quel continent se trouve la Guyane française ?", answer: "L'Amérique du Sud", faux: ["L'Afrique", "L'Asie", "L'Océanie"] },
-        { cat: "L'Europe", prompt: "Quelle est la deuxième ville de France par sa population ?", answer: 'Marseille', faux: ['Lyon', 'Toulouse', 'Nice'] },
-        { cat: "L'Europe", prompt: "Quel pays voisin de la France n'utilise pas l'euro ?", answer: 'La Suisse', faux: ["L'Allemagne", "L'Espagne", "L'Italie"] }
+        { cat: "L'Europe", prompt: "Quelle est la capitale de la France ?", answer: 'Paris', faux: ['Lyon', 'Marseille', 'Bordeaux'], expl: "Paris, siège du gouvernement et ville la plus peuplée." },
+        { cat: "L'Europe", prompt: "Combien de pays compte l'Union européenne aujourd'hui ?", answer: '27', faux: ['12', '15', '50'], expl: "27 pays depuis le départ du Royaume-Uni en 2020." },
+        { cat: "L'Europe", prompt: "Lequel de ces pays est un voisin de la France ?", answer: "L'Italie", faux: ['Le Portugal', 'La Pologne', 'La Grèce'], expl: "L'Italie borde la France au sud-est, par les Alpes." },
+        { cat: "L'Europe", prompt: "Quel très petit État est enclavé entre la France et l'Espagne ?", answer: 'Andorre', faux: ['Monaco', 'Le Luxembourg', 'Malte'], expl: "Andorre, niché dans les Pyrénées. Monaco, lui, borde la Méditerranée." },
+        { cat: "L'Europe", prompt: "Quelle est la capitale de l'Espagne ?", answer: 'Madrid', faux: ['Barcelone', 'Lisbonne', 'Séville'], expl: "Madrid, située au centre du pays." },
+        { cat: "L'Europe", prompt: "Quelle est la capitale de l'Italie ?", answer: 'Rome', faux: ['Milan', 'Venise', 'Naples'], expl: "Rome, qui fut aussi la capitale de l'Empire romain." },
+        { cat: "L'Europe", prompt: "Quelle est la capitale de l'Allemagne ?", answer: 'Berlin', faux: ['Munich', 'Francfort', 'Hambourg'], expl: "Berlin, redevenue capitale après la réunification de 1990." },
+        { cat: "L'Europe", prompt: "Laquelle de ces îles est un territoire français d'outre-mer ?", answer: 'La Réunion', faux: ['La Sardaigne', 'Les Baléares', 'La Sicile'], expl: "La Réunion, dans l'océan Indien, est un département français." },
+        { cat: "L'Europe", prompt: "Sur quel continent se trouve la Guyane française ?", answer: "L'Amérique du Sud", faux: ["L'Afrique", "L'Asie", "L'Océanie"], expl: "En Amérique du Sud, entre le Brésil et le Suriname." },
+        { cat: "L'Europe", prompt: "Quelle est la deuxième ville de France par sa population ?", answer: 'Marseille', faux: ['Lyon', 'Toulouse', 'Nice'], expl: "Marseille, premier port français, sur la Méditerranée." },
+        { cat: "L'Europe", prompt: "Quel pays voisin de la France n'utilise pas l'euro ?", answer: 'La Suisse', faux: ["L'Allemagne", "L'Espagne", "L'Italie"], expl: "La Suisse, qui n'est pas membre de l'Union européenne et garde le franc suisse." }
       ]); } },
 
     { id: 'geo-deplacer', title: 'Se déplacer et communiquer', explanation: "Les transports du quotidien et les réseaux qui relient le monde entier.", levels: ['cm2'],
@@ -1089,16 +1112,16 @@ const DOMAINS = [
       ],
       reperes: [['TGV', 'Plus de 300 km/h entre grandes villes'], ['Porte-conteneurs', 'Le transport du commerce mondial'], ['Câbles sous-marins', "L'essentiel du trafic Internet"], ['Fracture numérique', "Inégalités d'accès aux réseaux"]],
       question() { return questionDeBanque([
-        { cat: 'Se déplacer', prompt: "Quel train relie les grandes villes françaises à grande vitesse ?", answer: 'Le TGV', faux: ['Le RER', 'Le tramway', 'Le métro'] },
-        { cat: 'Se déplacer', prompt: "Comment voyagent la plupart des marchandises entre les continents ?", answer: 'Par porte-conteneurs', faux: ['Par avion', 'Par camion', 'Par train'] },
-        { cat: 'Se déplacer', prompt: "Par quoi passe l'essentiel du trafic Internet mondial ?", answer: 'Des câbles sous-marins', faux: ['Uniquement des satellites', 'Des ondes radio', 'Des lignes téléphoniques'] },
-        { cat: 'Se déplacer', prompt: "Comment appelle-t-on les inégalités d'accès à Internet ?", answer: 'La fracture numérique', faux: ["L'exode rural", 'La mondialisation', 'La densité'] },
-        { cat: 'Se déplacer', prompt: "Quel avantage ont les transports en commun sur la voiture individuelle ?", answer: 'Ils polluent moins par voyageur', faux: ['Ils vont toujours plus vite', 'Ils coûtent toujours plus cher', 'Ils vont partout'] },
-        { cat: 'Se déplacer', prompt: "Quel moyen de transport permet de traverser un océan en quelques heures ?", answer: "L'avion", faux: ['Le bateau', 'Le train', 'Le camion'] },
-        { cat: 'Se déplacer', prompt: "Lequel de ces déplacements ne produit aucune pollution ?", answer: 'La marche à pied', faux: ['La voiture', "L'avion", 'Le bus'] },
-        { cat: 'Se déplacer', prompt: "Où arrivent les porte-conteneurs ?", answer: 'Dans les ports', faux: ['Dans les gares', 'Dans les aéroports', 'Sur les autoroutes'] },
-        { cat: 'Se déplacer', prompt: "Quel transport en commun circule sur des rails en ville ?", answer: 'Le tramway', faux: ['Le bus', 'Le taxi', 'Le camion'] },
-        { cat: 'Se déplacer', prompt: "Qu'est-ce qui aide les satellites à faire circuler l'information ?", answer: 'Les ondes', faux: ['Les rails', 'Les routes', 'Les câbles électriques'] }
+        { cat: 'Se déplacer', prompt: "Quel train relie les grandes villes françaises à grande vitesse ?", answer: 'Le TGV', faux: ['Le RER', 'Le tramway', 'Le métro'], expl: "Le TGV circule à plus de 300 km/h sur des lignes dédiées." },
+        { cat: 'Se déplacer', prompt: "Comment voyagent la plupart des marchandises entre les continents ?", answer: 'Par porte-conteneurs', faux: ['Par avion', 'Par camion', 'Par train'], expl: "Par porte-conteneurs : le bateau transporte énormément pour un coût faible." },
+        { cat: 'Se déplacer', prompt: "Par quoi passe l'essentiel du trafic Internet mondial ?", answer: 'Des câbles sous-marins', faux: ['Uniquement des satellites', 'Des ondes radio', 'Des lignes téléphoniques'], expl: "Par des câbles posés au fond des océans, bien plus rapides que les satellites." },
+        { cat: 'Se déplacer', prompt: "Comment appelle-t-on les inégalités d'accès à Internet ?", answer: 'La fracture numérique', faux: ["L'exode rural", 'La mondialisation', 'La densité'], expl: "La fracture numérique sépare ceux qui sont connectés de ceux qui ne le sont pas." },
+        { cat: 'Se déplacer', prompt: "Quel avantage ont les transports en commun sur la voiture individuelle ?", answer: 'Ils polluent moins par voyageur', faux: ['Ils vont toujours plus vite', 'Ils coûtent toujours plus cher', 'Ils vont partout'], expl: "Un bus transporte des dizaines de personnes : la pollution par voyageur est bien moindre." },
+        { cat: 'Se déplacer', prompt: "Quel moyen de transport permet de traverser un océan en quelques heures ?", answer: "L'avion", faux: ['Le bateau', 'Le train', 'Le camion'], expl: "L'avion, le seul moyen assez rapide pour cela." },
+        { cat: 'Se déplacer', prompt: "Lequel de ces déplacements ne produit aucune pollution ?", answer: 'La marche à pied', faux: ['La voiture', "L'avion", 'Le bus'], expl: "La marche à pied : aucune énergie consommée en dehors de la sienne." },
+        { cat: 'Se déplacer', prompt: "Où arrivent les porte-conteneurs ?", answer: 'Dans les ports', faux: ['Dans les gares', 'Dans les aéroports', 'Sur les autoroutes'], expl: "Dans les ports, où des grues déchargent les conteneurs sur camions ou trains." },
+        { cat: 'Se déplacer', prompt: "Quel transport en commun circule sur des rails en ville ?", answer: 'Le tramway', faux: ['Le bus', 'Le taxi', 'Le camion'], expl: "Le tramway, revenu dans de nombreuses villes françaises." },
+        { cat: 'Se déplacer', prompt: "Qu'est-ce qui aide les satellites à faire circuler l'information ?", answer: 'Les ondes', faux: ['Les rails', 'Les routes', 'Les câbles électriques'], expl: "Les ondes, qui traversent l'espace sans support matériel." }
       ]); } },
 
     { id: 'geo-habiter', title: 'Mieux habiter', explanation: "Ville, campagne et environnement : comment on peut habiter autrement.", levels: ['cm2'],
@@ -1110,16 +1133,16 @@ const DOMAINS = [
       ],
       reperes: [['8 sur 10', 'Part des Français vivant en ville'], ['Périurbain', 'Autour des villes'], ['Faible densité', 'Peu d\'habitants au km²'], ['Développement durable', 'Sans compromettre les générations futures']],
       question() { return questionDeBanque([
-        { cat: 'Mieux habiter', prompt: "Où vit la grande majorité des Français ?", answer: 'En ville', faux: ['À la campagne', 'En montagne', 'Sur les îles'] },
-        { cat: 'Mieux habiter', prompt: "Comment appelle-t-on les espaces situés autour des villes ?", answer: 'Les espaces périurbains', faux: ['Les centres-villes', 'Les littoraux', 'Les massifs'] },
-        { cat: 'Mieux habiter', prompt: "Qu'est-ce que le développement durable ?", answer: 'Répondre aux besoins sans nuire aux générations futures', faux: ['Construire toujours plus vite', 'Développer uniquement les villes', 'Augmenter la production sans limite'] },
-        { cat: 'Mieux habiter', prompt: "Que fait-on des déchets quand on les trie ?", answer: 'On les recycle', faux: ['On les brûle tous', 'On les enterre', 'On les jette à la mer'] },
-        { cat: 'Mieux habiter', prompt: "Comment appelle-t-on un espace où vivent peu d'habitants au km² ?", answer: 'Un espace de faible densité', faux: ['Une métropole', 'Une banlieue', 'Un littoral'] },
-        { cat: 'Mieux habiter', prompt: "Quelle activité domine dans les campagnes françaises ?", answer: "L'agriculture", faux: ["L'industrie lourde", 'La finance', 'Le tourisme de masse'] },
-        { cat: 'Mieux habiter', prompt: "Quel aménagement rend une ville plus agréable et plus fraîche ?", answer: 'Les espaces verts', faux: ['Les parkings', 'Les autoroutes urbaines', 'Les zones commerciales'] },
-        { cat: 'Mieux habiter', prompt: "Quel déplacement urbain ne pollue pas ?", answer: 'Le vélo', faux: ['La voiture', 'Le scooter', 'Le camion'] },
-        { cat: 'Mieux habiter', prompt: "Comment appelle-t-on un quartier conçu pour respecter l'environnement ?", answer: 'Un écoquartier', faux: ['Un lotissement', 'Une zone industrielle', 'Un centre commercial'] },
-        { cat: 'Mieux habiter', prompt: "Que manque-t-il souvent dans les espaces de faible densité ?", answer: 'Des commerces et des services', faux: ['Des champs', 'De la place', 'De l\'air pur'] }
+        { cat: 'Mieux habiter', prompt: "Où vit la grande majorité des Français ?", answer: 'En ville', faux: ['À la campagne', 'En montagne', 'Sur les îles'], expl: "Plus de huit Français sur dix vivent en ville ou dans sa périphérie." },
+        { cat: 'Mieux habiter', prompt: "Comment appelle-t-on les espaces situés autour des villes ?", answer: 'Les espaces périurbains', faux: ['Les centres-villes', 'Les littoraux', 'Les massifs'], expl: "Les espaces périurbains : on y habite mais on travaille souvent en ville." },
+        { cat: 'Mieux habiter', prompt: "Qu'est-ce que le développement durable ?", answer: 'Répondre aux besoins sans nuire aux générations futures', faux: ['Construire toujours plus vite', 'Développer uniquement les villes', 'Augmenter la production sans limite'], expl: "Répondre aux besoins d'aujourd'hui sans priver les générations futures des leurs." },
+        { cat: 'Mieux habiter', prompt: "Que fait-on des déchets quand on les trie ?", answer: 'On les recycle', faux: ['On les brûle tous', 'On les enterre', 'On les jette à la mer'], expl: "Le tri permet de recycler : le verre, le papier et le métal redeviennent matière première." },
+        { cat: 'Mieux habiter', prompt: "Comment appelle-t-on un espace où vivent peu d'habitants au km² ?", answer: 'Un espace de faible densité', faux: ['Une métropole', 'Une banlieue', 'Un littoral'], expl: "Un espace de faible densité : campagnes, montagnes, forêts." },
+        { cat: 'Mieux habiter', prompt: "Quelle activité domine dans les campagnes françaises ?", answer: "L'agriculture", faux: ["L'industrie lourde", 'La finance', 'Le tourisme de masse'], expl: "L'agriculture façonne les paysages et occupe la plus grande partie du territoire." },
+        { cat: 'Mieux habiter', prompt: "Quel aménagement rend une ville plus agréable et plus fraîche ?", answer: 'Les espaces verts', faux: ['Les parkings', 'Les autoroutes urbaines', 'Les zones commerciales'], expl: "Les espaces verts abaissent la température et améliorent la qualité de l'air." },
+        { cat: 'Mieux habiter', prompt: "Quel déplacement urbain ne pollue pas ?", answer: 'Le vélo', faux: ['La voiture', 'Le scooter', 'Le camion'], expl: "Le vélo : silencieux, sans émission, et souvent plus rapide en ville." },
+        { cat: 'Mieux habiter', prompt: "Comment appelle-t-on un quartier conçu pour respecter l'environnement ?", answer: 'Un écoquartier', faux: ['Un lotissement', 'Une zone industrielle', 'Un centre commercial'], expl: "Un écoquartier : économies d'énergie, espaces verts, transports doux." },
+        { cat: 'Mieux habiter', prompt: "Que manque-t-il souvent dans les espaces de faible densité ?", answer: 'Des commerces et des services', faux: ['Des champs', 'De la place', 'De l\'air pur'], expl: "Commerces, médecins et services publics sont éloignés faute d'habitants." }
       ]); } },
 
     { id: 'geo-metropole', title: 'Habiter une métropole', explanation: "Les très grandes villes du monde : leur organisation, leurs atouts et leurs difficultés.", levels: ['sixieme'],
@@ -1131,16 +1154,16 @@ const DOMAINS = [
       ],
       reperes: [['Métropole', 'Grande ville qui concentre et rayonne'], ['Quartier d\'affaires', 'Les tours et les bureaux'], ['Bidonville', 'Habitat précaire, sans équipements'], ['Tokyo', "L'une des plus peuplées du monde"]],
       question() { return questionDeBanque([
-        { cat: 'Métropole', prompt: "Qu'est-ce qu'une métropole ?", answer: 'Une grande ville qui concentre activités et décisions', faux: ['Un village agrandi', 'Une ville de bord de mer', 'Une capitale uniquement'] },
-        { cat: 'Métropole', prompt: "Comment appelle-t-on le quartier des tours et des bureaux ?", answer: "Le quartier d'affaires", faux: ['Le centre historique', 'La banlieue', 'La zone industrielle'] },
-        { cat: 'Métropole', prompt: "Quel problème est fréquent dans les métropoles ?", answer: 'Les embouteillages et la pollution', faux: ['Le manque de population', "L'absence de transports", 'Le manque de commerces'] },
-        { cat: 'Métropole', prompt: "Comment appelle-t-on un quartier d'habitat précaire sans équipements ?", answer: 'Un bidonville', faux: ['Un écoquartier', 'Une banlieue résidentielle', 'Un centre-ville'] },
-        { cat: 'Métropole', prompt: "Laquelle de ces villes est une métropole mondiale ?", answer: 'Tokyo', faux: ['Chartres', 'Dinan', 'Guérande'] },
-        { cat: 'Métropole', prompt: "Que trouve-t-on autour du centre d'une métropole ?", answer: 'Des banlieues et un espace périurbain', faux: ['Uniquement des champs', 'Des déserts', 'Rien du tout'] },
-        { cat: 'Métropole', prompt: "Pourquoi les logements sont-ils chers dans les métropoles ?", answer: 'La demande y est très forte', faux: ['Ils sont tous neufs', 'Il y a peu d\'habitants', 'Les terrains sont gratuits'] },
-        { cat: 'Métropole', prompt: "Quel équipement relie une métropole au reste du monde ?", answer: "L'aéroport international", faux: ['La mairie', 'Le marché', "L'école primaire"] },
-        { cat: 'Métropole', prompt: "Quelle est la métropole française la plus peuplée ?", answer: 'Paris', faux: ['Lille', 'Strasbourg', 'Rennes'] },
-        { cat: 'Métropole', prompt: "Que veut dire « une métropole rayonne » ?", answer: 'Son influence dépasse largement ses limites', faux: ['Elle est très éclairée la nuit', 'Elle est très ensoleillée', 'Elle est très étendue'] }
+        { cat: 'Métropole', prompt: "Qu'est-ce qu'une métropole ?", answer: 'Une grande ville qui concentre activités et décisions', faux: ['Un village agrandi', 'Une ville de bord de mer', 'Une capitale uniquement'], expl: "Une très grande ville qui concentre emplois, décisions et transports, et rayonne au loin." },
+        { cat: 'Métropole', prompt: "Comment appelle-t-on le quartier des tours et des bureaux ?", answer: "Le quartier d'affaires", faux: ['Le centre historique', 'La banlieue', 'La zone industrielle'], expl: "Le quartier d'affaires, comme La Défense à Paris." },
+        { cat: 'Métropole', prompt: "Quel problème est fréquent dans les métropoles ?", answer: 'Les embouteillages et la pollution', faux: ['Le manque de population', "L'absence de transports", 'Le manque de commerces'], expl: "La concentration de population entraîne embouteillages et pollution de l'air." },
+        { cat: 'Métropole', prompt: "Comment appelle-t-on un quartier d'habitat précaire sans équipements ?", answer: 'Un bidonville', faux: ['Un écoquartier', 'Une banlieue résidentielle', 'Un centre-ville'], expl: "Un bidonville : construit sans plan, souvent sans eau courante ni électricité." },
+        { cat: 'Métropole', prompt: "Laquelle de ces villes est une métropole mondiale ?", answer: 'Tokyo', faux: ['Chartres', 'Dinan', 'Guérande'], expl: "Tokyo et son agglomération comptent parmi les plus peuplées du monde." },
+        { cat: 'Métropole', prompt: "Que trouve-t-on autour du centre d'une métropole ?", answer: 'Des banlieues et un espace périurbain', faux: ['Uniquement des champs', 'Des déserts', 'Rien du tout'], expl: "Des banlieues puis un espace périurbain, de moins en moins dense." },
+        { cat: 'Métropole', prompt: "Pourquoi les logements sont-ils chers dans les métropoles ?", answer: 'La demande y est très forte', faux: ['Ils sont tous neufs', 'Il y a peu d\'habitants', 'Les terrains sont gratuits'], expl: "Beaucoup de gens veulent y habiter et la place est limitée : les prix montent." },
+        { cat: 'Métropole', prompt: "Quel équipement relie une métropole au reste du monde ?", answer: "L'aéroport international", faux: ['La mairie', 'Le marché', "L'école primaire"], expl: "L'aéroport international, porte d'entrée des voyageurs et du fret." },
+        { cat: 'Métropole', prompt: "Quelle est la métropole française la plus peuplée ?", answer: 'Paris', faux: ['Lille', 'Strasbourg', 'Rennes'], expl: "Paris et son agglomération, de loin la plus peuplée de France." },
+        { cat: 'Métropole', prompt: "Que veut dire « une métropole rayonne » ?", answer: 'Son influence dépasse largement ses limites', faux: ['Elle est très éclairée la nuit', 'Elle est très ensoleillée', 'Elle est très étendue'], expl: "Son influence — économique, culturelle — dépasse largement ses limites administratives." }
       ]); } },
 
     { id: 'geo-littoral', title: 'Habiter les littoraux', explanation: "Les bords de mer : tourisme, pêche, ports et fragilité des milieux.", levels: ['sixieme'],
@@ -1152,16 +1175,16 @@ const DOMAINS = [
       ],
       reperes: [['Littoral', 'Contact entre la terre et la mer'], ['Industrialo-portuaire', 'Grands ports, usines, raffineries'], ['Surpêche', 'Prélever plus que la mer ne produit'], ['Érosion', 'Le recul du trait de côte']],
       question() { return questionDeBanque([
-        { cat: 'Littoraux', prompt: "Qu'est-ce qu'un littoral ?", answer: 'La zone de contact entre la terre et la mer', faux: ['Une chaîne de montagnes', 'Un fleuve large', 'Une grande plaine'] },
-        { cat: 'Littoraux', prompt: "Quelle activité domine sur un littoral touristique ?", answer: 'Le tourisme balnéaire', faux: ["L'industrie lourde", "L'élevage", "L'exploitation minière"] },
-        { cat: 'Littoraux', prompt: "Que reçoivent les grands ports de commerce ?", answer: 'Des porte-conteneurs', faux: ['Des avions', 'Des trains à grande vitesse', 'Des voitures particulières'] },
-        { cat: 'Littoraux', prompt: "Qu'est-ce que la surpêche ?", answer: 'Prélever plus de poissons que la mer n\'en produit', faux: ['Pêcher uniquement l\'été', 'Pêcher à la ligne', 'Élever des poissons'] },
-        { cat: 'Littoraux', prompt: "Comment appelle-t-on le recul progressif de la côte ?", answer: "L'érosion", faux: ['La marée', 'La sédimentation', 'La pollution'] },
-        { cat: 'Littoraux', prompt: "Quel phénomène climatique menace les littoraux ?", answer: 'La montée du niveau de la mer', faux: ['La baisse des marées', 'Le refroidissement', 'La fonte des fleuves'] },
-        { cat: 'Littoraux', prompt: "Pourquoi les populations se concentrent-elles sur les littoraux ?", answer: 'Ce sont des espaces attractifs et bien reliés', faux: ['Le climat y est toujours froid', 'Les terres y sont gratuites', 'Il n\'y a pas de risques'] },
-        { cat: 'Littoraux', prompt: "Comment appelle-t-on un littoral où se trouvent usines et grand port ?", answer: 'Un littoral industrialo-portuaire', faux: ['Un littoral balnéaire', 'Un littoral protégé', 'Un littoral rural'] },
-        { cat: 'Littoraux', prompt: "Que construit-on parfois trop sur les côtes, au détriment des milieux ?", answer: 'Des immeubles et des routes', faux: ['Des forêts', 'Des dunes', 'Des récifs'] },
-        { cat: 'Littoraux', prompt: "Comment protège-t-on les milieux littoraux fragiles ?", answer: 'En créant des espaces protégés', faux: ['En construisant davantage', 'En augmentant la pêche', 'En supprimant les plages'] }
+        { cat: 'Littoraux', prompt: "Qu'est-ce qu'un littoral ?", answer: 'La zone de contact entre la terre et la mer', faux: ['Une chaîne de montagnes', 'Un fleuve large', 'Une grande plaine'], expl: "La bande où la terre rencontre la mer : plages, falaises, ports, estuaires." },
+        { cat: 'Littoraux', prompt: "Quelle activité domine sur un littoral touristique ?", answer: 'Le tourisme balnéaire', faux: ["L'industrie lourde", "L'élevage", "L'exploitation minière"], expl: "Le tourisme balnéaire : plages, hôtels, ports de plaisance." },
+        { cat: 'Littoraux', prompt: "Que reçoivent les grands ports de commerce ?", answer: 'Des porte-conteneurs', faux: ['Des avions', 'Des trains à grande vitesse', 'Des voitures particulières'], expl: "Des porte-conteneurs, parfois longs de 400 mètres." },
+        { cat: 'Littoraux', prompt: "Qu'est-ce que la surpêche ?", answer: 'Prélever plus de poissons que la mer n\'en produit', faux: ['Pêcher uniquement l\'été', 'Pêcher à la ligne', 'Élever des poissons'], expl: "Prélever plus de poissons que la mer n'en produit : les stocks s'épuisent." },
+        { cat: 'Littoraux', prompt: "Comment appelle-t-on le recul progressif de la côte ?", answer: "L'érosion", faux: ['La marée', 'La sédimentation', 'La pollution'], expl: "L'érosion : vagues et courants arrachent peu à peu le trait de côte." },
+        { cat: 'Littoraux', prompt: "Quel phénomène climatique menace les littoraux ?", answer: 'La montée du niveau de la mer', faux: ['La baisse des marées', 'Le refroidissement', 'La fonte des fleuves'], expl: "La montée du niveau de la mer, due au réchauffement, submerge les côtes basses." },
+        { cat: 'Littoraux', prompt: "Pourquoi les populations se concentrent-elles sur les littoraux ?", answer: 'Ce sont des espaces attractifs et bien reliés', faux: ['Le climat y est toujours froid', 'Les terres y sont gratuites', 'Il n\'y a pas de risques'], expl: "Les littoraux offrent ports, échanges, climat agréable et emplois." },
+        { cat: 'Littoraux', prompt: "Comment appelle-t-on un littoral où se trouvent usines et grand port ?", answer: 'Un littoral industrialo-portuaire', faux: ['Un littoral balnéaire', 'Un littoral protégé', 'Un littoral rural'], expl: "Un littoral industrialo-portuaire, comme celui du Havre ou de Marseille-Fos." },
+        { cat: 'Littoraux', prompt: "Que construit-on parfois trop sur les côtes, au détriment des milieux ?", answer: 'Des immeubles et des routes', faux: ['Des forêts', 'Des dunes', 'Des récifs'], expl: "Immeubles et routes bétonnent le littoral et détruisent dunes et marais." },
+        { cat: 'Littoraux', prompt: "Comment protège-t-on les milieux littoraux fragiles ?", answer: 'En créant des espaces protégés', faux: ['En construisant davantage', 'En augmentant la pêche', 'En supprimant les plages'], expl: "Par des espaces protégés, où la construction et la fréquentation sont limitées." }
       ]); } },
 
     { id: 'geo-faible-densite', title: 'Les espaces de faible densité', explanation: "Campagnes, montagnes et déserts : vivre là où il y a peu d'habitants.", levels: ['sixieme'],
@@ -1173,16 +1196,16 @@ const DOMAINS = [
       ],
       reperes: [['Densité', 'Habitants par kilomètre carré'], ['Marges', 'Espaces à l\'écart des grands centres'], ['Tourisme vert', 'Une ressource pour les campagnes'], ['Télétravail', 'Il permet de vivre loin des villes']],
       question() { return questionDeBanque([
-        { cat: 'Faible densité', prompt: "Comment calcule-t-on la densité de population ?", answer: 'Nombre d\'habitants par km²', faux: ['Nombre d\'habitants par maison', 'Nombre de villes par région', 'Nombre de km² par habitant'] },
-        { cat: 'Faible densité', prompt: "Lequel de ces espaces est de faible densité ?", answer: 'Un désert', faux: ['Une métropole', 'Un quartier d\'affaires', 'Une banlieue'] },
-        { cat: 'Faible densité', prompt: "Quelle activité fait vivre les espaces ruraux ?", answer: "L'agriculture et l'élevage", faux: ['La finance', "L'industrie automobile", 'Le transport aérien'] },
-        { cat: 'Faible densité', prompt: "Quelle difficulté rencontrent les habitants de ces espaces ?", answer: "L'éloignement des services", faux: ['Le trop-plein de commerces', 'Les embouteillages', 'Le manque de place'] },
-        { cat: 'Faible densité', prompt: "Quel tourisme se développe en montagne l'hiver ?", answer: 'Les sports d\'hiver', faux: ['Le tourisme balnéaire', 'Le tourisme urbain', 'Les croisières'] },
-        { cat: 'Faible densité', prompt: "Qu'est-ce qui permet aujourd'hui de travailler loin des villes ?", answer: 'Le télétravail', faux: ["L'autoroute", 'Le TGV uniquement', "L'aviation"] },
-        { cat: 'Faible densité', prompt: "Comment appelle-t-on ces espaces à l'écart des grands centres ?", answer: 'Des marges', faux: ['Des métropoles', 'Des littoraux', 'Des capitales'] },
-        { cat: 'Faible densité', prompt: "Un désert froid est-il un espace de faible densité ?", answer: 'Oui', faux: ['Non, il est très peuplé', 'Seulement en été', 'Cela dépend du pays'] },
-        { cat: 'Faible densité', prompt: "Qu'est-ce que le tourisme vert ?", answer: 'Un tourisme à la campagne, proche de la nature', faux: ['Un tourisme dans les grandes villes', 'Un tourisme en bord de mer', 'Un tourisme industriel'] },
-        { cat: 'Faible densité', prompt: "Que ferme-t-on parfois faute d'habitants dans ces espaces ?", answer: 'Des écoles et des commerces', faux: ['Des aéroports', 'Des universités', 'Des ports'] }
+        { cat: 'Faible densité', prompt: "Comment calcule-t-on la densité de population ?", answer: 'Nombre d\'habitants par km²', faux: ['Nombre d\'habitants par maison', 'Nombre de villes par région', 'Nombre de km² par habitant'], expl: "On divise le nombre d'habitants par la surface en kilomètres carrés." },
+        { cat: 'Faible densité', prompt: "Lequel de ces espaces est de faible densité ?", answer: 'Un désert', faux: ['Une métropole', 'Un quartier d\'affaires', 'Une banlieue'], expl: "Un désert : conditions extrêmes, donc très peu d'habitants." },
+        { cat: 'Faible densité', prompt: "Quelle activité fait vivre les espaces ruraux ?", answer: "L'agriculture et l'élevage", faux: ['La finance', "L'industrie automobile", 'Le transport aérien'], expl: "L'agriculture et l'élevage, parfois complétés par le tourisme." },
+        { cat: 'Faible densité', prompt: "Quelle difficulté rencontrent les habitants de ces espaces ?", answer: "L'éloignement des services", faux: ['Le trop-plein de commerces', 'Les embouteillages', 'Le manque de place'], expl: "Tout est loin : école, médecin, commerces. Il faut souvent la voiture." },
+        { cat: 'Faible densité', prompt: "Quel tourisme se développe en montagne l'hiver ?", answer: 'Les sports d\'hiver', faux: ['Le tourisme balnéaire', 'Le tourisme urbain', 'Les croisières'], expl: "Les sports d'hiver font vivre les stations et les vallées." },
+        { cat: 'Faible densité', prompt: "Qu'est-ce qui permet aujourd'hui de travailler loin des villes ?", answer: 'Le télétravail', faux: ["L'autoroute", 'Le TGV uniquement', "L'aviation"], expl: "Le télétravail, rendu possible par Internet." },
+        { cat: 'Faible densité', prompt: "Comment appelle-t-on ces espaces à l'écart des grands centres ?", answer: 'Des marges', faux: ['Des métropoles', 'Des littoraux', 'Des capitales'], expl: "Les marges : à l'écart des flux et des grandes concentrations." },
+        { cat: 'Faible densité', prompt: "Un désert froid est-il un espace de faible densité ?", answer: 'Oui', faux: ['Non, il est très peuplé', 'Seulement en été', 'Cela dépend du pays'], expl: "Oui : au Groenland ou en Sibérie, les conditions rendent l'installation très difficile." },
+        { cat: 'Faible densité', prompt: "Qu'est-ce que le tourisme vert ?", answer: 'Un tourisme à la campagne, proche de la nature', faux: ['Un tourisme dans les grandes villes', 'Un tourisme en bord de mer', 'Un tourisme industriel'], expl: "Un tourisme à la campagne, tourné vers la nature et le patrimoine rural." },
+        { cat: 'Faible densité', prompt: "Que ferme-t-on parfois faute d'habitants dans ces espaces ?", answer: 'Des écoles et des commerces', faux: ['Des aéroports', 'Des universités', 'Des ports'], expl: "Quand la population baisse, écoles et commerces ferment, ce qui accélère le départ." }
       ]); } },
 
     { id: 'geo-monde-habite', title: 'Le monde habité', explanation: "Où vivent les humains sur la planète, et pourquoi si inégalement.", levels: ['sixieme'],
@@ -1194,16 +1217,16 @@ const DOMAINS = [
       ],
       reperes: [['8 milliards', "Population mondiale actuelle"], ['Asie', 'Le continent le plus peuplé'], ['Pacifique', 'Le plus grand océan'], ['Urbanisation', 'Plus d\'un humain sur deux vit en ville']],
       question() { return questionDeBanque([
-        { cat: 'Monde habité', prompt: "Combien d'habitants compte la Terre aujourd'hui ?", answer: 'Environ 8 milliards', faux: ['Environ 1 milliard', 'Environ 800 millions', 'Environ 50 milliards'] },
-        { cat: 'Monde habité', prompt: "Quel est le continent le plus peuplé ?", answer: "L'Asie", faux: ["L'Afrique", "L'Europe", "L'Amérique"] },
-        { cat: 'Monde habité', prompt: "Comment appelle-t-on une région du monde très peuplée ?", answer: 'Un foyer de peuplement', faux: ['Un désert humain', 'Une marge', 'Un littoral'] },
-        { cat: 'Monde habité', prompt: "Quel est le plus grand océan de la planète ?", answer: "L'océan Pacifique", faux: ["L'océan Atlantique", "L'océan Indien", "L'océan Arctique"] },
-        { cat: 'Monde habité', prompt: "Lequel de ces espaces est très peu habité ?", answer: 'Un désert', faux: ['Une plaine fertile', 'Un littoral tempéré', 'Une vallée fluviale'] },
-        { cat: 'Monde habité', prompt: "Où vit aujourd'hui plus de la moitié de l'humanité ?", answer: 'En ville', faux: ['À la campagne', 'En montagne', 'Sur les littoraux uniquement'] },
-        { cat: 'Monde habité', prompt: "Comment appelle-t-on l'augmentation de la population des villes ?", answer: "L'urbanisation", faux: ["L'exode urbain", 'La densification agricole', 'La migration saisonnière'] },
-        { cat: 'Monde habité', prompt: "Quel pays d'Asie compte le plus grand foyer de peuplement avec la Chine ?", answer: "L'Inde", faux: ['Le Japon', 'La Thaïlande', 'Le Népal'] },
-        { cat: 'Monde habité', prompt: "Pourquoi les hautes montagnes sont-elles peu peuplées ?", answer: 'Les conditions de vie y sont difficiles', faux: ['Il y fait trop chaud', 'Les terres y sont trop riches', 'Elles sont interdites'] },
-        { cat: 'Monde habité', prompt: "La population mondiale est-elle répartie de façon égale ?", answer: 'Non, très inégalement', faux: ['Oui, partout pareil', 'Oui, sauf en Europe', 'Oui, depuis 2000'] }
+        { cat: 'Monde habité', prompt: "Combien d'habitants compte la Terre aujourd'hui ?", answer: 'Environ 8 milliards', faux: ['Environ 1 milliard', 'Environ 800 millions', 'Environ 50 milliards'], expl: "Environ 8 milliards, contre 2,5 milliards en 1950." },
+        { cat: 'Monde habité', prompt: "Quel est le continent le plus peuplé ?", answer: "L'Asie", faux: ["L'Afrique", "L'Europe", "L'Amérique"], expl: "L'Asie rassemble à elle seule plus de la moitié de l'humanité." },
+        { cat: 'Monde habité', prompt: "Comment appelle-t-on une région du monde très peuplée ?", answer: 'Un foyer de peuplement', faux: ['Un désert humain', 'Une marge', 'Un littoral'], expl: "Un foyer de peuplement : Asie de l'Est, Asie du Sud, Europe, nord-est de l'Amérique du Nord." },
+        { cat: 'Monde habité', prompt: "Quel est le plus grand océan de la planète ?", answer: "L'océan Pacifique", faux: ["L'océan Atlantique", "L'océan Indien", "L'océan Arctique"], expl: "Le Pacifique couvre à lui seul environ un tiers de la surface du globe." },
+        { cat: 'Monde habité', prompt: "Lequel de ces espaces est très peu habité ?", answer: 'Un désert', faux: ['Une plaine fertile', 'Un littoral tempéré', 'Une vallée fluviale'], expl: "Les déserts, trop secs ou trop froids, comptent très peu d'habitants." },
+        { cat: 'Monde habité', prompt: "Où vit aujourd'hui plus de la moitié de l'humanité ?", answer: 'En ville', faux: ['À la campagne', 'En montagne', 'Sur les littoraux uniquement'], expl: "En ville : depuis 2007, les citadins sont plus nombreux que les ruraux." },
+        { cat: 'Monde habité', prompt: "Comment appelle-t-on l'augmentation de la population des villes ?", answer: "L'urbanisation", faux: ["L'exode urbain", 'La densification agricole', 'La migration saisonnière'], expl: "L'urbanisation : les villes grandissent et concentrent toujours plus d'habitants." },
+        { cat: 'Monde habité', prompt: "Quel pays d'Asie compte le plus grand foyer de peuplement avec la Chine ?", answer: "L'Inde", faux: ['Le Japon', 'La Thaïlande', 'Le Népal'], expl: "L'Inde, dont la population dépasse aujourd'hui celle de la Chine." },
+        { cat: 'Monde habité', prompt: "Pourquoi les hautes montagnes sont-elles peu peuplées ?", answer: 'Les conditions de vie y sont difficiles', faux: ['Il y fait trop chaud', 'Les terres y sont trop riches', 'Elles sont interdites'], expl: "Froid, pente, air raréfié et terres peu cultivables rendent la vie difficile." },
+        { cat: 'Monde habité', prompt: "La population mondiale est-elle répartie de façon égale ?", answer: 'Non, très inégalement', faux: ['Oui, partout pareil', 'Oui, sauf en Europe', 'Oui, depuis 2000'], expl: "Non : des régions entières sont presque vides, d'autres très denses." }
       ]); } }
   ] },
 
@@ -1218,17 +1241,17 @@ const DOMAINS = [
       ],
       reperes: [['0 °C', "L'eau gèle"], ['100 °C', "L'eau bout"], ['Fusion', 'Solide vers liquide'], ['Homogène', 'On ne distingue pas les constituants']],
       question() { return questionDeBanque([
-        { cat: 'Matière', prompt: "Combien y a-t-il d'états de la matière ?", answer: 'Trois', faux: ['Deux', 'Quatre', 'Cinq'] },
-        { cat: 'Matière', prompt: "À quelle température l'eau gèle-t-elle ?", answer: '0 °C', faux: ['100 °C', '10 °C', '-100 °C'] },
-        { cat: 'Matière', prompt: "À quelle température l'eau bout-elle ?", answer: '100 °C', faux: ['0 °C', '50 °C', '200 °C'] },
-        { cat: 'Matière', prompt: "Comment appelle-t-on le passage de solide à liquide ?", answer: 'La fusion', faux: ['La solidification', "L'évaporation", 'La condensation'] },
-        { cat: 'Matière', prompt: "Que devient la masse de l'eau quand elle gèle ?", answer: 'Elle ne change pas', faux: ['Elle augmente', 'Elle diminue', 'Elle double'] },
-        { cat: 'Matière', prompt: "Pourquoi une bouteille pleine éclate-t-elle au congélateur ?", answer: "L'eau prend plus de place en gelant", faux: ['Le verre rétrécit', "L'eau devient plus lourde", 'Le froid dilate le plastique'] },
-        { cat: 'Matière', prompt: "L'eau salée est un mélange...", answer: 'Homogène', faux: ['Hétérogène', 'Solide', 'Gazeux'] },
-        { cat: 'Matière', prompt: "Quelle technique sépare le sable de l'eau ?", answer: 'La filtration', faux: ['La fusion', 'La vaporisation', 'La condensation'] },
-        { cat: 'Matière', prompt: "Comment récupérer le sel d'une eau salée ?", answer: 'Par évaporation', faux: ['Par filtration', 'Par congélation', 'Par décantation'] },
-        { cat: 'Matière', prompt: "Quelle est la particularité d'un gaz ?", answer: "Il occupe tout l'espace disponible", faux: ['Il a sa forme propre', 'Sa surface est plane', 'Il ne pèse rien'] },
-        { cat: 'Matière', prompt: "La buée sur une vitre froide est due à...", answer: 'La condensation', faux: ['La fusion', 'La solidification', 'La filtration'] }
+        { cat: 'Matière', prompt: "Combien y a-t-il d'états de la matière ?", answer: 'Trois', faux: ['Deux', 'Quatre', 'Cinq'], expl: "Solide, liquide et gazeux : trois états pour une même matière." },
+        { cat: 'Matière', prompt: "À quelle température l'eau gèle-t-elle ?", answer: '0 °C', faux: ['100 °C', '10 °C', '-100 °C'], expl: "À 0 °C l'eau passe de l'état liquide à l'état solide : c'est la solidification." },
+        { cat: 'Matière', prompt: "À quelle température l'eau bout-elle ?", answer: '100 °C', faux: ['0 °C', '50 °C', '200 °C'], expl: "À 100 °C au niveau de la mer, l'eau passe à l'état de vapeur." },
+        { cat: 'Matière', prompt: "Comment appelle-t-on le passage de solide à liquide ?", answer: 'La fusion', faux: ['La solidification', "L'évaporation", 'La condensation'], expl: "La fusion : la glace fond et redevient eau liquide." },
+        { cat: 'Matière', prompt: "Que devient la masse de l'eau quand elle gèle ?", answer: 'Elle ne change pas', faux: ['Elle augmente', 'Elle diminue', 'Elle double'], expl: "La masse se conserve toujours lors d'un changement d'état ; seul le volume change." },
+        { cat: 'Matière', prompt: "Pourquoi une bouteille pleine éclate-t-elle au congélateur ?", answer: "L'eau prend plus de place en gelant", faux: ['Le verre rétrécit', "L'eau devient plus lourde", 'Le froid dilate le plastique'], expl: "En gelant, l'eau augmente de volume et pousse sur les parois jusqu'à les briser." },
+        { cat: 'Matière', prompt: "L'eau salée est un mélange...", answer: 'Homogène', faux: ['Hétérogène', 'Solide', 'Gazeux'], expl: "Homogène : une fois dissous, le sel ne se distingue plus à l'œil." },
+        { cat: 'Matière', prompt: "Quelle technique sépare le sable de l'eau ?", answer: 'La filtration', faux: ['La fusion', 'La vaporisation', 'La condensation'], expl: "La filtration : le filtre retient le sable et laisse passer l'eau." },
+        { cat: 'Matière', prompt: "Comment récupérer le sel d'une eau salée ?", answer: 'Par évaporation', faux: ['Par filtration', 'Par congélation', 'Par décantation'], expl: "En laissant l'eau s'évaporer : le sel reste au fond, c'est le principe des marais salants." },
+        { cat: 'Matière', prompt: "Quelle est la particularité d'un gaz ?", answer: "Il occupe tout l'espace disponible", faux: ['Il a sa forme propre', 'Sa surface est plane', 'Il ne pèse rien'], expl: "Un gaz n'a ni forme ni volume propres : il occupe tout l'espace qu'on lui donne." },
+        { cat: 'Matière', prompt: "La buée sur une vitre froide est due à...", answer: 'La condensation', faux: ['La fusion', 'La solidification', 'La filtration'], expl: "La vapeur d'eau de l'air se refroidit au contact de la vitre et redevient liquide." }
       ]); } },
 
     { id: 'sci-energie', title: "L'énergie et ses formes", explanation: "D'où vient l'énergie que nous utilisons, et comment elle se transforme.", levels: ['cm2', 'sixieme'],
@@ -1240,17 +1263,17 @@ const DOMAINS = [
       ],
       reperes: [['Renouvelable', 'Soleil, vent, eau, biomasse, géothermie'], ['Non renouvelable', 'Charbon, pétrole, gaz, uranium'], ['Circuit fermé', 'Condition pour que le courant passe'], ['Conducteur', 'Les métaux laissent passer le courant']],
       question() { return questionDeBanque([
-        { cat: 'Énergie', prompt: "Laquelle de ces sources d'énergie est renouvelable ?", answer: 'Le vent', faux: ['Le charbon', 'Le pétrole', "L'uranium"] },
-        { cat: 'Énergie', prompt: "Laquelle de ces sources d'énergie n'est pas renouvelable ?", answer: 'Le pétrole', faux: ['Le soleil', "L'eau", 'Le vent'] },
-        { cat: 'Énergie', prompt: "Que fait l'énergie : elle se crée ou elle se transforme ?", answer: 'Elle se transforme', faux: ['Elle se crée', 'Elle disparaît', 'Elle se multiplie'] },
-        { cat: 'Énergie', prompt: "Que transforme une éolienne ?", answer: "Le mouvement du vent en électricité", faux: ['La lumière en chaleur', "L'eau en vapeur", 'Le charbon en gaz'] },
-        { cat: 'Énergie', prompt: "De quoi a besoin un circuit électrique simple ?", answer: "D'un générateur, de fils et d'un récepteur", faux: ["D'un aimant seulement", "D'eau et de sel", "D'un miroir"] },
-        { cat: 'Énergie', prompt: "Pour que le courant circule, le circuit doit être...", answer: 'Fermé', faux: ['Ouvert', 'Coupé', 'Mouillé'] },
-        { cat: 'Énergie', prompt: "Lequel de ces matériaux est isolant ?", answer: 'Le plastique', faux: ['Le cuivre', 'Le fer', "L'aluminium"] },
-        { cat: 'Énergie', prompt: "Lequel de ces matériaux conduit le courant ?", answer: 'Le cuivre', faux: ['Le bois', 'Le verre', 'Le plastique'] },
-        { cat: 'Énergie', prompt: "Quelle énergie contiennent les aliments ?", answer: "De l'énergie chimique", faux: ["De l'énergie électrique", "De l'énergie lumineuse", "De l'énergie nucléaire"] },
-        { cat: 'Énergie', prompt: "Une lampe allumée produit de la lumière et...", answer: 'De la chaleur', faux: ['Du son', 'Du vent', "De l'eau"] },
-        { cat: 'Énergie', prompt: "D'où vient la quasi-totalité de l'énergie sur Terre à l'origine ?", answer: 'Du Soleil', faux: ['De la Lune', 'Du centre de la Terre', 'Des océans'] }
+        { cat: 'Énergie', prompt: "Laquelle de ces sources d'énergie est renouvelable ?", answer: 'Le vent', faux: ['Le charbon', 'Le pétrole', "L'uranium"], expl: "Le vent se renouvelle en permanence, contrairement au charbon ou au pétrole." },
+        { cat: 'Énergie', prompt: "Laquelle de ces sources d'énergie n'est pas renouvelable ?", answer: 'Le pétrole', faux: ['Le soleil', "L'eau", 'Le vent'], expl: "Le pétrole s'est formé en millions d'années : les réserves sont limitées." },
+        { cat: 'Énergie', prompt: "Que fait l'énergie : elle se crée ou elle se transforme ?", answer: 'Elle se transforme', faux: ['Elle se crée', 'Elle disparaît', 'Elle se multiplie'], expl: "L'énergie ne se crée ni ne disparaît : elle change seulement de forme." },
+        { cat: 'Énergie', prompt: "Que transforme une éolienne ?", answer: "Le mouvement du vent en électricité", faux: ['La lumière en chaleur', "L'eau en vapeur", 'Le charbon en gaz'], expl: "Les pales captent l'énergie du vent et la génératrice la transforme en électricité." },
+        { cat: 'Énergie', prompt: "De quoi a besoin un circuit électrique simple ?", answer: "D'un générateur, de fils et d'un récepteur", faux: ["D'un aimant seulement", "D'eau et de sel", "D'un miroir"], expl: "Un générateur pour fournir le courant, des fils pour le conduire, un récepteur pour l'utiliser." },
+        { cat: 'Énergie', prompt: "Pour que le courant circule, le circuit doit être...", answer: 'Fermé', faux: ['Ouvert', 'Coupé', 'Mouillé'], expl: "Fermé : si le circuit est ouvert quelque part, le courant ne peut pas circuler." },
+        { cat: 'Énergie', prompt: "Lequel de ces matériaux est isolant ?", answer: 'Le plastique', faux: ['Le cuivre', 'Le fer', "L'aluminium"], expl: "Le plastique ne laisse pas passer le courant : c'est pourquoi il gaine les fils." },
+        { cat: 'Énergie', prompt: "Lequel de ces matériaux conduit le courant ?", answer: 'Le cuivre', faux: ['Le bois', 'Le verre', 'Le plastique'], expl: "Le cuivre est un métal : les métaux conduisent bien l'électricité." },
+        { cat: 'Énergie', prompt: "Quelle énergie contiennent les aliments ?", answer: "De l'énergie chimique", faux: ["De l'énergie électrique", "De l'énergie lumineuse", "De l'énergie nucléaire"], expl: "De l'énergie chimique, que le corps libère lors de la digestion." },
+        { cat: 'Énergie', prompt: "Une lampe allumée produit de la lumière et...", answer: 'De la chaleur', faux: ['Du son', 'Du vent', "De l'eau"], expl: "Une partie de l'électricité se transforme en chaleur : c'est pourquoi une lampe chauffe." },
+        { cat: 'Énergie', prompt: "D'où vient la quasi-totalité de l'énergie sur Terre à l'origine ?", answer: 'Du Soleil', faux: ['De la Lune', 'Du centre de la Terre', 'Des océans'], expl: "Le Soleil : il est à l'origine du vent, de la pluie, des plantes et donc des énergies fossiles." }
       ]); } },
 
     { id: 'sci-corps', title: 'Le corps humain', explanation: "Digestion, respiration, circulation : comment le corps se nourrit et fonctionne.", levels: ['cm2', 'sixieme'],
@@ -1262,16 +1285,16 @@ const DOMAINS = [
       ],
       reperes: [['Intestin grêle', 'Le passage des nutriments dans le sang'], ['Poumons', 'Échange dioxygène / dioxyde de carbone'], ['Cœur', 'Le muscle qui pompe le sang'], ['Artères', 'Elles partent du cœur']],
       question() { return questionDeBanque([
-        { cat: 'Corps humain', prompt: "Dans quel organe les nutriments passent-ils dans le sang ?", answer: "L'intestin grêle", faux: ["L'estomac", 'Le foie', 'Le poumon'] },
-        { cat: 'Corps humain', prompt: "Quel gaz le corps prend-il dans l'air ?", answer: 'Le dioxygène', faux: ['Le dioxyde de carbone', "L'azote", "L'hydrogène"] },
-        { cat: 'Corps humain', prompt: "Quel gaz le corps rejette-t-il en respirant ?", answer: 'Le dioxyde de carbone', faux: ['Le dioxygène', "L'azote", 'La vapeur seule'] },
-        { cat: 'Corps humain', prompt: "Quel organe pompe le sang dans tout le corps ?", answer: 'Le cœur', faux: ['Le poumon', "L'estomac", 'Le cerveau'] },
-        { cat: 'Corps humain', prompt: "Les artères transportent le sang...", answer: 'En partant du cœur', faux: ['Vers le cœur', 'Vers l\'estomac seulement', 'Dans les deux sens'] },
-        { cat: 'Corps humain', prompt: "Par quoi commence le tube digestif ?", answer: 'La bouche', faux: ["L'estomac", "L'intestin", "L'œsophage"] },
-        { cat: 'Corps humain', prompt: "De combien d'heures de sommeil un enfant de 11 ans a-t-il besoin ?", answer: 'Environ 9 à 11 heures', faux: ['Environ 4 heures', 'Environ 6 heures', 'Environ 14 heures'] },
-        { cat: 'Corps humain', prompt: "Où arrive l'air après la trachée ?", answer: 'Dans les poumons', faux: ["Dans l'estomac", 'Dans le cœur', 'Dans le foie'] },
-        { cat: 'Corps humain', prompt: "Qu'est-ce qu'une alimentation équilibrée ?", answer: 'Variée, avec des aliments de chaque groupe', faux: ['Uniquement des légumes', 'Uniquement des protéines', 'Sans jamais de féculents'] },
-        { cat: 'Corps humain', prompt: "Que fait la digestion aux aliments ?", answer: 'Elle les transforme en nutriments', faux: ['Elle les fait disparaître', 'Elle les refroidit', 'Elle les transforme en air'] }
+        { cat: 'Corps humain', prompt: "Dans quel organe les nutriments passent-ils dans le sang ?", answer: "L'intestin grêle", faux: ["L'estomac", 'Le foie', 'Le poumon'], expl: "Dans l'intestin grêle, dont la paroi très repliée laisse passer les nutriments vers le sang." },
+        { cat: 'Corps humain', prompt: "Quel gaz le corps prend-il dans l'air ?", answer: 'Le dioxygène', faux: ['Le dioxyde de carbone', "L'azote", "L'hydrogène"], expl: "Le dioxygène, indispensable au fonctionnement de toutes les cellules." },
+        { cat: 'Corps humain', prompt: "Quel gaz le corps rejette-t-il en respirant ?", answer: 'Le dioxyde de carbone', faux: ['Le dioxygène', "L'azote", 'La vapeur seule'], expl: "Le dioxyde de carbone, déchet produit par les cellules." },
+        { cat: 'Corps humain', prompt: "Quel organe pompe le sang dans tout le corps ?", answer: 'Le cœur', faux: ['Le poumon', "L'estomac", 'Le cerveau'], expl: "Le cœur, un muscle qui bat environ 100 000 fois par jour." },
+        { cat: 'Corps humain', prompt: "Les artères transportent le sang...", answer: 'En partant du cœur', faux: ['Vers le cœur', 'Vers l\'estomac seulement', 'Dans les deux sens'], expl: "Les artères partent du cœur ; les veines y ramènent le sang." },
+        { cat: 'Corps humain', prompt: "Par quoi commence le tube digestif ?", answer: 'La bouche', faux: ["L'estomac", "L'intestin", "L'œsophage"], expl: "Par la bouche, où les dents broient et la salive commence à transformer les aliments." },
+        { cat: 'Corps humain', prompt: "De combien d'heures de sommeil un enfant de 11 ans a-t-il besoin ?", answer: 'Environ 9 à 11 heures', faux: ['Environ 4 heures', 'Environ 6 heures', 'Environ 14 heures'], expl: "Entre 9 et 11 heures : le sommeil sert à grandir et à mémoriser." },
+        { cat: 'Corps humain', prompt: "Où arrive l'air après la trachée ?", answer: 'Dans les poumons', faux: ["Dans l'estomac", 'Dans le cœur', 'Dans le foie'], expl: "Dans les poumons, où il atteint les alvéoles et passe dans le sang." },
+        { cat: 'Corps humain', prompt: "Qu'est-ce qu'une alimentation équilibrée ?", answer: 'Variée, avec des aliments de chaque groupe', faux: ['Uniquement des légumes', 'Uniquement des protéines', 'Sans jamais de féculents'], expl: "Manger de tout en bonne proportion, sans supprimer ni abuser d'aucun groupe d'aliments." },
+        { cat: 'Corps humain', prompt: "Que fait la digestion aux aliments ?", answer: 'Elle les transforme en nutriments', faux: ['Elle les fait disparaître', 'Elle les refroidit', 'Elle les transforme en air'], expl: "Elle les découpe en nutriments assez petits pour passer dans le sang." }
       ]); } },
 
     { id: 'sci-vivant', title: 'Le monde vivant', explanation: "Classer les êtres vivants et comprendre ce dont ils ont besoin pour vivre.", levels: ['cm2', 'sixieme'],
@@ -1283,16 +1306,16 @@ const DOMAINS = [
       ],
       reperes: [['Vertébrés', 'Mammifères, oiseaux, reptiles, amphibiens, poissons'], ['Photosynthèse', 'Les végétaux produisent grâce à la lumière'], ['Chaîne alimentaire', 'Elle commence par un végétal'], ['Omnivore', 'Il mange végétaux et animaux']],
       question() { return questionDeBanque([
-        { cat: 'Le vivant', prompt: "Combien de groupes de vertébrés distingue-t-on ?", answer: 'Cinq', faux: ['Trois', 'Sept', 'Dix'] },
-        { cat: 'Le vivant', prompt: "Lequel de ces animaux est un invertébré ?", answer: "L'araignée", faux: ['Le chat', 'La grenouille', 'Le saumon'] },
-        { cat: 'Le vivant', prompt: "Comment appelle-t-on la fabrication de matière par les végétaux verts ?", answer: 'La photosynthèse', faux: ['La digestion', 'La respiration', 'La germination'] },
-        { cat: 'Le vivant', prompt: "De quoi les végétaux verts ont-ils besoin pour la photosynthèse ?", answer: "D'eau, de dioxyde de carbone et de lumière", faux: ["De viande et d'eau", "De dioxygène seulement", "De terre uniquement"] },
-        { cat: 'Le vivant', prompt: "Par quoi commence toujours une chaîne alimentaire ?", answer: 'Un végétal', faux: ['Un carnivore', 'Un omnivore', 'Un champignon'] },
-        { cat: 'Le vivant', prompt: "Comment appelle-t-on un animal qui ne mange que des végétaux ?", answer: 'Un herbivore', faux: ['Un carnivore', 'Un omnivore', 'Un producteur'] },
-        { cat: 'Le vivant', prompt: "La grenouille appartient au groupe des...", answer: 'Amphibiens', faux: ['Reptiles', 'Poissons', 'Mammifères'] },
-        { cat: 'Le vivant', prompt: "Sur quoi la classification du vivant se fonde-t-elle ?", answer: 'Sur ce que les êtres vivants ont en commun', faux: ['Sur leur taille', 'Sur ce qui leur manque', 'Sur leur couleur'] },
-        { cat: 'Le vivant', prompt: "Qu'est-ce qui caractérise un vertébré ?", answer: 'Il a une colonne vertébrale', faux: ['Il a des poils', 'Il pond des œufs', 'Il vit dans l\'eau'] },
-        { cat: 'Le vivant', prompt: "La baleine appartient au groupe des...", answer: 'Mammifères', faux: ['Poissons', 'Reptiles', 'Amphibiens'] }
+        { cat: 'Le vivant', prompt: "Combien de groupes de vertébrés distingue-t-on ?", answer: 'Cinq', faux: ['Trois', 'Sept', 'Dix'], expl: "Mammifères, oiseaux, reptiles, amphibiens et poissons : cinq groupes." },
+        { cat: 'Le vivant', prompt: "Lequel de ces animaux est un invertébré ?", answer: "L'araignée", faux: ['Le chat', 'La grenouille', 'Le saumon'], expl: "L'araignée n'a pas de colonne vertébrale : c'est un invertébré, comme les insectes." },
+        { cat: 'Le vivant', prompt: "Comment appelle-t-on la fabrication de matière par les végétaux verts ?", answer: 'La photosynthèse', faux: ['La digestion', 'La respiration', 'La germination'], expl: "La photosynthèse, qui se déroule dans les feuilles grâce à la chlorophylle." },
+        { cat: 'Le vivant', prompt: "De quoi les végétaux verts ont-ils besoin pour la photosynthèse ?", answer: "D'eau, de dioxyde de carbone et de lumière", faux: ["De viande et d'eau", "De dioxygène seulement", "De terre uniquement"], expl: "De l'eau puisée par les racines, du dioxyde de carbone de l'air et de la lumière du Soleil." },
+        { cat: 'Le vivant', prompt: "Par quoi commence toujours une chaîne alimentaire ?", answer: 'Un végétal', faux: ['Un carnivore', 'Un omnivore', 'Un champignon'], expl: "Par un végétal : lui seul produit sa propre matière, les autres la consomment." },
+        { cat: 'Le vivant', prompt: "Comment appelle-t-on un animal qui ne mange que des végétaux ?", answer: 'Un herbivore', faux: ['Un carnivore', 'Un omnivore', 'Un producteur'], expl: "Un herbivore, comme la vache ou le lapin." },
+        { cat: 'Le vivant', prompt: "La grenouille appartient au groupe des...", answer: 'Amphibiens', faux: ['Reptiles', 'Poissons', 'Mammifères'], expl: "Les amphibiens vivent d'abord dans l'eau, puis respirent l'air à l'âge adulte." },
+        { cat: 'Le vivant', prompt: "Sur quoi la classification du vivant se fonde-t-elle ?", answer: 'Sur ce que les êtres vivants ont en commun', faux: ['Sur leur taille', 'Sur ce qui leur manque', 'Sur leur couleur'], expl: "On regroupe selon ce que les êtres vivants possèdent en commun, jamais selon ce qui leur manque." },
+        { cat: 'Le vivant', prompt: "Qu'est-ce qui caractérise un vertébré ?", answer: 'Il a une colonne vertébrale', faux: ['Il a des poils', 'Il pond des œufs', 'Il vit dans l\'eau'], expl: "La présence d'une colonne vertébrale, faite de vertèbres." },
+        { cat: 'Le vivant', prompt: "La baleine appartient au groupe des...", answer: 'Mammifères', faux: ['Poissons', 'Reptiles', 'Amphibiens'], expl: "Elle allaite ses petits et respire de l'air : c'est un mammifère, malgré sa vie marine." }
       ]); } },
 
     { id: 'sci-terre', title: 'La Terre et le ciel', explanation: "Le système solaire, les saisons et les mouvements de notre planète.", levels: ['cm2', 'sixieme'],
@@ -1304,16 +1327,16 @@ const DOMAINS = [
       ],
       reperes: [['8', 'Nombre de planètes du système solaire'], ['24 h', 'Rotation de la Terre : le jour et la nuit'], ['365 jours ¼', "Révolution autour du Soleil : l'année"], ['Inclinaison', "La cause des saisons"]],
       question() { return questionDeBanque([
-        { cat: 'La Terre', prompt: "Combien de planètes compte le système solaire ?", answer: 'Huit', faux: ['Neuf', 'Sept', 'Douze'] },
-        { cat: 'La Terre', prompt: "Quelle est la position de la Terre par rapport au Soleil ?", answer: 'La troisième planète', faux: ['La première', 'La deuxième', 'La cinquième'] },
-        { cat: 'La Terre', prompt: "En combien de temps la Terre tourne-t-elle sur elle-même ?", answer: '24 heures', faux: ['365 jours', 'Un mois', '12 heures'] },
-        { cat: 'La Terre', prompt: "Qu'est-ce qui explique l'alternance du jour et de la nuit ?", answer: 'La rotation de la Terre', faux: ['La révolution autour du Soleil', 'Les phases de la Lune', "L'inclinaison de l'axe"] },
-        { cat: 'La Terre', prompt: "Qu'est-ce qui explique les saisons ?", answer: "L'inclinaison de l'axe de la Terre", faux: ['La distance au Soleil', 'La rotation en 24 h', 'La Lune'] },
-        { cat: 'La Terre', prompt: "Le Soleil est...", answer: 'Une étoile', faux: ['Une planète', 'Un satellite', 'Une comète'] },
-        { cat: 'La Terre', prompt: "La Lune est le satellite de quelle planète ?", answer: 'La Terre', faux: ['Mars', 'Vénus', 'Jupiter'] },
-        { cat: 'La Terre', prompt: "Pourquoi voit-on la Lune briller ?", answer: 'Elle réfléchit la lumière du Soleil', faux: ['Elle produit sa propre lumière', 'Elle est en feu', 'Elle réfléchit la lumière de la Terre'] },
-        { cat: 'La Terre', prompt: "En combien de temps la Terre fait-elle le tour du Soleil ?", answer: 'Environ 365 jours', faux: ['24 heures', '30 jours', '10 ans'] },
-        { cat: 'La Terre', prompt: "Quelle planète suit la Terre en s'éloignant du Soleil ?", answer: 'Mars', faux: ['Vénus', 'Mercure', 'Jupiter'] }
+        { cat: 'La Terre', prompt: "Combien de planètes compte le système solaire ?", answer: 'Huit', faux: ['Neuf', 'Sept', 'Douze'], expl: "Huit depuis 2006, date à laquelle Pluton a été reclassée en planète naine." },
+        { cat: 'La Terre', prompt: "Quelle est la position de la Terre par rapport au Soleil ?", answer: 'La troisième planète', faux: ['La première', 'La deuxième', 'La cinquième'], expl: "Troisième, après Mercure et Vénus. Cette distance rend l'eau liquide possible." },
+        { cat: 'La Terre', prompt: "En combien de temps la Terre tourne-t-elle sur elle-même ?", answer: '24 heures', faux: ['365 jours', 'Un mois', '12 heures'], expl: "En 24 heures, ce qui définit la durée du jour." },
+        { cat: 'La Terre', prompt: "Qu'est-ce qui explique l'alternance du jour et de la nuit ?", answer: 'La rotation de la Terre', faux: ['La révolution autour du Soleil', 'Les phases de la Lune', "L'inclinaison de l'axe"], expl: "La rotation : la face éclairée par le Soleil change au fil des heures." },
+        { cat: 'La Terre', prompt: "Qu'est-ce qui explique les saisons ?", answer: "L'inclinaison de l'axe de la Terre", faux: ['La distance au Soleil', 'La rotation en 24 h', 'La Lune'], expl: "L'axe incliné fait que chaque hémisphère reçoit les rayons plus ou moins directement selon la saison." },
+        { cat: 'La Terre', prompt: "Le Soleil est...", answer: 'Une étoile', faux: ['Une planète', 'Un satellite', 'Une comète'], expl: "Une étoile : il produit sa propre lumière, contrairement aux planètes." },
+        { cat: 'La Terre', prompt: "La Lune est le satellite de quelle planète ?", answer: 'La Terre', faux: ['Mars', 'Vénus', 'Jupiter'], expl: "La Terre : la Lune en fait le tour en environ 27 jours." },
+        { cat: 'La Terre', prompt: "Pourquoi voit-on la Lune briller ?", answer: 'Elle réfléchit la lumière du Soleil', faux: ['Elle produit sa propre lumière', 'Elle est en feu', 'Elle réfléchit la lumière de la Terre'], expl: "Elle n'émet pas de lumière : on voit la lumière du Soleil qu'elle renvoie." },
+        { cat: 'La Terre', prompt: "En combien de temps la Terre fait-elle le tour du Soleil ?", answer: 'Environ 365 jours', faux: ['24 heures', '30 jours', '10 ans'], expl: "Environ 365 jours et un quart, d'où l'année bissextile tous les quatre ans." },
+        { cat: 'La Terre', prompt: "Quelle planète suit la Terre en s'éloignant du Soleil ?", answer: 'Mars', faux: ['Vénus', 'Mercure', 'Jupiter'], expl: "Mars, la quatrième planète, surnommée la planète rouge." }
       ]); } },
 
     { id: 'sci-objets', title: 'Objets techniques et matériaux', explanation: "À quoi sert un objet, en quoi il est fait, et comment il fonctionne.", levels: ['cm2', 'sixieme'],
@@ -1325,16 +1348,16 @@ const DOMAINS = [
       ],
       reperes: [['Fonction d\'usage', "Ce à quoi l'objet sert"], ['Fonction technique', 'Le rôle de chaque élément'], ['Matériau', 'Choisi pour ses propriétés'], ['Réparer, réutiliser, recycler', "Limiter l'impact"]],
       question() { return questionDeBanque([
-        { cat: 'Objets techniques', prompt: "Qu'est-ce que la fonction d'usage d'un objet ?", answer: "Ce à quoi il sert", faux: ['Sa couleur', 'Son prix', 'Son poids'] },
-        { cat: 'Objets techniques', prompt: "Quelle est la fonction d'usage d'un vélo ?", answer: 'Se déplacer', faux: ['Faire du bruit', 'Éclairer', 'Mesurer le temps'] },
-        { cat: 'Objets techniques', prompt: "Quel matériau est transparent mais fragile ?", answer: 'Le verre', faux: ['Le métal', 'Le bois', 'Le plastique'] },
-        { cat: 'Objets techniques', prompt: "Quel matériau est léger et isolant ?", answer: 'Le plastique', faux: ['Le fer', 'Le cuivre', "L'acier"] },
-        { cat: 'Objets techniques', prompt: "Sur un vélo, à quoi sert la chaîne ?", answer: 'À transmettre le mouvement', faux: ['À freiner', 'À diriger', 'À éclairer'] },
-        { cat: 'Objets techniques', prompt: "Comment appelle-t-on le rôle de chaque élément d'un objet ?", answer: 'Sa fonction technique', faux: ['Sa fonction d\'usage', 'Son matériau', 'Son besoin'] },
-        { cat: 'Objets techniques', prompt: "Quel matériau est renouvelable ?", answer: 'Le bois', faux: ['Le pétrole', 'Le fer', 'Le verre'] },
-        { cat: 'Objets techniques', prompt: "Que vaut-il mieux faire avant de jeter un objet cassé ?", answer: 'Essayer de le réparer', faux: ['Le brûler', "L'enterrer", 'En racheter deux'] },
-        { cat: 'Objets techniques', prompt: "Pourquoi fabrique-t-on un objet technique ?", answer: 'Pour répondre à un besoin', faux: ['Par hasard', 'Pour décorer seulement', 'Pour consommer des ressources'] },
-        { cat: 'Objets techniques', prompt: "Pourquoi choisit-on le métal pour une casserole ?", answer: 'Il résiste à la chaleur et la conduit', faux: ['Il est transparent', 'Il est très léger', 'Il est isolant'] }
+        { cat: 'Objets techniques', prompt: "Qu'est-ce que la fonction d'usage d'un objet ?", answer: "Ce à quoi il sert", faux: ['Sa couleur', 'Son prix', 'Son poids'], expl: "C'est le besoin auquel il répond, autrement dit ce à quoi il sert." },
+        { cat: 'Objets techniques', prompt: "Quelle est la fonction d'usage d'un vélo ?", answer: 'Se déplacer', faux: ['Faire du bruit', 'Éclairer', 'Mesurer le temps'], expl: "Se déplacer : c'est le besoin auquel le vélo répond." },
+        { cat: 'Objets techniques', prompt: "Quel matériau est transparent mais fragile ?", answer: 'Le verre', faux: ['Le métal', 'Le bois', 'Le plastique'], expl: "Le verre laisse passer la lumière mais casse net sous un choc." },
+        { cat: 'Objets techniques', prompt: "Quel matériau est léger et isolant ?", answer: 'Le plastique', faux: ['Le fer', 'Le cuivre', "L'acier"], expl: "Le plastique : léger, isolant et façonnable, d'où son usage massif." },
+        { cat: 'Objets techniques', prompt: "Sur un vélo, à quoi sert la chaîne ?", answer: 'À transmettre le mouvement', faux: ['À freiner', 'À diriger', 'À éclairer'], expl: "Elle transmet le mouvement du pédalier à la roue arrière." },
+        { cat: 'Objets techniques', prompt: "Comment appelle-t-on le rôle de chaque élément d'un objet ?", answer: 'Sa fonction technique', faux: ['Sa fonction d\'usage', 'Son matériau', 'Son besoin'], expl: "Sa fonction technique : chaque pièce remplit un rôle précis dans l'ensemble." },
+        { cat: 'Objets techniques', prompt: "Quel matériau est renouvelable ?", answer: 'Le bois', faux: ['Le pétrole', 'Le fer', 'Le verre'], expl: "Le bois repousse, à condition de replanter et d'exploiter raisonnablement." },
+        { cat: 'Objets techniques', prompt: "Que vaut-il mieux faire avant de jeter un objet cassé ?", answer: 'Essayer de le réparer', faux: ['Le brûler', "L'enterrer", 'En racheter deux'], expl: "Réparer économise les ressources et l'énergie qu'il faudrait pour en fabriquer un neuf." },
+        { cat: 'Objets techniques', prompt: "Pourquoi fabrique-t-on un objet technique ?", answer: 'Pour répondre à un besoin', faux: ['Par hasard', 'Pour décorer seulement', 'Pour consommer des ressources'], expl: "Tout objet technique naît d'un besoin humain à satisfaire." },
+        { cat: 'Objets techniques', prompt: "Pourquoi choisit-on le métal pour une casserole ?", answer: 'Il résiste à la chaleur et la conduit', faux: ['Il est transparent', 'Il est très léger', 'Il est isolant'], expl: "Le métal supporte la chaleur sans fondre et la transmet vite aux aliments." }
       ]); } }
   ] },
   /* ========== Enseignement moral et civique ========== */
@@ -1348,16 +1371,16 @@ const DOMAINS = [
       ],
       reperes: [['Règlement intérieur', "Les règles de l'école"], ['Parlement', 'Assemblée nationale et Sénat'], ['La loi', 'La même pour tous'], ['Droit et devoir', "L'un ne va pas sans l'autre"]],
       question() { return questionDeBanque([
-        { cat: 'Règles et loi', prompt: "Comment s'appellent les règles de l'école ?", answer: 'Le règlement intérieur', faux: ['La Constitution', 'Le code civil', 'La charte des droits'] },
-        { cat: 'Règles et loi', prompt: "Qui vote les lois en France ?", answer: 'Le Parlement', faux: ['Le président seul', 'Les juges', 'Les maires'] },
-        { cat: 'Règles et loi', prompt: "De quoi le Parlement est-il composé ?", answer: "De l'Assemblée nationale et du Sénat", faux: ['Du gouvernement et des juges', 'Des maires et des préfets', 'Du président et des ministres'] },
-        { cat: 'Règles et loi', prompt: "La loi s'applique-t-elle à tout le monde ?", answer: 'Oui, elle est la même pour tous', faux: ['Non, seulement aux adultes', 'Non, seulement aux pauvres', 'Seulement le jour'] },
-        { cat: 'Règles et loi', prompt: "Qui tranche quand la loi n'est pas respectée ?", answer: 'La justice', faux: ['Le maire', "L'école", 'Les voisins'] },
-        { cat: 'Règles et loi', prompt: "Une personne accusée est considérée comme...", answer: "Innocente tant que ce n'est pas prouvé", faux: ['Coupable dès l\'accusation', 'Coupable si elle se tait', 'Toujours libre'] },
-        { cat: 'Règles et loi', prompt: "À quoi correspond chaque droit ?", answer: 'À un devoir', faux: ['À une récompense', 'À une punition', 'À un privilège'] },
-        { cat: 'Règles et loi', prompt: "À quoi servent les règles de vie commune ?", answer: 'À protéger chacun', faux: ['À punir les enfants', 'À faire plaisir aux adultes', 'À compliquer la vie'] },
-        { cat: 'Règles et loi', prompt: "Comment les députés arrivent-ils au Parlement ?", answer: 'Ils sont élus par les citoyens', faux: ['Ils sont nommés par le roi', 'Ils héritent du poste', 'Ils sont tirés au sort'] },
-        { cat: 'Règles et loi', prompt: "Tu as le droit d'aller à l'école. Quel est le devoir qui l'accompagne ?", answer: "En respecter les règles et y travailler", faux: ['Y aller quand tu veux', "Choisir tes professeurs", "N'y aller que le lundi"] }
+        { cat: 'Règles et loi', prompt: "Comment s'appellent les règles de l'école ?", answer: 'Le règlement intérieur', faux: ['La Constitution', 'Le code civil', 'La charte des droits'], expl: "Le règlement intérieur fixe les droits et les devoirs de chacun dans l'établissement." },
+        { cat: 'Règles et loi', prompt: "Qui vote les lois en France ?", answer: 'Le Parlement', faux: ['Le président seul', 'Les juges', 'Les maires'], expl: "Le Parlement : ce sont les représentants élus qui font la loi, pas le gouvernement seul." },
+        { cat: 'Règles et loi', prompt: "De quoi le Parlement est-il composé ?", answer: "De l'Assemblée nationale et du Sénat", faux: ['Du gouvernement et des juges', 'Des maires et des préfets', 'Du président et des ministres'], expl: "De l'Assemblée nationale, élue par les citoyens, et du Sénat." },
+        { cat: 'Règles et loi', prompt: "La loi s'applique-t-elle à tout le monde ?", answer: 'Oui, elle est la même pour tous', faux: ['Non, seulement aux adultes', 'Non, seulement aux pauvres', 'Seulement le jour'], expl: "La loi est la même pour tous : personne n'est au-dessus d'elle." },
+        { cat: 'Règles et loi', prompt: "Qui tranche quand la loi n'est pas respectée ?", answer: 'La justice', faux: ['Le maire', "L'école", 'Les voisins'], expl: "La justice, rendue par des juges indépendants du pouvoir politique." },
+        { cat: 'Règles et loi', prompt: "Une personne accusée est considérée comme...", answer: "Innocente tant que ce n'est pas prouvé", faux: ['Coupable dès l\'accusation', 'Coupable si elle se tait', 'Toujours libre'], expl: "C'est la présomption d'innocence : c'est à l'accusation de prouver la culpabilité." },
+        { cat: 'Règles et loi', prompt: "À quoi correspond chaque droit ?", answer: 'À un devoir', faux: ['À une récompense', 'À une punition', 'À un privilège'], expl: "Un devoir : le droit d'être respecté suppose le devoir de respecter les autres." },
+        { cat: 'Règles et loi', prompt: "À quoi servent les règles de vie commune ?", answer: 'À protéger chacun', faux: ['À punir les enfants', 'À faire plaisir aux adultes', 'À compliquer la vie'], expl: "Elles protègent chacun et permettent de vivre ensemble sans que le plus fort impose sa loi." },
+        { cat: 'Règles et loi', prompt: "Comment les députés arrivent-ils au Parlement ?", answer: 'Ils sont élus par les citoyens', faux: ['Ils sont nommés par le roi', 'Ils héritent du poste', 'Ils sont tirés au sort'], expl: "Ils sont élus par les citoyens lors des élections législatives." },
+        { cat: 'Règles et loi', prompt: "Tu as le droit d'aller à l'école. Quel est le devoir qui l'accompagne ?", answer: "En respecter les règles et y travailler", faux: ['Y aller quand tu veux', "Choisir tes professeurs", "N'y aller que le lundi"], expl: "Y travailler et en respecter les règles : chaque droit a sa contrepartie." }
       ]); } },
 
     { id: 'emc-republique', title: 'Les valeurs de la République', explanation: "Liberté, Égalité, Fraternité, et la laïcité : ce que ces mots veulent dire concrètement.", levels: ['cm2', 'sixieme'],
@@ -1369,16 +1392,16 @@ const DOMAINS = [
       ],
       reperes: [['Devise', 'Liberté, Égalité, Fraternité'], ['Laïcité', "L'État est neutre, chacun est libre de croire"], ['18 ans', "L'âge pour voter"], ['Vote secret', 'Personne ne sait pour qui tu votes']],
       question() { return questionDeBanque([
-        { cat: 'République', prompt: "Quelle est la devise de la France ?", answer: 'Liberté, Égalité, Fraternité', faux: ['Travail, Famille, Patrie', 'Paix, Justice, Honneur', 'Unité, Force, Courage'] },
-        { cat: 'République', prompt: "Que garantit la laïcité ?", answer: 'La liberté de croire ou de ne pas croire', faux: ["L'interdiction de toute religion", 'Une religion officielle', "L'obligation d'être croyant"] },
-        { cat: 'République', prompt: "À partir de quel âge vote-t-on en France ?", answer: '18 ans', faux: ['16 ans', '21 ans', '15 ans'] },
-        { cat: 'République', prompt: "Le vote est-il public ou secret ?", answer: 'Secret', faux: ['Public', 'Affiché en mairie', 'Communiqué aux voisins'] },
-        { cat: 'République', prompt: "Que signifie l'égalité ?", answer: 'Les mêmes droits pour tous', faux: ['Tout le monde est identique', 'Tout le monde gagne pareil', 'Personne n\'a de droits'] },
-        { cat: 'République', prompt: "Que signifie la fraternité ?", answer: "L'entraide entre les personnes", faux: ['Avoir un frère', 'Vivre en famille', 'Se ressembler'] },
-        { cat: 'République', prompt: "La liberté d'expression permet-elle de tout dire ?", answer: 'Non, elle s\'arrête au respect des autres', faux: ['Oui, sans aucune limite', 'Non, il faut se taire', 'Oui, mais seulement à l\'école'] },
-        { cat: 'République', prompt: "Quel personnage symbolise la République ?", answer: 'Marianne', faux: ['Jeanne d\'Arc', 'Napoléon', 'Vercingétorix'] },
-        { cat: 'République', prompt: "Dans une démocratie, qui détient le pouvoir ?", answer: 'Les citoyens, par leurs représentants élus', faux: ['Un roi', "L'armée", 'Une seule famille'] },
-        { cat: 'République', prompt: "L'État français favorise-t-il une religion ?", answer: 'Non, il est neutre', faux: ['Oui, le catholicisme', 'Oui, celle du président', 'Oui, celle de la majorité'] }
+        { cat: 'République', prompt: "Quelle est la devise de la France ?", answer: 'Liberté, Égalité, Fraternité', faux: ['Travail, Famille, Patrie', 'Paix, Justice, Honneur', 'Unité, Force, Courage'], expl: "Héritée de la Révolution de 1789, elle est inscrite sur les bâtiments publics." },
+        { cat: 'République', prompt: "Que garantit la laïcité ?", answer: 'La liberté de croire ou de ne pas croire', faux: ["L'interdiction de toute religion", 'Une religion officielle', "L'obligation d'être croyant"], expl: "Chacun est libre de croire ou non, et l'État ne privilégie aucune conviction." },
+        { cat: 'République', prompt: "À partir de quel âge vote-t-on en France ?", answer: '18 ans', faux: ['16 ans', '21 ans', '15 ans'], expl: "18 ans, l'âge de la majorité, depuis 1974." },
+        { cat: 'République', prompt: "Le vote est-il public ou secret ?", answer: 'Secret', faux: ['Public', 'Affiché en mairie', 'Communiqué aux voisins'], expl: "Le secret du vote protège la liberté de choix : c'est le rôle de l'isoloir." },
+        { cat: 'République', prompt: "Que signifie l'égalité ?", answer: 'Les mêmes droits pour tous', faux: ['Tout le monde est identique', 'Tout le monde gagne pareil', 'Personne n\'a de droits'], expl: "Les mêmes droits pour tous, quelles que soient l'origine, la religion ou le sexe." },
+        { cat: 'République', prompt: "Que signifie la fraternité ?", answer: "L'entraide entre les personnes", faux: ['Avoir un frère', 'Vivre en famille', 'Se ressembler'], expl: "L'entraide et la solidarité entre les membres d'une même société." },
+        { cat: 'République', prompt: "La liberté d'expression permet-elle de tout dire ?", answer: 'Non, elle s\'arrête au respect des autres', faux: ['Oui, sans aucune limite', 'Non, il faut se taire', 'Oui, mais seulement à l\'école'], expl: "Non : injure, diffamation et incitation à la haine sont punies par la loi." },
+        { cat: 'République', prompt: "Quel personnage symbolise la République ?", answer: 'Marianne', faux: ['Jeanne d\'Arc', 'Napoléon', 'Vercingétorix'], expl: "Marianne, dont le buste figure dans toutes les mairies de France." },
+        { cat: 'République', prompt: "Dans une démocratie, qui détient le pouvoir ?", answer: 'Les citoyens, par leurs représentants élus', faux: ['Un roi', "L'armée", 'Une seule famille'], expl: "Les citoyens, qui l'exercent en élisant leurs représentants." },
+        { cat: 'République', prompt: "L'État français favorise-t-il une religion ?", answer: 'Non, il est neutre', faux: ['Oui, le catholicisme', 'Oui, celle du président', 'Oui, celle de la majorité'], expl: "Non : depuis 1905, l'État est neutre et ne finance aucun culte." }
       ]); } },
 
     { id: 'emc-enfant', title: "Les droits de l'enfant", explanation: "Ce que tout enfant du monde a le droit d'avoir, et qui le garantit.", levels: ['cm2', 'sixieme'],
@@ -1390,16 +1413,16 @@ const DOMAINS = [
       ],
       reperes: [['1989', "Convention internationale des droits de l'enfant"], ['20 novembre', "Journée des droits de l'enfant"], ['Être écouté', "Un droit, pas une faveur"], ['Sans distinction', 'Les mêmes droits pour tous les enfants']],
       question() { return questionDeBanque([
-        { cat: "Droits de l'enfant", prompt: "En quelle année la Convention des droits de l'enfant a-t-elle été adoptée ?", answer: '1989', faux: ['1905', '1945', '2001'] },
-        { cat: "Droits de l'enfant", prompt: "Quelle date célèbre les droits de l'enfant ?", answer: '20 novembre', faux: ['14 juillet', '1er mai', '11 novembre'] },
-        { cat: "Droits de l'enfant", prompt: "Lequel de ces éléments est un droit de l'enfant ?", answer: "Aller à l'école", faux: ['Travailler à l\'usine', 'Conduire une voiture', 'Voter aux élections'] },
-        { cat: "Droits de l'enfant", prompt: "Jouer est-il un droit de l'enfant ?", answer: 'Oui, c\'est un droit', faux: ['Non, c\'est une récompense', 'Non, c\'est interdit', 'Seulement le dimanche'] },
-        { cat: "Droits de l'enfant", prompt: "Les droits de l'enfant concernent...", answer: 'Tous les enfants, sans distinction', faux: ['Seulement les enfants français', 'Seulement les garçons', 'Seulement les plus de 10 ans'] },
-        { cat: "Droits de l'enfant", prompt: "Un enfant a-t-il le droit de donner son avis ?", answer: "Oui, il a le droit d'être écouté", faux: ['Non, jamais', 'Seulement à 18 ans', 'Seulement à la maison'] },
-        { cat: "Droits de l'enfant", prompt: "De quoi tout enfant doit-il être protégé ?", answer: 'De la violence et de la maltraitance', faux: ['Du travail scolaire', 'Des jeux', 'Des livres'] },
-        { cat: "Droits de l'enfant", prompt: "En quelle année la France a-t-elle signé cette Convention ?", answer: '1990', faux: ['1789', '1958', '2010'] },
-        { cat: "Droits de l'enfant", prompt: "Les droits de l'enfant sont-ils respectés partout dans le monde ?", answer: 'Non, pas partout', faux: ['Oui, partout', 'Oui, depuis 1989', 'Oui, sauf en Europe'] },
-        { cat: "Droits de l'enfant", prompt: "Avoir un nom et une nationalité, est-ce un droit ?", answer: 'Oui', faux: ['Non', 'Seulement pour les adultes', 'Seulement en France'] }
+        { cat: "Droits de l'enfant", prompt: "En quelle année la Convention des droits de l'enfant a-t-elle été adoptée ?", answer: '1989', faux: ['1905', '1945', '2001'], expl: "En 1989 par les Nations unies : c'est le traité le plus ratifié au monde." },
+        { cat: "Droits de l'enfant", prompt: "Quelle date célèbre les droits de l'enfant ?", answer: '20 novembre', faux: ['14 juillet', '1er mai', '11 novembre'], expl: "Le 20 novembre, jour anniversaire de l'adoption de la Convention en 1989." },
+        { cat: "Droits de l'enfant", prompt: "Lequel de ces éléments est un droit de l'enfant ?", answer: "Aller à l'école", faux: ['Travailler à l\'usine', 'Conduire une voiture', 'Voter aux élections'], expl: "L'instruction est un droit garanti à tout enfant, partout dans le monde." },
+        { cat: "Droits de l'enfant", prompt: "Jouer est-il un droit de l'enfant ?", answer: 'Oui, c\'est un droit', faux: ['Non, c\'est une récompense', 'Non, c\'est interdit', 'Seulement le dimanche'], expl: "Oui : la Convention reconnaît le droit au jeu et au repos, pas seulement au travail scolaire." },
+        { cat: "Droits de l'enfant", prompt: "Les droits de l'enfant concernent...", answer: 'Tous les enfants, sans distinction', faux: ['Seulement les enfants français', 'Seulement les garçons', 'Seulement les plus de 10 ans'], expl: "Tous les enfants, sans distinction d'origine, de sexe, de religion ou de fortune." },
+        { cat: "Droits de l'enfant", prompt: "Un enfant a-t-il le droit de donner son avis ?", answer: "Oui, il a le droit d'être écouté", faux: ['Non, jamais', 'Seulement à 18 ans', 'Seulement à la maison'], expl: "Oui : son opinion doit être prise en compte dans les décisions qui le concernent." },
+        { cat: "Droits de l'enfant", prompt: "De quoi tout enfant doit-il être protégé ?", answer: 'De la violence et de la maltraitance', faux: ['Du travail scolaire', 'Des jeux', 'Des livres'], expl: "De toute forme de violence, d'exploitation et de maltraitance." },
+        { cat: "Droits de l'enfant", prompt: "En quelle année la France a-t-elle signé cette Convention ?", answer: '1990', faux: ['1789', '1958', '2010'], expl: "En 1990, un an après son adoption par les Nations unies." },
+        { cat: "Droits de l'enfant", prompt: "Les droits de l'enfant sont-ils respectés partout dans le monde ?", answer: 'Non, pas partout', faux: ['Oui, partout', 'Oui, depuis 1989', 'Oui, sauf en Europe'], expl: "Non : des millions d'enfants travaillent ou n'ont pas accès à l'école." },
+        { cat: "Droits de l'enfant", prompt: "Avoir un nom et une nationalité, est-ce un droit ?", answer: 'Oui', faux: ['Non', 'Seulement pour les adultes', 'Seulement en France'], expl: "Oui, c'est le tout premier droit reconnu : il permet d'exister aux yeux de la loi." }
       ]); } },
 
     { id: 'emc-ensemble', title: 'Le respect et le vivre-ensemble', explanation: "Harcèlement, discriminations, entraide : savoir reconnaître et savoir réagir.", levels: ['cm2', 'sixieme'],
@@ -1411,16 +1434,16 @@ const DOMAINS = [
       ],
       reperes: [['Discrimination', "Traiter quelqu'un moins bien pour ce qu'il est"], ['Harcèlement', 'Une violence répétée'], ['3020', "Le numéro contre le harcèlement à l'école"], ['3018', 'Le numéro contre le harcèlement en ligne']],
       question() { return questionDeBanque([
-        { cat: 'Vivre ensemble', prompt: "Qu'est-ce qui caractérise le harcèlement ?", answer: "C'est une violence répétée", faux: ['Une seule dispute', 'Un jeu entre amis', 'Une punition'] },
-        { cat: 'Vivre ensemble', prompt: "Quel numéro appeler en cas de harcèlement à l'école ?", answer: 'Le 3020', faux: ['Le 15', 'Le 18', 'Le 112'] },
-        { cat: 'Vivre ensemble', prompt: "Quel numéro appeler en cas de harcèlement en ligne ?", answer: 'Le 3018', faux: ['Le 3020', 'Le 17', 'Le 115'] },
-        { cat: 'Vivre ensemble', prompt: "Le harcèlement est-il la faute de la victime ?", answer: 'Non, jamais', faux: ['Oui, si elle est différente', 'Oui, si elle se laisse faire', 'Parfois'] },
-        { cat: 'Vivre ensemble', prompt: "Qu'est-ce qu'une discrimination ?", answer: "Traiter quelqu'un moins bien pour ce qu'il est", faux: ['Choisir son équipe', 'Préférer un plat', 'Avoir des goûts différents'] },
-        { cat: 'Vivre ensemble', prompt: "Que doit faire un témoin de harcèlement ?", answer: 'Prévenir un adulte et aider la victime', faux: ['Rire avec les autres', 'Ne rien dire', 'Filmer la scène'] },
-        { cat: 'Vivre ensemble', prompt: "La discrimination est-elle autorisée par la loi ?", answer: 'Non, elle est interdite', faux: ['Oui, à l\'école', 'Oui, entre enfants', 'Cela dépend'] },
-        { cat: 'Vivre ensemble', prompt: "À qui parler quand on subit du harcèlement ?", answer: 'À un adulte de confiance', faux: ['À personne', 'Seulement à ses amis', 'À celui qui harcèle'] },
-        { cat: 'Vivre ensemble', prompt: "Mettre quelqu'un à l'écart tous les jours, c'est...", answer: 'Du harcèlement', faux: ['Un jeu', 'Une préférence', 'Un droit'] },
-        { cat: 'Vivre ensemble', prompt: "Par quoi commence le respect ?", answer: 'Écouter et ne pas se moquer', faux: ['Avoir raison', 'Parler plus fort', 'Être le plus fort'] }
+        { cat: 'Vivre ensemble', prompt: "Qu'est-ce qui caractérise le harcèlement ?", answer: "C'est une violence répétée", faux: ['Une seule dispute', 'Un jeu entre amis', 'Une punition'], expl: "La répétition : ce n'est pas une dispute isolée mais une violence qui recommence." },
+        { cat: 'Vivre ensemble', prompt: "Quel numéro appeler en cas de harcèlement à l'école ?", answer: 'Le 3020', faux: ['Le 15', 'Le 18', 'Le 112'], expl: "Le 3020, gratuit et confidentiel, dédié au harcèlement scolaire." },
+        { cat: 'Vivre ensemble', prompt: "Quel numéro appeler en cas de harcèlement en ligne ?", answer: 'Le 3018', faux: ['Le 3020', 'Le 17', 'Le 115'], expl: "Le 3018, pour le cyberharcèlement et les violences numériques." },
+        { cat: 'Vivre ensemble', prompt: "Le harcèlement est-il la faute de la victime ?", answer: 'Non, jamais', faux: ['Oui, si elle est différente', 'Oui, si elle se laisse faire', 'Parfois'], expl: "Jamais. La responsabilité est entièrement du côté de celui qui harcèle." },
+        { cat: 'Vivre ensemble', prompt: "Qu'est-ce qu'une discrimination ?", answer: "Traiter quelqu'un moins bien pour ce qu'il est", faux: ['Choisir son équipe', 'Préférer un plat', 'Avoir des goûts différents'], expl: "Traiter quelqu'un moins bien à cause de son origine, sa religion, son sexe ou son handicap." },
+        { cat: 'Vivre ensemble', prompt: "Que doit faire un témoin de harcèlement ?", answer: 'Prévenir un adulte et aider la victime', faux: ['Rire avec les autres', 'Ne rien dire', 'Filmer la scène'], expl: "Ne pas rire, soutenir la victime et prévenir un adulte : se taire, c'est laisser faire." },
+        { cat: 'Vivre ensemble', prompt: "La discrimination est-elle autorisée par la loi ?", answer: 'Non, elle est interdite', faux: ['Oui, à l\'école', 'Oui, entre enfants', 'Cela dépend'], expl: "Non : la discrimination est un délit puni par la loi française." },
+        { cat: 'Vivre ensemble', prompt: "À qui parler quand on subit du harcèlement ?", answer: 'À un adulte de confiance', faux: ['À personne', 'Seulement à ses amis', 'À celui qui harcèle'], expl: "À un adulte de confiance. Rester seul aggrave toujours la situation." },
+        { cat: 'Vivre ensemble', prompt: "Mettre quelqu'un à l'écart tous les jours, c'est...", answer: 'Du harcèlement', faux: ['Un jeu', 'Une préférence', 'Un droit'], expl: "L'exclusion répétée est une forme de harcèlement, même sans coups ni insultes." },
+        { cat: 'Vivre ensemble', prompt: "Par quoi commence le respect ?", answer: 'Écouter et ne pas se moquer', faux: ['Avoir raison', 'Parler plus fort', 'Être le plus fort'], expl: "Par des gestes simples : écouter sans couper la parole et ne pas se moquer." }
       ]); } }
   ] },
 ];
@@ -1492,7 +1515,7 @@ function clearTimer() { if (state.quiz && state.quiz.timerHandle) { clearInterva
    à une dans une banque. On en tire au hasard, sans jamais reposer la même. */
 function questionDeBanque(banque) {
   const b = banque[rnd(0, banque.length - 1)];
-  return q({ category: b.cat, prompt: b.prompt, answer: b.answer, options: mkOptions(b.answer, b.faux), limit: b.limit || 25 });
+  return q({ category: b.cat, prompt: b.prompt, answer: b.answer, options: mkOptions(b.answer, b.faux), limit: b.limit || 25, expl: b.expl });
 }
 
 function pickDistinct(makeFn, keyFn, count) {
@@ -1510,19 +1533,64 @@ const questionKey = (q) => [q.formula, q.prompt, q.svg, q.answer].join('|');
 /* Pour les exemples d'une leçon on ignore le dessin : deux exemples de réponses
    différentes (angle aigu puis obtus, par exemple) sont plus parlants. */
 const lessonKey = (q) => [q.formula, q.prompt, q.answer].join('|');
+/* ---------- L'explication d'une réponse ----------
+   On ne réécrit pas 262 explications à la main : les repères d'une leçon sont
+   déjà les faits clés, et l'explication d'une compétence est déjà la règle.
+   On pioche donc dans ce qui existe, dans cet ordre de précision. */
+function repereQuiColle(skill, reponse) {
+  if (!skill || !skill.reperes) return null;
+  const norm = (x) => String(x).toLowerCase().replace(/\s+/g, ' ').trim();
+  /* « La Loire » doit retrouver le repère « Loire » : on écarte l'article */
+  const sansArticle = (x) => norm(x).replace(/^(le |la |les |l'|un |une |des |du |de la |d')/, '');
+  const r = sansArticle(reponse);
+  if (r.length < 3) return null;   // « Oui », « 8 » : trop court, on rapprocherait n'importe quoi
+
+  /* Le rapprochement doit tomber sur un mot entier. Une simple inclusion de
+     texte faisait répondre « 0 °C : l'eau gèle » à la question sur 100 °C. */
+  const estAlphaNum = (c) => /[0-9a-zà-ÿ]/i.test(c);
+  const contientMot = (phrase, mot) => {
+    let i = phrase.indexOf(mot);
+    while (i >= 0) {
+      const avant = i === 0 ? ' ' : phrase[i - 1];
+      const apres = i + mot.length >= phrase.length ? ' ' : phrase[i + mot.length];
+      if (!estAlphaNum(avant) && !estAlphaNum(apres)) return true;
+      i = phrase.indexOf(mot, i + 1);
+    }
+    return false;
+  };
+
+  /* l'égalité exacte d'abord, c'est le cas le plus sûr */
+  const m = skill.reperes.find(([cle]) => sansArticle(cle) === r)
+         || skill.reperes.find(([cle, val]) => contientMot(sansArticle(cle), r) || contientMot(norm(val), r));
+  return m ? `${m[0]} : ${m[1]}` : null;
+}
+function explicationPour(skill, q) {
+  if (q.expl) return q.expl;
+  return repereQuiColle(skill, q.answer) || (skill && skill.explanation) || '';
+}
+
 function buildMentalQuiz(trickId, count) {
   const trick = getTrick(trickId); const qs = [];
-  for (const ex of pickDistinct(() => trick.gen(state.level), (e) => e.formula, count)) { const decimals = ex.result % 1 !== 0 ? 1 : 0; qs.push({ category: trick.title, prompt: "Utilise l'astuce !", unit: '', svg: null, formula: ex.formula, answer: formatNum(ex.result), options: numericOptions(ex.result, decimals).map(formatNum), limit: 15 }); }
+  for (const ex of pickDistinct(() => trick.gen(state.level), (e) => e.formula, count)) {
+    const decimals = ex.result % 1 !== 0 ? 1 : 0;
+    /* l'astuce décompose déjà le calcul : c'est la meilleure explication possible */
+    qs.push({ category: trick.title, prompt: "Utilise l'astuce !", unit: '', svg: null, formula: ex.formula, answer: formatNum(ex.result),
+      options: numericOptions(ex.result, decimals).map(formatNum), limit: 15, expl: ex.breakdown || trick.explanation });
+  }
   return qs;
 }
 function buildSkillQuiz(domainId, skillId, count) {
   const skill = getSkill(domainId, skillId);
-  return pickDistinct(() => skill.question(state.level), questionKey, count);
+  const qs = pickDistinct(() => skill.question(state.level), questionKey, count);
+  /* on fige l'explication ici : l'écran de résultat n'aura plus besoin de
+     retrouver la compétence d'origine pour l'afficher */
+  qs.forEach(q => { q.expl = explicationPour(skill, q); });
+  return qs;
 }
 function startQuiz(kind, builderFn, bestKey) {
   clearTimer();
   const questions = builderFn();
-  state.quiz = { kind, rebuild: builderFn, bestKey, index: 0, score: 0, questions, answered: false, lastChosen: null, timeLeft: questions[0].limit, timerHandle: null, times: [], catStats: {}, pause: false, gain: null };
+  state.quiz = { kind, rebuild: builderFn, bestKey, index: 0, score: 0, questions, answered: false, lastChosen: null, timeLeft: questions[0].limit, timerHandle: null, times: [], catStats: {}, pause: false, gain: null, erreurs: [], attenteCorrection: false };
   state.screen = 'quiz'; render(); runTimer();
 }
 function runTimer() {
@@ -1533,6 +1601,17 @@ function runTimer() {
     if (state.quiz.timeLeft <= 0) { clearTimer(); answerQuiz(null); } else render();
   }, 1000);
 }
+function questionSuivante() {
+  const qz = state.quiz;
+  qz.attenteCorrection = false;
+  if (qz.index < qz.questions.length - 1) { qz.index++; qz.answered = false; qz.lastChosen = null; qz.timeLeft = qz.questions[qz.index].limit; render(); runTimer(); return; }
+  const total = qz.questions.length, pct = Math.round((qz.score / total) * 100);
+  if (qz.bestKey) saveBest(qz.bestKey, pct);
+  qz.gain = attribuerRecompense(pct);
+  if (qz.etapeSeance !== undefined) marquerEtape(qz.etapeSeance);
+  state.screen = 'quizResults'; render();
+}
+
 function answerQuiz(chosen) {
   const qz = state.quiz; const cur = qz.questions[qz.index];
   if (qz.answered) return;
@@ -1542,17 +1621,13 @@ function answerQuiz(chosen) {
   if (!qz.catStats[cur.category]) qz.catStats[cur.category] = { correct: 0, total: 0 };
   qz.catStats[cur.category].total++;
   if (correct) { qz.score++; qz.catStats[cur.category].correct++; }
+  else qz.erreurs.push({ q: cur, choisi: chosen, numero: qz.index + 1 });
+  /* Une bonne réponse enchaîne toute seule. Une mauvaise s'arrête sur la
+     correction : c'est l'enfant qui décide quand il a fini de lire. */
+  qz.attenteCorrection = !correct;
   render();
-  setTimeout(() => {
-    if (qz.index < qz.questions.length - 1) { qz.index++; qz.answered = false; qz.lastChosen = null; qz.timeLeft = qz.questions[qz.index].limit; render(); runTimer(); }
-    else {
-      const total = qz.questions.length; const pct = Math.round((qz.score / total) * 100);
-      if (qz.bestKey) saveBest(qz.bestKey, pct);
-      qz.gain = attribuerRecompense(pct);
-      if (qz.etapeSeance !== undefined) marquerEtape(qz.etapeSeance);
-      state.screen = 'quizResults'; render();
-    }
-  }, 1100);
+  if (!correct) return;
+  setTimeout(() => { if (state.quiz === qz && qz.answered) questionSuivante(); }, 1100);
 }
 
 
@@ -1985,6 +2060,15 @@ function renderQuiz() {
   const pctLeft = Math.max(0, Math.round((qz.timeLeft / cur.limit) * 100));
   const low = qz.timeLeft <= Math.ceil(cur.limit * 0.3);
   const optionsHtml = cur.options.map(opt => { let cls = 'option-btn'; if (qz.answered) { if (opt === cur.answer) cls += ' correct'; else if (opt === qz.lastChosen) cls += ' wrong'; } return `<button class="${cls}" data-action="answer-quiz" data-value="${opt}" ${qz.answered || qz.pause ? 'disabled' : ''}>${opt}</button>`; }).join('');
+  const faux = qz.answered && qz.lastChosen !== cur.answer;
+  const expl = cur.expl ? `<div class="correction-expl"><div class="correction-expl-titre">Pourquoi ?</div>${cur.expl}</div>` : '';
+  const carteCorrection = faux ? `<div class="correction">
+      <div class="correction-titre">Correction</div>
+      <div class="correction-ligne">${qz.lastChosen ? `Ta réponse : <s>${qz.lastChosen}</s>` : "Le temps est écoulé."}</div>
+      <div class="correction-ligne">Bonne réponse : <span class="correction-bonne">${cur.answer}${cur.unit ? ' ' + cur.unit : ''}</span></div>
+      ${expl}
+      <div class="btn-stack" style="margin-top:0.8rem;"><button class="btn btn-primary" data-action="continuer-quiz">J'ai compris, continuer →</button></div>
+    </div>` : '';
   const carteQuestion = qz.pause
     ? `<div class="pause-panel"><div class="pause-emoji">⏸️</div><div class="pause-title">Pause</div><div class="pause-note">Le chrono est arrêté. La question réapparaîtra quand tu reprendras.</div></div>`
     : `<div class="question-card">
@@ -1995,6 +2079,7 @@ function renderQuiz() {
     <div class="timer-wrap"><div class="timer-bar-bg"><div class="timer-bar-fill ${low ? 'low' : ''}" style="width:${pctLeft}%"></div></div><div class="timer-num">${Math.max(0, qz.timeLeft)} s</div></div>
     ${carteQuestion}
     <div class="options-grid">${optionsHtml}</div>
+    ${carteCorrection}
   </div>`;
 }
 
@@ -2007,6 +2092,20 @@ function renderGain(gain, pct) {
   /* « presque » n'a de sens que si le score en est vraiment proche */
   const encouragement = pct >= SEUIL_JETON - 20 ? `Tu y es presque : ${pct} % cette fois.` : `Tu as obtenu ${pct} %. Relis la leçon, puis retente ta chance !`;
   return `<div class="gain-card" style="background:var(--warning-bg);border-color:#E8C98A;"><div class="gain-text" style="color:#8A5510;">Il faut ${SEUIL_JETON} % pour gagner un jeton chaton 🐱</div><div class="gain-sub">${encouragement}</div></div>`;
+}
+
+/* Le récapitulatif des erreurs : c'est là que se fait le vrai apprentissage,
+   une fois la pression du chrono retombée. */
+function renderARevoir(erreurs) {
+  if (!erreurs || !erreurs.length) return '';
+  const cartes = erreurs.map(e => `<div class="revoir">
+    <div class="revoir-num">Question ${e.numero} · ${e.q.category}</div>
+    <div class="revoir-question">${e.q.formula ? e.q.formula : e.q.prompt}</div>
+    ${e.q.svg ? `<div class="question-shape">${e.q.svg}</div>` : ''}
+    <div class="revoir-reponses">${e.choisi ? `Ta réponse : <s>${e.choisi}</s><br>` : 'Pas de réponse à temps.<br>'}Bonne réponse : <span class="correction-bonne">${e.q.answer}${e.q.unit ? ' ' + e.q.unit : ''}</span></div>
+    ${e.q.expl ? `<div class="revoir-expl">${e.q.expl}</div>` : ''}
+  </div>`).join('');
+  return `<div class="section-label">À revoir · ${erreurs.length} erreur${erreurs.length > 1 ? 's' : ''}</div>${cartes}`;
 }
 
 function renderQuizResults() {
@@ -2026,6 +2125,7 @@ function renderQuizResults() {
     ${breakdownHtml}
     ${renderGain(qz.gain, pct)}
     <div class="verdict-box ${verdictClass}">${verdictText}</div>
+    ${renderARevoir(qz.erreurs)}
     <div class="btn-stack"><button class="btn btn-primary" data-action="retry-quiz">🔄 Rejouer</button><button class="btn btn-secondary" data-action="go-home">← Retour à l'accueil</button></div>
   </div>`;
 }
@@ -2061,6 +2161,7 @@ function onAction(e) {
   else if (a === 'start-skill-quiz') { const dId = state.currentDomain, sId = state.currentSkill; startQuiz('skill', () => buildSkillQuiz(dId, sId, 8), 'skill-' + dId + '-' + sId + '-' + state.level); }
   else if (a === 'answer-quiz') { state.quiz.lastChosen = e.currentTarget.dataset.value; answerQuiz(e.currentTarget.dataset.value); }
   else if (a === 'retry-quiz') { const etape = state.quiz.etapeSeance; startQuiz(state.quiz.kind, state.quiz.rebuild, state.quiz.bestKey); state.quiz.etapeSeance = etape; }
+  else if (a === 'continuer-quiz') questionSuivante();
   else if (a === 'toggle-pause') { state.quiz.pause = !state.quiz.pause; render(); }
 }
 
