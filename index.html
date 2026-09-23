@@ -2330,6 +2330,8 @@ function render() {
   else if (state.screen === 'dictee') app.innerHTML = renderDictee();
   else if (state.screen === 'dicteeResult') app.innerHTML = renderDicteeResult();
   attachListeners();
+  /* une mise à jour repérée pendant un quiz s'applique dès qu'on en sort */
+  if (typeof majEnAttente !== 'undefined' && majEnAttente) setTimeout(rechargerSiCalme, 0);
 }
 function attachListeners() {
   document.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
@@ -2635,7 +2637,45 @@ function hideInstallBanner() {
   if (banner) banner.remove();
   document.documentElement.style.removeProperty('--install-offset');
 }
-if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); }); }
+/* ================= Mises à jour automatiques =================
+   À l'ouverture, le service worker sert toujours la dernière page publiée.
+   Mais une appli restée ouverte en arrière-plan garde l'ancienne : à chaque
+   retour au premier plan, on demande donc au serveur l'empreinte (ETag) de
+   index.html. Si elle a changé, une nouvelle version est en ligne, et l'on
+   recharge dès que l'enfant n'est pas au milieu d'un quiz ou d'une dictée. */
+var empreintePage = null, majEnAttente = false;
+async function verifierNouvelleVersion() {
+  if (!navigator.onLine || location.protocol === 'file:') return;
+  try {
+    const rep = await fetch('index.html', { method: 'HEAD', cache: 'no-store' });
+    const e = rep.ok && (rep.headers.get('etag') || rep.headers.get('last-modified'));
+    if (!e) return;
+    if (empreintePage && e !== empreintePage) { majEnAttente = true; rechargerSiCalme(); }
+    empreintePage = e;
+  } catch (err) { /* hors ligne : on réessaiera au prochain retour */ }
+}
+const ECRANS_CALMES = ['home', 'skillList', 'mentalLesson', 'skillLesson', 'dicteeList', 'quizResults', 'dicteeResult'];
+function rechargerSiCalme() { if (majEnAttente && ECRANS_CALMES.includes(state.screen)) location.reload(); }
+
+if ('serviceWorker' in navigator) {
+  const avaitUnServiceWorker = !!navigator.serviceWorker.controller;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') return;
+        reg.update().catch(() => {});
+        verifierNouvelleVersion();
+      });
+    }).catch(() => {});
+    verifierNouvelleVersion();
+  });
+  /* un nouveau service worker vient de prendre la main (première installation
+     exceptée) : la page affichée date d'avant, on la recharge au bon moment */
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!avaitUnServiceWorker) return;
+    majEnAttente = true; rechargerSiCalme();
+  });
+}
 </script>
 </body>
 </html>
