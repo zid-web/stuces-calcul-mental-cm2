@@ -50,6 +50,14 @@ Outils de vitesse :
 
 L'application ne dépend d'**aucune ressource extérieure** : pas de bibliothèque distante, pas de police en ligne, pas d'image téléchargée. Tout tient dans `index.html`, et le service worker met en cache les cinq fichiers du site.
 
+### Mises à jour automatiques
+
+Une fois une nouvelle version publiée (fusion dans `main`, puis déploiement), l'appli **déjà installée se met à jour toute seule** :
+
+- à chaque ouverture, la page est demandée au serveur d'abord ; le cache ne sert qu'en secours, sans connexion (ou si le réseau met plus de 4 secondes à répondre) ;
+- si l'appli est restée ouverte en arrière-plan, elle vérifie à chaque retour au premier plan si une nouvelle version est en ligne, et se recharge d'elle-même ;
+- ce rechargement n'interrompt jamais un quiz ni une dictée : il attend que l'enfant revienne à l'accueil, à une liste, à une leçon ou à l'écran de résultat. Les scores, jetons et séances sont conservés.
+
 Vérifié réseau coupé : chargement de l'app, séance du jour, quiz de maths, sciences, EMC et histoire, dictée et sa correction, jetons et série, changement de niveau — tout fonctionne, sans une seule requête en échec.
 
 Seule réserve : la **lecture à voix haute** des dictées passe par la synthèse vocale du téléphone. Sur certains appareils Android, la voix par défaut est téléchargée à la demande. Si la dictée doit fonctionner sans réseau, il faut installer une voix française hors-ligne dans les réglages du téléphone (Paramètres, Synthèse vocale). Le reste de l'application n'est pas concerné.
@@ -131,4 +139,4 @@ Chaque envoi sur la branche `main` redéploie automatiquement le site.
 ## Personnalisation
 Les leçons et exercices sont définis dans les données en haut du `<script>` d'`index.html` : `TRICKS` pour les astuces, `DOMAINS` pour les matières, `DICTEES` pour les textes de dictée. Tu peux en ajouter d'autres en suivant le même format.
 
-Après chaque modification des fichiers, pense à incrémenter `CACHE_NAME` dans `sw.js` (`calcul-cm2-v8` → `v9`, etc.) pour que les appareils déjà installés récupèrent bien la nouvelle version.
+Il n'y a plus de numéro de version à incrémenter : les appareils déjà installés récupèrent seuls chaque nouvelle version publiée (voir « Mises à jour automatiques »).
