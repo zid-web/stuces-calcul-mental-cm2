@@ -40,6 +40,27 @@
   .mode-desc { font-size: 0.78rem; color: var(--text-secondary); }
   .mode-arrow { font-size: 1.2rem; color: var(--purple); flex-shrink: 0; }
   .trick-progress { font-size: 0.72rem; color: var(--success); font-weight: 600; margin-top: 2px; }
+  .trick-palier { font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; margin-top: 2px; }
+  .trick-palier .trick-progress { margin-top: 0; }
+  .trick-card.outil { border-color: var(--purple); }
+  .screen-liste .section-label { margin-top: 0.6rem; }
+  .vitesse-aide { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem 0.9rem; margin-bottom: 1rem; }
+  .vitesse-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 0.9rem 1rem; margin-bottom: 1rem; }
+  .vitesse-card.monte { background: var(--success-bg); border-color: #A6DFCB; }
+  .vitesse-titre { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.35rem; }
+  .vitesse-texte { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.45; margin-top: 0.25rem; }
+  .palier-ligne { display: flex; gap: 6px; margin: 0.3rem 0; }
+  .palier-point { font-size: 1.15rem; opacity: 0.25; filter: grayscale(1); }
+  .palier-point.atteint { opacity: 1; filter: none; }
+  .saisie-zone { display: flex; flex-direction: column; gap: 10px; }
+  .saisie-affichage { text-align: center; font-size: 1.8rem; font-weight: 800; letter-spacing: 1px; padding: 0.6rem; min-height: 3.2rem; background: var(--card); border: 2px solid var(--purple); border-radius: 14px; color: var(--text); }
+  .saisie-affichage.ok { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+  .saisie-affichage.ko { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+  .saisie-vide { color: var(--border); }
+  .pave { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .pave-touche { padding: 0.8rem 0; font-size: 1.3rem; font-weight: 700; border-radius: 12px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; touch-action: manipulation; }
+  .pave-touche:active { background: var(--bg); }
+  .pave-touche:disabled, .btn:disabled { opacity: 0.45; cursor: default; }
 
   .btn { padding: 1rem; border-radius: 14px; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; }
   .btn:active { transform: scale(0.97); }
@@ -137,6 +158,9 @@
   .etape.faite .etape-coche { background: var(--success); border-color: var(--success); color: #FFFFFF; }
   .etape.faite .etape-titre { text-decoration: line-through; color: var(--text-secondary); }
   .etape-info { flex: 1; min-width: 0; }
+  .etape.verrou { cursor: default; opacity: 0.55; }
+  .etape.verrou:active { opacity: 0.55; }
+  .etape.verrou .etape-coche { font-size: 0.7rem; }
   .etape-titre { font-weight: 600; font-size: 0.92rem; }
   .etape-detail { font-size: 0.76rem; color: var(--text-secondary); }
   .reward-strip { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 0.8rem 0.9rem; margin-bottom: 1rem; }
@@ -511,8 +535,131 @@ function sgDeuxNoms() { const s = shuffle(SG_NOMS); return [s[0], s[1]]; }
 function sgObjet() { return SG_OBJETS[rnd(0, SG_OBJETS.length - 1)]; }
 
 /* ================= Astuces de calcul mental (domaine spécial) ================= */
+/* Chaque générateur renvoie le calcul, sa décomposition (l'astuce appliquée)
+   et, quand c'est possible, des « pièges » : les résultats qu'on obtient en
+   faisant l'erreur typique. Ils servent de mauvaises réponses au QCM, bien
+   plus instructives que des nombres tirés au hasard. */
+
+/* nombre de départ à 2, 3 ou 4 chiffres, au moins égal à minA */
+function nombreDepart(minA) {
+  const tranches = [[10, 99], [100, 999], [1000, 9999]].filter(([, hi]) => hi >= minA);
+  const [lo, hi] = tranches[rnd(0, tranches.length - 1)];
+  return rnd(Math.max(lo, minA), hi);
+}
+
+/* + ou − un nombre qui finit par 8 ou 9 (8, 38, 49, 199, 298…) :
+   on passe par le nombre rond juste au-dessus, puis on corrige l'écart. */
+function genPresqueRond(chiffre, op) {
+  const ecart = 10 - chiffre, t = Math.random();
+  let n;
+  if (t < 0.2) n = chiffre;                                   /* 8 ou 9 */
+  else if (t < 0.6) n = rnd(1, 9) * 10 + chiffre;             /* 18 … 99 */
+  else if (t < 0.8) n = rnd(1, 9) * 100 + 90 + chiffre;       /* 198, 299… */
+  else n = rnd(10, 99) * 10 + chiffre;                        /* 138, 459… */
+  const rond = n + ecart;
+  const a = nombreDepart(op === '-' ? rond + 10 : 10);
+  const step = op === '+' ? a + rond : a - rond;
+  const result = op === '+' ? a + n : a - n;
+  const breakdown = op === '+'
+    ? `${n} = ${rond} − ${ecart} : ${formatNum(a)} + ${rond} = ${formatNum(step)}, puis − ${ecart}`
+    : `${n} = ${rond} − ${ecart} : ${formatNum(a)} − ${rond} = ${formatNum(step)}, puis + ${ecart}`;
+  /* oublier la correction, ou la faire dans le mauvais sens */
+  const pieges = op === '+' ? [step, step + ecart] : [step, step - ecart];
+  return { formula: `${formatNum(a)} ${op === '+' ? '+' : '−'} ${n}`, breakdown, result, pieges };
+}
+
+/* + ou − un nombre qui dépasse juste un nombre rond (11, 21, 102, 301…) */
+function genJusteApres(op) {
+  const ecart = rnd(1, 2), t = Math.random();
+  const rond = t < 0.5 ? rnd(1, 9) * 10 : t < 0.8 ? rnd(1, 9) * 100 : rnd(11, 99) * 10;
+  const n = rond + ecart;
+  const a = nombreDepart(op === '-' ? n + 10 : 10);
+  const step = op === '+' ? a + rond : a - rond;
+  const result = op === '+' ? a + n : a - n;
+  const breakdown = op === '+'
+    ? `${n} = ${rond} + ${ecart} : ${formatNum(a)} + ${rond} = ${formatNum(step)}, puis + ${ecart}`
+    : `${n} = ${rond} + ${ecart} : ${formatNum(a)} − ${rond} = ${formatNum(step)}, puis − ${ecart}`;
+  const pieges = op === '+' ? [step, step - ecart] : [step, step + ecart];
+  return { formula: `${formatNum(a)} ${op === '+' ? '+' : '−'} ${n}`, breakdown, result, pieges };
+}
+
+/* le complément « chiffre par chiffre à 10 », erreur classique : 100 − 37 → 73 */
+function complementFaux(b, cible) {
+  const ch = String(b).padStart(String(cible).length - 1, '0').split('').map(Number);
+  return Number(ch.map(c => 10 - c).join('').slice(-ch.length));
+}
+
+const CATS_ASTUCES = [
+  { id: 'addsub', titre: '➕ Additions et soustractions' },
+  { id: 'mult', titre: '✖️ Multiplications' },
+  { id: 'div', titre: '➗ Divisions, moitiés et pourcentages' }
+];
+const TOUS_NIVEAUX = ['cm2', 'sixieme', 'singapour'];
+
 const TRICKS = [
-  { id: 'mult10', emoji: '🔟', title: 'Multiplier par 10', levels: ['cm2', 'sixieme', 'singapour'],
+  /* ---------- Additions et soustractions ---------- */
+  { id: 'compl100', cat: 'addsub', emoji: '🧲', title: 'Compléments à 100 et à 1000', levels: TOUS_NIVEAUX,
+    explanation: "Pour aller jusqu'à 100 ou 1000, avance par bonds : d'abord jusqu'à la dizaine, puis jusqu'à la centaine, puis jusqu'au bout. Additionne les bonds.",
+    gen(level) {
+      const cible = Math.random() < (level === 'cm2' ? 0.6 : 0.35) ? 100 : 1000;
+      if (cible === 100) {
+        let b; do { b = rnd(11, 89); } while (b % 10 === 0);
+        const d = Math.ceil(b / 10) * 10, result = 100 - b;
+        return { formula: `${b} + ? = 100`, breakdown: `${b} → ${d} (+${d - b}), puis ${d} → 100 (+${100 - d}) : ${d - b} + ${100 - d}`, result, pieges: [complementFaux(b, 100), result + 10] };
+      }
+      let b; do { b = rnd(101, 989); } while (b % 10 === 0);
+      const d = Math.ceil(b / 10) * 10, c = Math.ceil(d / 100) * 100, result = 1000 - b;
+      const bonds = [[b, d], [d, c], [c, 1000]].filter(([x, y]) => y > x);
+      return { formula: `${b} + ? = 1000`, breakdown: `${bonds.map(([x, y]) => `${x} → ${y} (+${y - x})`).join(', ')}`, result, pieges: [complementFaux(b, 1000), result + 10, result + 100] };
+    } },
+  { id: 'passer-dizaine', cat: 'addsub', emoji: '🌉', title: 'Passer la dizaine en ajoutant', levels: TOUS_NIVEAUX,
+    explanation: "Coupe le petit nombre en deux : de quoi compléter la dizaine, puis le reste. Exemple : 47 + 8 = 47 + 3 + 5 = 50 + 5.",
+    gen() {
+      const u = rnd(3, 9); const a = rnd(1, 99) * 10 + u; const b = rnd(10 - u + 1, 9);
+      const c = 10 - u, result = a + b;
+      return { formula: `${a} + ${b}`, breakdown: `${b} = ${c} + ${b - c} : ${a} + ${c} = ${a + c}, puis + ${b - c}`, result, pieges: [result - 10] };
+    } },
+  { id: 'sub-dizaine', cat: 'addsub', emoji: '🪜', title: 'Passer la dizaine en soustrayant', levels: TOUS_NIVEAUX,
+    explanation: "Descends d'abord jusqu'à la dizaine, puis retire le reste. Exemple : 53 − 7 = 53 − 3 − 4 = 50 − 4.",
+    gen() {
+      const u = rnd(1, 6); const a = rnd(2, 99) * 10 + u; const b = rnd(u + 1, 9); const result = a - b;
+      return { formula: `${a} − ${b}`, breakdown: `${b} = ${u} + ${b - u} : ${a} − ${u} = ${a - u}, puis − ${b - u}`, result, pieges: [result + 10] };
+    } },
+  { id: 'add-dizaine', cat: 'addsub', emoji: '➕', title: 'Additionner en découpant', levels: TOUS_NIVEAUX,
+    explanation: "Additionne d'abord les dizaines, puis les unités.",
+    gen() { const a = rnd(11, 69), b = rnd(11, 39), result = a + b; const da = Math.floor(a / 10) * 10, db = Math.floor(b / 10) * 10, ua = a % 10, ub = b % 10; return { formula: `${a} + ${b}`, breakdown: `(${da}+${db}) + (${ua}+${ub}) = ${da + db} + ${ua + ub}`, result, pieges: ua + ub >= 10 ? [result - 10] : [] }; } },
+  { id: 'sub-complement', cat: 'addsub', emoji: '↔️', title: 'Soustraire avec le complément', levels: TOUS_NIVEAUX,
+    explanation: "Compte la distance entre les deux nombres au lieu de soustraire.",
+    gen() { const a = rnd(30, 90), b = rnd(5, a - 5), result = a - b; const round = Math.ceil(b / 10) * 10, step1 = round - b, step2 = a - round; return { formula: `${a} − ${b}`, breakdown: `${b} → ${round} (+${step1}), puis ${round} → ${a} (+${step2})`, result }; } },
+  { id: 'add9', cat: 'addsub', emoji: '9️⃣', title: 'Ajouter 9, 19, 49, 199…', levels: TOUS_NIVEAUX,
+    explanation: "Un nombre qui finit par 9, c'est un nombre rond moins 1. Ajoute le nombre rond, puis retire 1. Exemple : + 49, c'est + 50 − 1.",
+    gen() { return genPresqueRond(9, '+'); } },
+  { id: 'sub9', cat: 'addsub', emoji: '➖', title: 'Soustraire 9, 19, 49, 199…', levels: TOUS_NIVEAUX,
+    explanation: "Un nombre qui finit par 9, c'est un nombre rond moins 1. Retire le nombre rond, puis rajoute 1 (tu as enlevé 1 de trop). Exemple : − 49, c'est − 50 + 1.",
+    gen() { return genPresqueRond(9, '-'); } },
+  { id: 'add8', cat: 'addsub', emoji: '8️⃣', title: 'Ajouter 8, 18, 38, 198…', levels: TOUS_NIVEAUX,
+    explanation: "Un nombre qui finit par 8, c'est un nombre rond moins 2. Ajoute le nombre rond, puis retire 2. Exemple : + 38, c'est + 40 − 2.",
+    gen() { return genPresqueRond(8, '+'); } },
+  { id: 'sub8', cat: 'addsub', emoji: '➖', title: 'Soustraire 8, 18, 38, 198…', levels: TOUS_NIVEAUX,
+    explanation: "Un nombre qui finit par 8, c'est un nombre rond moins 2. Retire le nombre rond, puis rajoute 2 (tu as enlevé 2 de trop). Exemple : − 38, c'est − 40 + 2.",
+    gen() { return genPresqueRond(8, '-'); } },
+  { id: 'add11', cat: 'addsub', emoji: '1️⃣', title: 'Ajouter 11, 21, 102, 301…', levels: TOUS_NIVEAUX,
+    explanation: "Un nombre juste après un nombre rond, c'est ce nombre rond plus un petit peu. Ajoute le nombre rond, puis le petit reste. Exemple : + 31, c'est + 30 + 1.",
+    gen() { return genJusteApres('+'); } },
+  { id: 'sub11', cat: 'addsub', emoji: '➖', title: 'Soustraire 11, 21, 102, 301…', levels: TOUS_NIVEAUX,
+    explanation: "Retire le nombre rond, puis retire encore le petit reste. Exemple : − 102, c'est − 100 − 2.",
+    gen() { return genJusteApres('-'); } },
+
+  /* ---------- Multiplications ---------- */
+  { id: 'double', cat: 'mult', emoji: '👯', title: 'Doubler un grand nombre', levels: TOUS_NIVEAUX,
+    explanation: "Double séparément les centaines, les dizaines et les unités, puis additionne. Exemple : double de 386 = 600 + 160 + 12.",
+    gen() {
+      let a; do { a = rnd(26, 499); } while (a % 10 === 0);
+      const c = Math.floor(a / 100) * 100, d = Math.floor((a % 100) / 10) * 10, u = a % 10;
+      const parts = [c, d, u].filter(Boolean), result = 2 * a;
+      return { formula: `2 × ${a}`, breakdown: `${parts.map(p => `2 × ${p}`).join(' + ')} = ${parts.map(p => 2 * p).join(' + ')}`, result, pieges: [result - 10, result + 10] };
+    } },
+  { id: 'mult10', cat: 'mult', emoji: '🔟', title: 'Multiplier par 10', levels: TOUS_NIVEAUX,
     explanation: "Pour multiplier par 10, ajoute un zéro (ou décale la virgule d'un rang pour un nombre décimal).",
     gen(level) {
       if (level === 'sixieme' && Math.random() < 0.4) {
@@ -521,44 +668,82 @@ const TRICKS = [
         return { formula: `${formatNum(a)} × 10`, breakdown: `On décale la virgule d'un rang : ${formatNum(a)} → ${formatNum(result)}`, result };
       }
       const a = rnd(2, 99); const result = a * 10;
-      return { formula: `${a} × 10`, breakdown: `On ajoute un zéro : ${a} → ${result}`, result };
+      return { formula: `${a} × 10`, breakdown: `On ajoute un zéro : ${a} → ${result}`, result, pieges: [a * 100] };
     } },
-  { id: 'mult100', emoji: '💯', title: 'Multiplier par 100', levels: ['sixieme', 'singapour'],
+  { id: 'mult100', cat: 'mult', emoji: '💯', title: 'Multiplier par 100', levels: ['sixieme', 'singapour'],
     explanation: "Pour multiplier par 100, ajoute deux zéros.",
-    gen() { const a = rnd(2, 99); const result = a * 100; return { formula: `${a} × 100`, breakdown: `On ajoute deux zéros : ${a} → ${result}`, result }; } },
-  { id: 'mult11', emoji: '🔁', title: 'Multiplier par 11', levels: ['cm2', 'sixieme', 'singapour'],
+    gen() { const a = rnd(2, 99); const result = a * 100; return { formula: `${a} × 100`, breakdown: `On ajoute deux zéros : ${a} → ${result}`, result, pieges: [a * 10, a * 1000] }; } },
+  { id: 'mult-dizaine', cat: 'mult', emoji: '🔢', title: 'Multiplier par 20, 30, 40…', levels: TOUS_NIVEAUX,
+    explanation: "Multiplier par 30, c'est multiplier par 3 puis par 10. Fais le petit calcul, puis ajoute le zéro.",
+    gen() { const a = rnd(3, 25), k = rnd(2, 9), result = a * k * 10; return { formula: `${a} × ${k * 10}`, breakdown: `${a} × ${k} = ${a * k}, puis × 10`, result, pieges: [a * k, result * 10] }; } },
+  { id: 'mult-decompo', cat: 'mult', emoji: '🧩', title: 'Multiplier en décomposant', levels: TOUS_NIVEAUX,
+    explanation: "Coupe le grand nombre en dizaines et unités, multiplie chaque morceau, puis additionne. Exemple : 23 × 7 = 20 × 7 + 3 × 7 = 140 + 21.",
+    gen() {
+      let a; do { a = rnd(12, 99); } while (a % 10 === 0);
+      const b = rnd(3, 9), d = Math.floor(a / 10) * 10, u = a % 10, result = a * b;
+      return { formula: `${a} × ${b}`, breakdown: `(${d} × ${b}) + (${u} × ${b}) = ${d * b} + ${u * b}`, result, pieges: [d * b + u, result + 10] };
+    } },
+  { id: 'mult11', cat: 'mult', emoji: '🔁', title: 'Multiplier par 11', levels: TOUS_NIVEAUX,
     explanation: "Pour un nombre à deux chiffres : sépare-les et ajoute leur somme entre eux.",
-    gen() { let a; do { a = rnd(10, 89); } while ((Math.floor(a / 10) + a % 10) >= 10); const d1 = Math.floor(a / 10), d2 = a % 10, result = a * 11; return { formula: `${a} × 11`, breakdown: `${d1} + ${d2} = ${d1 + d2} → on place ${d1 + d2} entre ${d1} et ${d2}`, result }; } },
-  { id: 'mult5', emoji: '✋', title: 'Multiplier par 5', levels: ['cm2', 'sixieme', 'singapour'],
+    gen() { let a; do { a = rnd(10, 89); } while ((Math.floor(a / 10) + a % 10) >= 10); const d1 = Math.floor(a / 10), d2 = a % 10, result = a * 11; return { formula: `${a} × 11`, breakdown: `${d1} + ${d2} = ${d1 + d2} → on place ${d1 + d2} entre ${d1} et ${d2}`, result, pieges: [a * 10 + d1 + d2] }; } },
+  { id: 'mult5', cat: 'mult', emoji: '✋', title: 'Multiplier par 5', levels: TOUS_NIVEAUX,
     explanation: "Multiplie par 10, puis divise par 2.",
-    gen() { const a = rnd(2, 60); const step = a * 10; const result = step / 2; return { formula: `${a} × 5`, breakdown: `${a} × 10 = ${step}, puis ÷ 2`, result }; } },
-  { id: 'add-dizaine', emoji: '➕', title: 'Additionner en découpant', levels: ['cm2', 'sixieme', 'singapour'],
-    explanation: "Additionne d'abord les dizaines, puis les unités.",
-    gen() { const a = rnd(11, 69), b = rnd(11, 39), result = a + b; const da = Math.floor(a / 10) * 10, db = Math.floor(b / 10) * 10, ua = a % 10, ub = b % 10; return { formula: `${a} + ${b}`, breakdown: `(${da}+${db}) + (${ua}+${ub}) = ${da + db} + ${ua + ub}`, result }; } },
-  { id: 'sub-complement', emoji: '➖', title: 'Soustraire avec le complément', levels: ['cm2', 'sixieme', 'singapour'],
-    explanation: "Compte la distance entre les deux nombres au lieu de soustraire.",
-    gen() { const a = rnd(30, 90), b = rnd(5, a - 5), result = a - b; const round = Math.ceil(b / 10) * 10, step1 = round - b, step2 = a - round; return { formula: `${a} - ${b}`, breakdown: `${b} → ${round} (+${step1}), puis ${round} → ${a} (+${step2})`, result }; } },
-  { id: 'mult3', emoji: '🔺', title: 'Multiplier par 3', levels: ['cm2', 'sixieme', 'singapour'],
+    gen() { const a = rnd(2, 60); const step = a * 10; const result = step / 2; return { formula: `${a} × 5`, breakdown: `${a} × 10 = ${step}, puis ÷ 2`, result, pieges: [step] }; } },
+  { id: 'mult50', cat: 'mult', emoji: '🪙', title: 'Multiplier par 50', levels: TOUS_NIVEAUX,
+    explanation: "Multiplie par 100, puis prends la moitié.",
+    gen() { const a = rnd(3, 80); const result = a * 50; return { formula: `${a} × 50`, breakdown: `${a} × 100 = ${a * 100}, puis ÷ 2`, result, pieges: [a * 5, a * 500] }; } },
+  { id: 'mult3', cat: 'mult', emoji: '🔺', title: 'Multiplier par 3', levels: TOUS_NIVEAUX,
     explanation: "Double le nombre, puis ajoute le nombre de départ.",
     gen() { const a = rnd(2, 40); const result = a * 3; return { formula: `${a} × 3`, breakdown: `(${a} × 2) + ${a} = ${a * 2} + ${a}`, result }; } },
-  { id: 'mult4', emoji: '🍀', title: 'Multiplier par 4', levels: ['cm2', 'sixieme', 'singapour'],
+  { id: 'mult4', cat: 'mult', emoji: '🍀', title: 'Multiplier par 4', levels: TOUS_NIVEAUX,
     explanation: "Double le nombre, puis double le résultat.",
-    gen() { const a = rnd(2, 30); const result = a * 4; return { formula: `${a} × 4`, breakdown: `${a} × 2 = ${a * 2}, puis × 2`, result }; } },
-  { id: 'mult9', emoji: '✨', title: 'Multiplier par 9', levels: ['cm2', 'sixieme', 'singapour'],
+    gen() { const a = rnd(2, 30); const result = a * 4; return { formula: `${a} × 4`, breakdown: `${a} × 2 = ${a * 2}, puis × 2`, result, pieges: [a * 2] }; } },
+  { id: 'mult9', cat: 'mult', emoji: '✨', title: 'Multiplier par 9', levels: TOUS_NIVEAUX,
     explanation: "Multiplie par 10, puis retire le nombre de départ.",
-    gen() { const a = rnd(2, 30); const result = a * 9; return { formula: `${a} × 9`, breakdown: `${a} × 10 = ${a * 10}, puis − ${a}`, result }; } },
-  { id: 'mult25', emoji: '🎯', title: 'Multiplier par 25', levels: ['sixieme', 'singapour'],
+    gen() { const a = rnd(2, 30); const result = a * 9; return { formula: `${a} × 9`, breakdown: `${a} × 10 = ${a * 10}, puis − ${a}`, result, pieges: [a * 10 - 9] }; } },
+  { id: 'mult12', cat: 'mult', emoji: '🕛', title: 'Multiplier par 12', levels: ['sixieme', 'singapour'],
+    explanation: "Multiplier par 12, c'est multiplier par 10 puis ajouter le double.",
+    gen() { const a = rnd(4, 60); return { formula: `${a} × 12`, breakdown: `${a} × 10 + ${a} × 2 = ${a * 10} + ${a * 2}`, result: a * 12, pieges: [a * 10 + 2, a * 12 + 10] }; } },
+  { id: 'mult15', cat: 'mult', emoji: '🕒', title: 'Multiplier par 15', levels: ['sixieme', 'singapour'],
+    explanation: "Multiplie par 10, puis ajoute la moitié de ce résultat.",
+    gen() { const a = rnd(3, 40); return { formula: `${a} × 15`, breakdown: `${a} × 10 = ${a * 10}, plus sa moitié ${a * 5} : ${a * 10} + ${a * 5}`, result: a * 15, pieges: [a * 10 + 5, a * 15 - 10] }; } },
+  { id: 'mult25', cat: 'mult', emoji: '🎯', title: 'Multiplier par 25', levels: ['sixieme', 'singapour'],
     explanation: "Divise par 4, puis multiplie par 100.",
-    gen() { const a = rndMultiple(1, 10, 4); const result = a * 25; return { formula: `${a} × 25`, breakdown: `${a} ÷ 4 = ${a / 4}, puis × 100`, result }; } },
-  { id: 'carre5', emoji: '🧮', title: 'Carré des nombres finissant par 5', levels: ['sixieme', 'singapour'],
+    gen() { const a = rndMultiple(1, 25, 4); const result = a * 25; return { formula: `${a} × 25`, breakdown: `${a} ÷ 4 = ${a / 4}, puis × 100`, result, pieges: [result / 10] }; } },
+  { id: 'mult99', cat: 'mult', emoji: '🎰', title: 'Multiplier par 99', levels: ['sixieme', 'singapour'],
+    explanation: "Multiplier par 99, c'est multiplier par 100 puis retirer une fois le nombre.",
+    gen() { const a = rnd(3, 60); return { formula: `${a} × 99`, breakdown: `${a} × 100 = ${a * 100}, puis − ${a}`, result: a * 99, pieges: [a * 100 - 99, a * 101] }; } },
+  { id: 'carre5', cat: 'mult', emoji: '🧮', title: 'Carré des nombres finissant par 5', levels: ['sixieme', 'singapour'],
     explanation: "Multiplie le chiffre des dizaines par (lui-même + 1), puis colle 25.",
-    gen() { const opts = [15, 25, 35, 45, 55, 65, 75, 85, 95]; const a = opts[rnd(0, opts.length - 1)]; const d = Math.floor(a / 10); const result = a * a; return { formula: `${a} × ${a}`, breakdown: `${d} × ${d + 1} = ${d * (d + 1)}, puis on colle 25`, result }; } },
-  { id: 'pct10', emoji: '📊', title: 'Trouver 10 % d\'un nombre', levels: ['sixieme', 'singapour'],
+    gen() { const opts = [15, 25, 35, 45, 55, 65, 75, 85, 95]; const a = opts[rnd(0, opts.length - 1)]; const d = Math.floor(a / 10); const result = a * a; return { formula: `${a} × ${a}`, breakdown: `${d} × ${d + 1} = ${d * (d + 1)}, puis on colle 25`, result, pieges: [d * d * 100 + 25] }; } },
+
+  /* ---------- Divisions, moitiés et pourcentages ---------- */
+  { id: 'moitie', cat: 'div', emoji: '✂️', title: 'Trouver la moitié', levels: TOUS_NIVEAUX,
+    explanation: "Coupe le nombre en morceaux faciles à partager (un nombre pair de dizaines + le reste), prends la moitié de chaque morceau, puis additionne.",
+    gen() {
+      let a; do { a = rnd(15, 499) * 2; } while (a % 20 === 0);
+      const T = Math.floor(a / 20) * 20, r = a - T, result = a / 2;
+      const breakdown = T ? `${a} = ${T} + ${r} → ${T / 2} + ${r / 2}` : `moitié de ${a}`;
+      return { formula: `${a} ÷ 2`, breakdown, result, pieges: [result - 5, result + 5] };
+    } },
+  { id: 'div4', cat: 'div', emoji: '🍰', title: 'Diviser par 4', levels: TOUS_NIVEAUX,
+    explanation: "Diviser par 4, c'est prendre la moitié de la moitié.",
+    gen() { const a = 4 * rnd(6, 60); return { formula: `${a} ÷ 4`, breakdown: `${a} ÷ 2 = ${a / 2}, puis ${a / 2} ÷ 2`, result: a / 4, pieges: [a / 2] }; } },
+  { id: 'div5', cat: 'div', emoji: '🖐️', title: 'Diviser par 5', levels: TOUS_NIVEAUX,
+    explanation: "Diviser par 5, c'est multiplier par 2 puis diviser par 10.",
+    gen() { const a = 5 * rnd(6, 99); return { formula: `${a} ÷ 5`, breakdown: `${a} × 2 = ${a * 2}, puis ÷ 10`, result: a / 5, pieges: [a / 10, a / 5 + 10] }; } },
+  { id: 'mult05', cat: 'div', emoji: '🌓', title: 'Multiplier par 0,5', levels: ['sixieme', 'singapour'],
+    explanation: "Multiplier par 0,5, c'est prendre la moitié.",
+    gen() { const a = rnd(3, 199); return { formula: `${a} × 0,5`, breakdown: `× 0,5 = la moitié : ${a} ÷ 2`, result: a / 2, pieges: [a * 5, a * 2] }; } },
+  { id: 'pct10', cat: 'div', emoji: '📊', title: 'Trouver 10 % d\'un nombre', levels: ['sixieme', 'singapour'],
     explanation: "10 % d'un nombre, c'est le nombre divisé par 10.",
-    gen() { const a = rndMultiple(2, 50, 10); const result = a / 10; return { formula: `10 % de ${a}`, breakdown: `${a} ÷ 10`, result }; } },
-  { id: 'pct50', emoji: '📈', title: 'Trouver 50 % d\'un nombre', levels: ['sixieme', 'singapour'],
+    gen() { const a = rndMultiple(2, 50, 10); const result = a / 10; return { formula: `10 % de ${a}`, breakdown: `${a} ÷ 10`, result, pieges: [a / 5, a / 10 + 10] }; } },
+  { id: 'pct25', cat: 'div', emoji: '🥧', title: 'Trouver 25 % d\'un nombre', levels: ['sixieme', 'singapour'],
+    explanation: "25 %, c'est un quart : prends la moitié, puis encore la moitié.",
+    gen() { const a = 4 * rnd(3, 50); return { formula: `25 % de ${a}`, breakdown: `${a} ÷ 2 = ${a / 2}, puis ${a / 2} ÷ 2`, result: a / 4, pieges: [a / 2, a / 4 + 25] }; } },
+  { id: 'pct50', cat: 'div', emoji: '📈', title: 'Trouver 50 % d\'un nombre', levels: ['sixieme', 'singapour'],
     explanation: "50 % d'un nombre, c'est sa moitié.",
-    gen() { const a = rndMultiple(2, 100, 2); const result = a / 2; return { formula: `50 % de ${a}`, breakdown: `${a} ÷ 2`, result }; } }
+    gen() { const a = rndMultiple(2, 100, 2); const result = a / 2; return { formula: `50 % de ${a}`, breakdown: `${a} ÷ 2`, result, pieges: [a] }; } }
 ];
 function tricksForLevel(level) { return TRICKS.filter(t => t.levels.includes(level)); }
 function getTrick(id) { return TRICKS.find(t => t.id === id); }
@@ -1569,16 +1754,139 @@ function explicationPour(skill, q) {
   return repereQuiColle(skill, q.answer) || (skill && skill.explanation) || '';
 }
 
-function buildMentalQuiz(trickId, count) {
-  const trick = getTrick(trickId); const qs = [];
-  for (const ex of pickDistinct(() => trick.gen(state.level), (e) => e.formula, count)) {
-    const decimals = ex.result % 1 !== 0 ? 1 : 0;
-    /* l'astuce décompose déjà le calcul : c'est la meilleure explication possible */
-    qs.push({ category: trick.title, prompt: "Utilise l'astuce !", unit: '', svg: null, formula: ex.formula, answer: formatNum(ex.result),
-      options: numericOptions(ex.result, decimals).map(formatNum), limit: 15, expl: ex.breakdown || trick.explanation });
-  }
-  return qs;
+/* ---------- Vitesse : des paliers par astuce ----------
+   Chaque astuce a son propre palier. On monte quand on réussit presque tout
+   ET vite ; le chrono se resserre alors, et à partir du palier « Rapide »
+   on n'a plus de choix proposés : il faut écrire le résultat soi-même, ce qui
+   interdit de deviner à partir du dernier chiffre. */
+const PALIERS = [
+  { nom: 'Débutant', emoji: '🐢', limite: 15, saisie: false },
+  { nom: 'Apprenti', emoji: '🐇', limite: 11, saisie: false },
+  { nom: 'Rapide', emoji: '🚲', limite: 12, saisie: true },
+  { nom: 'Très rapide', emoji: '🏎️', limite: 9, saisie: true },
+  { nom: 'Éclair', emoji: '⚡', limite: 7, saisie: true }
+];
+const SEUIL_PALIER = 85;       // 7 bonnes réponses sur 8 au moins
+const RAPIDITE_PALIER = 0.6;   // et en moyenne moins de 60 % du temps permis
+const SEUIL_MENTAL_JOUR = 70;  // pour valider l'étape obligatoire de la séance
+const DUREE_SPRINT = 60;
+
+function statTrick(id, level) { return ((loadStore().mental || {})[id + '-' + level]) || {}; }
+function palierIndex(id, level) { return statTrick(id, level).palier || 0; }
+function palierDe(id, level) { return PALIERS[palierIndex(id, level)]; }
+
+/* Mémorise chaque réponse : taux de réussite et rapidité, en moyennes
+   glissantes pour que les progrès récents comptent plus que les anciens. */
+function noterReponseMentale(id, level, correct, temps, limite) {
+  const s = loadStore(); s.mental = s.mental || {};
+  const k = id + '-' + level, st = s.mental[k] || {};
+  const ok = correct ? 1 : 0, rel = Math.min(1, temps / limite);
+  st.taux = st.taux == null ? ok : st.taux * 0.7 + ok * 0.3;
+  st.tempsRel = st.tempsRel == null ? rel : st.tempsRel * 0.7 + rel * 0.3;
+  st.n = (st.n || 0) + 1;
+  s.mental[k] = st; saveStore(s);
 }
+/* À la fin d'un entraînement sur UNE astuce : monter, rester ou redescendre. */
+function ajusterPalier(id, level, pct, tempsMoyen) {
+  const s = loadStore(); s.mental = s.mental || {};
+  const k = id + '-' + level, st = s.mental[k] || {};
+  const avant = st.palier || 0, lim = PALIERS[avant].limite;
+  let apres = avant;
+  if (pct >= SEUIL_PALIER && tempsMoyen <= lim * RAPIDITE_PALIER) apres = Math.min(PALIERS.length - 1, avant + 1);
+  else if (pct < 50) apres = Math.max(0, avant - 1);
+  let nouveauRecord = false;
+  if (pct >= SEUIL_PALIER && (st.record == null || tempsMoyen < st.record)) { st.record = tempsMoyen; nouveauRecord = true; }
+  st.palier = apres; s.mental[k] = st; saveStore(s);
+  return { avant, apres, record: st.record, nouveauRecord, tempsMoyen };
+}
+/* Plus une astuce est ratée, lente ou à un palier bas, plus elle revient. */
+function faiblesse(id, level) {
+  const st = statTrick(id, level);
+  if (!st.n) return 0.8;
+  return 0.05 + (1 - st.taux) + 0.5 * st.tempsRel + 0.3 * (PALIERS.length - 1 - (st.palier || 0)) / (PALIERS.length - 1);
+}
+function tirerAstuces(level, count, ponderer) {
+  const liste = tricksForLevel(level);
+  const poids = liste.map(t => ponderer ? faiblesse(t.id, level) : 1);
+  const total = poids.reduce((a, b) => a + b, 0), out = [];
+  for (let i = 0; i < count; i++) {
+    let x = Math.random() * total, j = 0;
+    while (j < liste.length - 1 && x >= poids[j]) { x -= poids[j]; j++; }
+    out.push(liste[j].id);
+  }
+  return out;
+}
+
+/* Les propositions : la bonne réponse, deux pièges typiques au plus, et des
+   voisins pour compléter. */
+function optionsMentales(ex) {
+  const dec = ex.result % 1 !== 0 ? 1 : 0;
+  const opts = new Set([ex.result]);
+  for (const p of shuffle(ex.pieges || [])) {
+    if (opts.size >= 3) break;
+    if (Number.isFinite(p) && p > 0 && p !== ex.result) opts.add(p);
+  }
+  for (const v of numericOptions(ex.result, dec)) { if (opts.size >= 4) break; opts.add(v); }
+  return shuffle([...opts]).map(formatNum);
+}
+function questionMentale(t, level, ex, opts) {
+  const o = opts || {}, p = palierDe(t.id, level);
+  const saisie = o.saisie !== undefined ? o.saisie : p.saisie;
+  return { category: t.title, trickId: t.id, niveau: level, prompt: saisie ? 'Écris le résultat' : "Utilise l'astuce !", unit: '', svg: null,
+    formula: ex.formula, answer: formatNum(ex.result), options: saisie ? [] : optionsMentales(ex), saisie,
+    limit: o.limite || p.limite, expl: ex.breakdown || t.explanation };
+}
+function buildMentalQuiz(trickId, count) {
+  const t = getTrick(trickId), level = state.level;
+  /* l'astuce décompose déjà le calcul : c'est la meilleure explication possible */
+  return pickDistinct(() => t.gen(level), (e) => e.formula, count).map(ex => questionMentale(t, level, ex));
+}
+/* Un quiz qui mélange plusieurs astuces, sans reposer deux fois le même calcul */
+function buildMixQuiz(level, ids, opts) {
+  const seen = new Set();
+  return ids.map(id => {
+    const t = getTrick(id); let ex = t.gen(level);
+    for (let a = 0; a < 30 && seen.has(ex.formula); a++) ex = t.gen(level);
+    seen.add(ex.formula);
+    return questionMentale(t, level, ex, opts);
+  });
+}
+/* Calcul mental du jour : 5 calculs sur l'astuce du jour, 5 révisions des points faibles */
+function buildQuizDuJour(trickId, level) { return buildMixQuiz(level, shuffle([...Array(5).fill(trickId), ...tirerAstuces(level, 5, true)])); }
+function buildRevision(level) { return buildMixQuiz(level, tirerAstuces(level, 10, true)); }
+/* Sprint : toujours en QCM, pour que le record mesure la vitesse de calcul */
+function buildSprint(level) { return buildMixQuiz(level, tirerAstuces(level, 120, false), { saisie: false, limite: DUREE_SPRINT }); }
+
+/* La saisie au pavé : « 012,50 » devient « 12,5 », comme les réponses attendues */
+function normaliserSaisie(s) {
+  let v = s.replace('.', ',');
+  if (v.includes(',')) v = v.replace(/0+$/, '').replace(/,$/, '');
+  return v.replace(/^0+(?=\d)/, '');
+}
+function toucher(k) {
+  const qz = state.quiz; if (!qz || qz.answered || qz.pause) return;
+  const cur = qz.questions[qz.index]; if (!cur.saisie) return;
+  if (k === '⌫') qz.saisie = qz.saisie.slice(0, -1);
+  else if (k === ',') { if (qz.saisie && !qz.saisie.includes(',')) qz.saisie += ','; }
+  else if (qz.saisie.length < 8) qz.saisie += k;
+  render();
+}
+function validerSaisie() {
+  const qz = state.quiz; if (!qz || qz.answered || qz.pause || !qz.saisie) return;
+  const v = normaliserSaisie(qz.saisie);
+  qz.lastChosen = v; answerQuiz(v);
+}
+/* le clavier de l'ordinateur marche aussi : chiffres, virgule, effacer, Entrée */
+document.addEventListener('keydown', (e) => {
+  if (state.screen !== 'quiz' || !state.quiz) return;
+  const qz = state.quiz, cur = qz.questions[qz.index];
+  if (e.key === 'Enter' && qz.attenteCorrection) { e.preventDefault(); questionSuivante(); return; }
+  if (!cur.saisie) return;
+  if (/^[0-9]$/.test(e.key)) toucher(e.key);
+  else if (e.key === ',' || e.key === '.') toucher(',');
+  else if (e.key === 'Backspace') { e.preventDefault(); toucher('⌫'); }
+  else if (e.key === 'Enter') { e.preventDefault(); validerSaisie(); }
+});
 function buildSkillQuiz(domainId, skillId, count) {
   const skill = getSkill(domainId, skillId);
   const qs = pickDistinct(() => skill.question(state.level), questionKey, count);
@@ -1587,43 +1895,85 @@ function buildSkillQuiz(domainId, skillId, count) {
   qs.forEach(q => { q.expl = explicationPour(skill, q); });
   return qs;
 }
-function startQuiz(kind, builderFn, bestKey) {
+/* `extra` précise le mode : { sprint: true } pour le sprint chronométré,
+   { trickId } pour l'entraînement sur une seule astuce (paliers de vitesse). */
+function startQuiz(kind, builderFn, bestKey, extra) {
   clearTimer();
-  const questions = builderFn();
-  state.quiz = { kind, rebuild: builderFn, bestKey, index: 0, score: 0, questions, answered: false, lastChosen: null, timeLeft: questions[0].limit, timerHandle: null, times: [], catStats: {}, pause: false, gain: null, erreurs: [], attenteCorrection: false };
+  const questions = builderFn(), x = extra || {};
+  state.quiz = { kind, rebuild: builderFn, bestKey, extra: x, sprint: !!x.sprint, trickId: x.trickId, niveau: x.niveau, index: 0, score: 0, questions, answered: false, lastChosen: null,
+    timeLeft: x.sprint ? DUREE_SPRINT : questions[0].limit, timerHandle: null, times: [], catStats: {}, pause: false, gain: null, erreurs: [], attenteCorrection: false,
+    saisie: '', debutQuestion: Date.now(), pauseDebut: null };
   state.screen = 'quiz'; render(); runTimer();
 }
 function runTimer() {
   clearTimer();
   state.quiz.timerHandle = setInterval(() => {
-    if (!state.quiz || state.quiz.answered || state.quiz.pause) return;
-    state.quiz.timeLeft--;
-    if (state.quiz.timeLeft <= 0) { clearTimer(); answerQuiz(null); } else render();
+    const qz = state.quiz;
+    if (!qz || qz.pause) return;
+    /* en sprint, le chrono est global : il tourne même pendant l'affichage de la correction */
+    if (qz.sprint) { qz.timeLeft--; if (qz.timeLeft <= 0) finirQuiz(); else render(); return; }
+    if (qz.answered) return;
+    qz.timeLeft--;
+    if (qz.timeLeft <= 0) { clearTimer(); answerQuiz(null); } else render();
   }, 1000);
+}
+function basculerPause() {
+  const qz = state.quiz; qz.pause = !qz.pause;
+  /* le temps de pause ne compte pas dans le temps de réponse */
+  if (qz.pause) qz.pauseDebut = Date.now();
+  else if (qz.pauseDebut) { qz.debutQuestion += Date.now() - qz.pauseDebut; qz.pauseDebut = null; }
+  render();
 }
 function questionSuivante() {
   const qz = state.quiz;
   qz.attenteCorrection = false;
-  if (qz.index < qz.questions.length - 1) { qz.index++; qz.answered = false; qz.lastChosen = null; qz.timeLeft = qz.questions[qz.index].limit; render(); runTimer(); return; }
-  const total = qz.questions.length, pct = Math.round((qz.score / total) * 100);
-  if (qz.bestKey) saveBest(qz.bestKey, pct);
-  qz.gain = attribuerRecompense(pct);
-  if (qz.etapeSeance !== undefined) marquerEtape(qz.etapeSeance);
+  if (qz.index < qz.questions.length - 1) {
+    qz.index++; qz.answered = false; qz.lastChosen = null; qz.saisie = ''; qz.debutQuestion = Date.now();
+    if (!qz.sprint) { qz.timeLeft = qz.questions[qz.index].limit; runTimer(); }
+    render(); return;
+  }
+  finirQuiz();
+}
+function finirQuiz() {
+  const qz = state.quiz; clearTimer();
+  qz.attenteCorrection = false;
+  const total = qz.sprint ? qz.times.length : qz.questions.length;
+  const pct = total ? Math.round((qz.score / total) * 100) : 0;
+  qz.total = total;
+  if (qz.sprint) { qz.recordAvant = getBest(qz.bestKey) || 0; saveBest(qz.bestKey, qz.score); }
+  else if (qz.bestKey) saveBest(qz.bestKey, pct);
+  if (qz.trickId && total) qz.palier = ajusterPalier(qz.trickId, qz.niveau, pct, qz.times.reduce((a, b) => a + b, 0) / total);
+  /* un sprint de 3 réponses ne mérite pas de jeton, même à 100 % */
+  qz.gain = qz.sprint && total < 10 ? null : attribuerRecompense(pct);
+  if (qz.etapeSeance !== undefined) {
+    const e = construireSeance(jourCle())[qz.etapeSeance];
+    qz.etapeValidee = !(e && e.type === 'mental') || pct >= SEUIL_MENTAL_JOUR;
+    if (qz.etapeValidee) marquerEtape(qz.etapeSeance);
+  }
   state.screen = 'quizResults'; render();
 }
 
 function answerQuiz(chosen) {
   const qz = state.quiz; const cur = qz.questions[qz.index];
   if (qz.answered) return;
-  qz.answered = true; clearTimer();
+  qz.answered = true;
+  if (!qz.sprint) clearTimer();
   const correct = chosen !== null && chosen === cur.answer;
-  const timeUsed = cur.limit - qz.timeLeft; qz.times.push(timeUsed);
+  const timeUsed = chosen === null ? cur.limit : Math.min(cur.limit, Math.round((Date.now() - qz.debutQuestion) / 100) / 10);
+  qz.times.push(timeUsed);
+  if (cur.trickId) noterReponseMentale(cur.trickId, cur.niveau, correct, timeUsed, qz.sprint ? PALIERS[0].limite : cur.limit);
   if (!qz.catStats[cur.category]) qz.catStats[cur.category] = { correct: 0, total: 0 };
   qz.catStats[cur.category].total++;
   if (correct) { qz.score++; qz.catStats[cur.category].correct++; }
   else qz.erreurs.push({ q: cur, choisi: chosen, numero: qz.index + 1 });
-  /* Une bonne réponse enchaîne toute seule. Une mauvaise s'arrête sur la
-     correction : c'est l'enfant qui décide quand il a fini de lire. */
+  /* En sprint, on enchaîne toujours : la correction est relue à la fin.
+     Sinon, une bonne réponse enchaîne toute seule et une mauvaise s'arrête
+     sur la correction : c'est l'enfant qui décide quand il a fini de lire. */
+  if (qz.sprint) {
+    render();
+    setTimeout(() => { if (state.quiz === qz && qz.answered && state.screen === 'quiz') questionSuivante(); }, correct ? 350 : 1300);
+    return;
+  }
   qz.attenteCorrection = !correct;
   render();
   if (!correct) return;
@@ -1869,8 +2219,9 @@ function semeur(graine) {
 
 const MATIERES_CULTURE = ['histoire', 'geographie', 'sciences', 'emc'];
 
-/* La séance mélange CM2 et 6ème dans la même journée, comme demandé : une
-   étape de maths, une leçon à relire, et le quiz de cette leçon. */
+/* La séance mélange CM2 et 6ème dans la même journée, comme demandé : le
+   calcul mental (obligatoire, il ouvre la séance), une étape de maths, une
+   leçon à relire, et le quiz de cette leçon. */
 function construireSeance(cle) {
   const rnd01 = semeur(cle);
   const tire = (arr) => arr[Math.floor(rnd01() * arr.length)];
@@ -1893,7 +2244,13 @@ function construireSeance(cle) {
   const domCulture = tire(domsCulture);
   const skCulture = tire(skillsForLevel(domCulture, nivCulture));
 
+  /* L'astuce du jour, au niveau des maths du jour. Tirée APRÈS les autres
+     étapes pour ne pas changer le reste de la séance d'un jour donné. */
+  const astuce = tire(tricksForLevel(nivEtape1));
+
   return [
+    { id: 'mental', titre: 'Calcul mental · obligatoire', detail: `Astuce du jour : ${astuce.title} + révisions`, emoji: '🧠',
+      niveau: nivEtape1, trick: astuce.id, type: 'mental' },
     { id: 'maths', titre: 'Maths', detail: `${getDomain(domMaths).title} · ${skMaths.title}`, emoji: getDomain(domMaths).emoji,
       niveau: nivEtape1, domaine: domMaths, skill: skMaths.id, type: 'quiz' },
     { id: 'lecon', titre: 'La leçon du jour', detail: `${getDomain(domCulture).title} · ${skCulture.title}`, emoji: getDomain(domCulture).emoji,
@@ -1903,19 +2260,21 @@ function construireSeance(cle) {
   ];
 }
 
+const NB_ETAPES = 4;
+function seanceValide(seance, cle) { return seance && seance.date === cle && seance.faits.length === NB_ETAPES; }
 function etatSeance() {
   const cle = jourCle(), s = loadStore();
   /* un nouveau jour remet les étapes à zéro, sans toucher à la série */
-  if (!s.seance || s.seance.date !== cle) return { date: cle, faits: [false, false, false] };
+  if (!seanceValide(s.seance, cle)) return { date: cle, faits: Array(NB_ETAPES).fill(false) };
   return s.seance;
 }
 function marquerEtape(i) {
   const cle = jourCle(), s = loadStore();
-  const seance = (s.seance && s.seance.date === cle) ? s.seance : { date: cle, faits: [false, false, false] };
+  const seance = seanceValide(s.seance, cle) ? s.seance : { date: cle, faits: Array(NB_ETAPES).fill(false) };
   if (seance.faits[i]) return;
   seance.faits[i] = true;
   s.seance = seance;
-  /* Série de jours : elle ne s'incrémente qu'une fois les trois étapes faites,
+  /* Série de jours : elle ne s'incrémente qu'une fois toutes les étapes faites,
      et repart à 1 si un jour a été sauté. */
   if (seance.faits.every(Boolean) && s.serieJour !== cle) {
     s.serie = (s.serieDernier === veilleDe(cle)) ? (s.serie || 0) + 1 : 1;
@@ -1930,14 +2289,19 @@ function renderSeance() {
   const faits = etat.faits.filter(Boolean).length;
   const fini = faits === etapes.length;
   const serie = getSerie();
-  const lignes = etapes.map((e, i) => `<div class="etape ${etat.faits[i] ? 'faite' : ''}" data-action="etape-seance" data-i="${i}">
-      <div class="etape-coche">${etat.faits[i] ? '✓' : i + 1}</div>
-      <div class="etape-info"><div class="etape-titre">${e.emoji} ${e.titre}</div><div class="etape-detail">${e.detail} · ${levelLabel(e.niveau)}</div></div>
-      <div class="mode-arrow">${etat.faits[i] ? '' : '→'}</div>
-    </div>`).join('');
+  /* le calcul mental est obligatoire : tant qu'il n'est pas réussi, le reste
+     de la séance reste fermé */
+  const lignes = etapes.map((e, i) => {
+    const verrou = i > 0 && !etat.faits[0];
+    return `<div class="etape ${etat.faits[i] ? 'faite' : ''} ${verrou ? 'verrou' : ''}" ${verrou ? '' : `data-action="etape-seance" data-i="${i}"`}>
+      <div class="etape-coche">${etat.faits[i] ? '✓' : verrou ? '🔒' : i + 1}</div>
+      <div class="etape-info"><div class="etape-titre">${e.emoji} ${e.titre}</div><div class="etape-detail">${verrou ? 'Réussis d\'abord le calcul mental' : `${e.detail} · ${levelLabel(e.niveau)}`}</div></div>
+      <div class="mode-arrow">${etat.faits[i] || verrou ? '' : '→'}</div>
+    </div>`;
+  }).join('');
   return `<div class="seance ${fini ? 'seance-finie' : ''}">
     <div class="seance-head">
-      <div><div class="seance-titre">${fini ? '🎉 Séance du jour terminée !' : '📅 Ta séance du jour'}</div><div class="seance-sous">${fini ? 'Reviens demain pour continuer ta série.' : `${faits} sur ${etapes.length} · environ 10 minutes`}</div></div>
+      <div><div class="seance-titre">${fini ? '🎉 Séance du jour terminée !' : '📅 Ta séance du jour'}</div><div class="seance-sous">${fini ? 'Reviens demain pour continuer ta série.' : `${faits} sur ${etapes.length} · environ 15 minutes`}</div></div>
       ${serie ? `<div class="serie" title="jours d'affilée">🔥 ${serie}</div>` : ''}
     </div>
     <div class="seance-barre"><div class="seance-barre-jauge" style="width:${Math.round(faits / etapes.length * 100)}%"></div></div>
@@ -1949,7 +2313,10 @@ function renderSeance() {
    étapes « quiz » le sont à la fin du quiz. */
 function ouvrirEtape(i) {
   const e = construireSeance(jourCle())[i];
+  if (i > 0 && !etatSeance().faits[0]) return;
   setLevel(e.niveau);
+  /* le calcul mental s'ouvre sur la leçon de l'astuce du jour, avec son bouton de départ */
+  if (e.type === 'mental') { state.currentDomain = 'astuces'; state.mentalTrickId = e.trick; state.etapeMentale = i; state.screen = 'mentalLesson'; render(); return; }
   state.currentDomain = e.domaine; state.currentSkill = e.skill;
   if (e.type === 'lecon') { marquerEtape(i); state.screen = 'skillLesson'; render(); return; }
   state.screen = 'skillLesson'; render();
@@ -1992,7 +2359,7 @@ function renderRecompenses() {
 }
 
 function renderHome() {
-  const cards = [...(tricksForLevel(state.level).length ? [{ id: 'astuces', emoji: '🧠', title: 'Astuces calcul mental', desc: "Des exercices générés à l'infini" }] : []),
+  const cards = [...(tricksForLevel(state.level).length ? [{ id: 'astuces', emoji: '🧠', title: 'Astuces calcul mental', desc: `${tricksForLevel(state.level).length} astuces · sprint et paliers de vitesse` }] : []),
     /* la dictée est un exercice de français : elle n'a pas sa place dans un programme de maths singapourien */
     ...(dicteesPourNiveau(state.level).length ? [{ id: 'dictee', emoji: '✍️', title: 'Dictée', desc: `${dicteesPourNiveau(state.level).length} textes lus à voix haute` }] : []),
     ...domainesPourNiveau(state.level).map(({ d, n }) => ({ id: d.id, emoji: d.emoji, title: d.title, desc: `${n} compétence${n > 1 ? 's' : ''}` }))]
@@ -2009,9 +2376,19 @@ function renderHome() {
 
 function renderSkillList() {
   if (state.currentDomain === 'astuces') {
-    const list = tricksForLevel(state.level);
-    const cards = list.map(t => { const best = getBest('mental-' + t.id + '-' + state.level); return `<div class="trick-card" data-action="open-mental" data-id="${t.id}"><div class="trick-emoji">${t.emoji}</div><div class="trick-info"><div class="trick-title">${t.title}</div>${best !== undefined ? `<div class="trick-progress">✓ Meilleur score : ${best}%</div>` : ''}</div><div class="mode-arrow">→</div></div>`; }).join('');
-    return `<div class="screen screen-liste"><button class="btn-back" data-action="go-home">← Retour</button><h1>🧠 Astuces calcul mental</h1><p class="subtitle">Niveau ${levelLabel(state.level)}</p><div class="cartes">${cards}</div></div>`;
+    const lvl = state.level, list = tricksForLevel(lvl);
+    const carte = (t) => { const best = getBest('mental-' + t.id + '-' + lvl), p = palierDe(t.id, lvl);
+      return `<div class="trick-card" data-action="open-mental" data-id="${t.id}"><div class="trick-emoji">${t.emoji}</div><div class="trick-info"><div class="trick-title">${t.title}</div><div class="trick-palier">${p.emoji} ${p.nom}${best !== undefined ? ` · <span class="trick-progress">✓ ${best} %</span>` : ''}</div></div><div class="mode-arrow">→</div></div>`; };
+    const groupes = CATS_ASTUCES.map(c => { const ts = list.filter(t => t.cat === c.id); return ts.length ? `<div class="section-label">${c.titre}</div><div class="cartes">${ts.map(carte).join('')}</div>` : ''; }).join('');
+    const record = getBest('sprint-' + lvl);
+    const maitrise = list.filter(t => palierIndex(t.id, lvl) >= 2).length;
+    const outils = `<div class="section-label">⚡ Devenir plus rapide</div><div class="cartes">
+      <div class="trick-card outil" data-action="start-sprint"><div class="trick-emoji">⏱️</div><div class="trick-info"><div class="trick-title">Sprint ${DUREE_SPRINT} secondes</div><div class="mode-desc">Un maximum de calculs, toutes astuces mélangées${record ? ` · record : ${record}` : ''}</div></div><div class="mode-arrow">→</div></div>
+      <div class="trick-card outil" data-action="start-revision"><div class="trick-emoji">🎯</div><div class="trick-info"><div class="trick-title">Révision ciblée</div><div class="mode-desc">10 calculs sur tes astuces les plus fragiles</div></div><div class="mode-arrow">→</div></div>
+    </div>`;
+    return `<div class="screen screen-liste"><button class="btn-back" data-action="go-home">← Retour</button><h1>🧠 Astuces calcul mental</h1><p class="subtitle">Niveau ${levelLabel(lvl)} · ${maitrise} / ${list.length} astuces au palier 🚲 Rapide ou plus</p>
+      <div class="vitesse-aide">Chaque astuce a son palier de vitesse : ${PALIERS.map(p => `${p.emoji} ${p.nom}`).join(' → ')}. Fais au moins 7/8 assez vite pour monter : le chrono se resserre, et à partir de 🚲 Rapide tu écris toi-même le résultat.</div>
+      ${outils}${groupes}</div>`;
   }
   const d = getDomain(state.currentDomain);
   const list = skillsForLevel(state.currentDomain, state.level);
@@ -2026,8 +2403,23 @@ function renderMentalLesson() {
     <div class="lesson-hero"><div class="lesson-emoji">${t.emoji}</div><div class="lesson-title">${t.title}</div><div class="lesson-explanation">${t.explanation}</div></div>
     <div class="section-label">Exemples</div>
     <div class="exemples">${[ex1, ex2].map(ex => `<div class="step-card"><div class="step-formula">${ex.formula}</div><div class="step-breakdown">${ex.breakdown}</div><div class="step-result">= ${formatNum(ex.result)}</div></div>`).join('')}</div>
-    <div class="btn-stack" style="margin-top:0.5rem;"><button class="btn btn-secondary" data-action="regen">🔀 De nouveaux exemples</button><button class="btn btn-primary" data-action="start-mental-quiz">✨ Pratiquer (8 questions, chrono)</button></div>
+    ${renderVitesseAstuce(t.id, state.level)}
+    <div class="btn-stack" style="margin-top:0.5rem;">
+      ${state.etapeMentale !== undefined ? `<button class="btn btn-primary" data-action="start-mental-jour">📅 Calcul mental du jour (10 calculs, il faut ${SEUIL_MENTAL_JOUR} %)</button>` : ''}
+      <button class="btn btn-secondary" data-action="regen">🔀 De nouveaux exemples</button>
+      <button class="btn ${state.etapeMentale !== undefined ? 'btn-secondary' : 'btn-primary'}" data-action="start-mental-quiz">✨ Pratiquer cette astuce (8 calculs · ${palierDe(t.id, state.level).limite} s)</button></div>
   </div>`;
+}
+/* Où en est l'enfant sur cette astuce, et ce qu'il faut pour monter */
+function renderVitesseAstuce(id, level) {
+  const i = palierIndex(id, level), p = PALIERS[i], st = statTrick(id, level);
+  const points = PALIERS.map((x, k) => `<span class="palier-point ${k <= i ? 'atteint' : ''}" title="${x.nom}">${x.emoji}</span>`).join('');
+  const suite = i < PALIERS.length - 1
+    ? `Pour passer ${PALIERS[i + 1].emoji} ${PALIERS[i + 1].nom} : au moins 7/8, en moins de ${formatNum(Math.round(p.limite * RAPIDITE_PALIER * 10) / 10)} s en moyenne.`
+    : 'Tu es au palier le plus rapide. Bats ton record !';
+  return `<div class="vitesse-card"><div class="vitesse-titre">Ta vitesse : ${p.emoji} ${p.nom}</div><div class="palier-ligne">${points}</div>
+    <div class="vitesse-texte">${p.limite} s par calcul · ${p.saisie ? 'tu écris le résultat' : 'choix multiples'}${st.record != null ? ` · record : ${formatNum(Math.round(st.record * 10) / 10)} s en moyenne` : ''}</div>
+    <div class="vitesse-texte">${suite}</div></div>`;
 }
 
 /* La leçon d'histoire ou de géographie : un texte à lire, des repères à
@@ -2057,10 +2449,17 @@ function renderSkillLesson() {
 
 function renderQuiz() {
   const qz = state.quiz; const cur = qz.questions[qz.index]; const total = qz.questions.length;
-  const pctLeft = Math.max(0, Math.round((qz.timeLeft / cur.limit) * 100));
-  const low = qz.timeLeft <= Math.ceil(cur.limit * 0.3);
-  const optionsHtml = cur.options.map(opt => { let cls = 'option-btn'; if (qz.answered) { if (opt === cur.answer) cls += ' correct'; else if (opt === qz.lastChosen) cls += ' wrong'; } return `<button class="${cls}" data-action="answer-quiz" data-value="${opt}" ${qz.answered || qz.pause ? 'disabled' : ''}>${opt}</button>`; }).join('');
-  const faux = qz.answered && qz.lastChosen !== cur.answer;
+  const duree = qz.sprint ? DUREE_SPRINT : cur.limit;
+  const pctLeft = Math.max(0, Math.round((qz.timeLeft / duree) * 100));
+  const low = qz.timeLeft <= Math.ceil(duree * 0.3);
+  const bloque = qz.answered || qz.pause;
+  const optionsHtml = cur.saisie ? `<div class="saisie-zone">
+      <div class="saisie-affichage ${qz.answered ? (qz.lastChosen === cur.answer ? 'ok' : 'ko') : ''}">${qz.saisie || '<span class="saisie-vide">?</span>'}</div>
+      <div class="pave">${['7', '8', '9', '4', '5', '6', '1', '2', '3', ',', '0', '⌫'].map(k => `<button class="pave-touche" data-action="touche" data-k="${k}" ${bloque ? 'disabled' : ''}>${k}</button>`).join('')}</div>
+      <button class="btn btn-primary" data-action="valider-saisie" ${bloque || !qz.saisie ? 'disabled' : ''}>Valider ✓</button>
+    </div>` : cur.options.map(opt => { let cls = 'option-btn'; if (qz.answered) { if (opt === cur.answer) cls += ' correct'; else if (opt === qz.lastChosen) cls += ' wrong'; } return `<button class="${cls}" data-action="answer-quiz" data-value="${opt}" ${qz.answered || qz.pause ? 'disabled' : ''}>${opt}</button>`; }).join('');
+  const faux = qz.answered && qz.lastChosen !== cur.answer && !qz.sprint;
+  const fauxSprint = qz.sprint && qz.answered && qz.lastChosen !== cur.answer;
   const expl = cur.expl ? `<div class="correction-expl"><div class="correction-expl-titre">Pourquoi ?</div>${cur.expl}</div>` : '';
   const carteCorrection = faux ? `<div class="correction">
       <div class="correction-titre">Correction</div>
@@ -2075,10 +2474,11 @@ function renderQuiz() {
       ${cur.formula ? `<div class="question-label">${cur.prompt}</div><div class="question-formula">${cur.formula}</div>` : `<div class="question-label">${cur.prompt}</div>${cur.svg ? `<div class="question-shape">${cur.svg}</div>` : ''}${cur.unit ? `<div style="font-size:0.78rem;color:var(--text-secondary);">Réponse en ${cur.unit}</div>` : ''}`}
     </div>`;
   return `<div class="screen screen-quiz">
-    <div class="quiz-topbar"><div class="quiz-progress">${cur.category} · ${qz.index + 1}/${total}</div><button class="btn-pause" data-action="toggle-pause">${qz.pause ? '▶ Reprendre' : '⏸ Pause'}</button><div class="quiz-score">⭐ ${qz.score}</div></div>
+    <div class="quiz-topbar"><div class="quiz-progress">${qz.sprint ? `⚡ Sprint · ${qz.times.length} réponse${qz.times.length > 1 ? 's' : ''}` : `${cur.category} · ${qz.index + 1}/${total}`}</div><button class="btn-pause" data-action="toggle-pause">${qz.pause ? '▶ Reprendre' : '⏸ Pause'}</button><div class="quiz-score">⭐ ${qz.score}</div></div>
     <div class="timer-wrap"><div class="timer-bar-bg"><div class="timer-bar-fill ${low ? 'low' : ''}" style="width:${pctLeft}%"></div></div><div class="timer-num">${Math.max(0, qz.timeLeft)} s</div></div>
     ${carteQuestion}
-    <div class="options-grid">${optionsHtml}</div>
+    ${cur.saisie ? optionsHtml : `<div class="options-grid">${optionsHtml}</div>`}
+    ${fauxSprint ? `<div class="correction"><div class="correction-ligne">Bonne réponse : <span class="correction-bonne">${cur.answer}</span></div></div>` : ''}
     ${carteCorrection}
   </div>`;
 }
@@ -2108,20 +2508,41 @@ function renderARevoir(erreurs) {
   return `<div class="section-label">À revoir · ${erreurs.length} erreur${erreurs.length > 1 ? 's' : ''}</div>${cartes}`;
 }
 
+/* Ce que l'entraînement a changé à la vitesse : palier, record, sprint */
+function renderBilanVitesse(qz) {
+  if (qz.sprint) {
+    const nouveau = qz.score > qz.recordAvant;
+    return `<div class="vitesse-card"><div class="vitesse-titre">${nouveau ? '🏅 Nouveau record !' : '⏱️ Sprint terminé'}</div>
+      <div class="vitesse-texte">${qz.score} bonne${qz.score > 1 ? 's' : ''} réponse${qz.score > 1 ? 's' : ''} en ${DUREE_SPRINT} s${nouveau ? (qz.recordAvant ? ` (ancien record : ${qz.recordAvant})` : '') : ` · ton record : ${qz.recordAvant}`}</div></div>`;
+  }
+  if (!qz.palier) return '';
+  const { avant, apres, nouveauRecord, tempsMoyen } = qz.palier, pa = PALIERS[avant], pn = PALIERS[apres];
+  let msg;
+  if (apres > avant) msg = `Tu passes au palier ${pn.emoji} ${pn.nom} : ${pn.limite} s par calcul.${pn.saisie && !pa.saisie ? ' Désormais, tu écris toi-même le résultat !' : ''}`;
+  else if (apres < avant) msg = `On revient au palier ${pn.emoji} ${pn.nom} pour consolider. Relis bien l'astuce.`;
+  else if (apres === PALIERS.length - 1) msg = 'Tu restes au palier le plus rapide.';
+  else msg = `Pour passer ${PALIERS[apres + 1].emoji} ${PALIERS[apres + 1].nom} : au moins 7/8 en moins de ${formatNum(Math.round(pa.limite * RAPIDITE_PALIER * 10) / 10)} s en moyenne (cette fois : ${formatNum(Math.round(tempsMoyen * 10) / 10)} s).`;
+  return `<div class="vitesse-card ${apres > avant ? 'monte' : ''}"><div class="vitesse-titre">${apres > avant ? '🚀 Palier suivant !' : `Ta vitesse : ${pn.emoji} ${pn.nom}`}</div>
+    <div class="vitesse-texte">${msg}</div>${nouveauRecord ? `<div class="vitesse-texte">🏅 Nouveau record sur cette astuce : ${formatNum(Math.round(tempsMoyen * 10) / 10)} s en moyenne.</div>` : ''}</div>`;
+}
+
 function renderQuizResults() {
-  const qz = state.quiz; const total = qz.questions.length;
-  const pct = Math.round((qz.score / total) * 100);
-  const avgTime = Math.round((qz.times.reduce((a, b) => a + b, 0) / total) * 10) / 10;
+  const qz = state.quiz; const total = qz.total || qz.questions.length;
+  const pct = qz.total ? Math.round((qz.score / total) * 100) : 0;
+  const avgTime = qz.total ? Math.round((qz.times.reduce((a, b) => a + b, 0) / total) * 10) / 10 : 0;
   const emoji = pct === 100 ? '🏆' : pct >= 80 ? '🌟' : pct >= 50 ? '👍' : '💪';
   const title = pct === 100 ? 'Parfait !' : pct >= 80 ? 'Excellent !' : pct >= 50 ? 'Bien joué !' : "Continue à t'entraîner";
   let verdictClass = 'verdict-good', verdictText = "Compétence maîtrisée ! Essaie-en une autre ou monte de niveau.";
   if (pct < 50) { verdictClass = 'verdict-low'; verdictText = "Cette notion mérite d'être revue calmement. Relis la leçon puis réessaie."; }
   else if (pct < 80) { verdictClass = 'verdict-mid'; verdictText = 'Bonne base ! Encore un peu de pratique pour bien maîtriser.'; }
+  if (qz.etapeValidee === false) { verdictClass = 'verdict-low'; verdictText = `Le calcul mental du jour est obligatoire : il faut au moins ${SEUIL_MENTAL_JOUR} % pour le valider et débloquer la suite de la séance. Relis les corrections, puis rejoue !`; }
+  else if (qz.etapeValidee && qz.kind === 'mix' && qz.etapeSeance === 0) verdictText = 'Calcul mental du jour validé ! La suite de ta séance est débloquée.';
   const cats = Object.keys(qz.catStats);
   const breakdownHtml = cats.length > 1 ? `<div class="breakdown-list">${cats.map(c => `<div class="breakdown-row"><span>${c}</span><span>${qz.catStats[c].correct}/${qz.catStats[c].total}</span></div>`).join('')}</div>` : '';
   return `<div class="screen screen-resultat">
     <div class="results-emoji">${emoji}</div><div class="results-title">${title}</div>
     <div class="results-card"><div class="results-score">${qz.score} / ${total}</div><div class="results-meta">${pct}% de réussite · ${avgTime}s en moyenne par question</div></div>
+    ${renderBilanVitesse(qz)}
     ${breakdownHtml}
     ${renderGain(qz.gain, pct)}
     <div class="verdict-box ${verdictClass}">${verdictText}</div>
@@ -2134,7 +2555,7 @@ function renderQuizResults() {
 function onAction(e) {
   const a = e.currentTarget.dataset.action;
   if (a === 'set-level') setLevel(e.currentTarget.dataset.level);
-  else if (a === 'go-home') { clearTimer(); stopperVoix(); state.screen = 'home'; state.quiz = null; render(); }
+  else if (a === 'go-home') { clearTimer(); stopperVoix(); state.screen = 'home'; state.quiz = null; state.etapeMentale = undefined; render(); }
   else if (a === 'open-domain') {
     const id = e.currentTarget.dataset.id;
     if (id === 'dictee') { state.screen = 'dicteeList'; render(); return; }
@@ -2154,15 +2575,24 @@ function onAction(e) {
   else if (a === 'corriger-dictee') corrigerEtAfficher();
   else if (a === 'refaire-dictee') ouvrirDictee(state.dictee.id);
   else if (a === 'back-to-list') { state.screen = 'skillList'; render(); }
-  else if (a === 'open-mental') { state.mentalTrickId = e.currentTarget.dataset.id; state.screen = 'mentalLesson'; render(); }
+  else if (a === 'open-mental') { state.etapeMentale = undefined; state.mentalTrickId = e.currentTarget.dataset.id; state.screen = 'mentalLesson'; render(); }
   else if (a === 'open-skill') { state.currentSkill = e.currentTarget.dataset.id; state.screen = 'skillLesson'; render(); }
   else if (a === 'regen') { render(); }
-  else if (a === 'start-mental-quiz') { const id = state.mentalTrickId; startQuiz('mental', () => buildMentalQuiz(id, 8), 'mental-' + id + '-' + state.level); }
+  else if (a === 'start-mental-quiz') { const id = state.mentalTrickId, lvl = state.level; state.etapeMentale = undefined; startQuiz('mental', () => buildMentalQuiz(id, 8), 'mental-' + id + '-' + lvl, { trickId: id, niveau: lvl }); }
+  else if (a === 'start-mental-jour') {
+    const i = state.etapeMentale, e = construireSeance(jourCle())[i];
+    startQuiz('mix', () => buildQuizDuJour(e.trick, e.niveau), 'jour-mental-' + e.niveau);
+    state.quiz.etapeSeance = i;
+  }
+  else if (a === 'start-sprint') { const lvl = state.level; startQuiz('sprint', () => buildSprint(lvl), 'sprint-' + lvl, { sprint: true }); }
+  else if (a === 'start-revision') { const lvl = state.level; startQuiz('mix', () => buildRevision(lvl), 'revision-' + lvl); }
+  else if (a === 'touche') toucher(e.currentTarget.dataset.k);
+  else if (a === 'valider-saisie') validerSaisie();
   else if (a === 'start-skill-quiz') { const dId = state.currentDomain, sId = state.currentSkill; startQuiz('skill', () => buildSkillQuiz(dId, sId, 8), 'skill-' + dId + '-' + sId + '-' + state.level); }
   else if (a === 'answer-quiz') { state.quiz.lastChosen = e.currentTarget.dataset.value; answerQuiz(e.currentTarget.dataset.value); }
-  else if (a === 'retry-quiz') { const etape = state.quiz.etapeSeance; startQuiz(state.quiz.kind, state.quiz.rebuild, state.quiz.bestKey); state.quiz.etapeSeance = etape; }
+  else if (a === 'retry-quiz') { const etape = state.quiz.etapeSeance; startQuiz(state.quiz.kind, state.quiz.rebuild, state.quiz.bestKey, state.quiz.extra); state.quiz.etapeSeance = etape; }
   else if (a === 'continuer-quiz') questionSuivante();
-  else if (a === 'toggle-pause') { state.quiz.pause = !state.quiz.pause; render(); }
+  else if (a === 'toggle-pause') basculerPause();
 }
 
 render();

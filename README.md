@@ -16,17 +16,35 @@ Les explications viennent de trois sources, de la plus précise à la plus gén�
 
 ### La séance du jour
 
-En haut de l'accueil, une **séance du jour** de trois étapes, à faire en une dizaine de minutes :
+En haut de l'accueil, une **séance du jour** de quatre étapes, à faire en un quart d'heure :
 
-1. **Maths** — un quiz, en privilégiant une notion de la méthode de Singapour une fois sur deux.
-2. **La leçon du jour** — un chapitre d'histoire, de géographie, de sciences ou d'éducation civique, à relire.
-3. **Le quiz de cette leçon.**
+1. **Calcul mental — obligatoire.** 10 calculs : 5 sur l'**astuce du jour** et 5 révisions tirées parmi les astuces les plus fragiles de l'enfant. Il faut au moins **70 %** pour valider l'étape ; tant qu'elle n'est pas réussie, les trois autres restent verrouillées 🔒.
+2. **Maths** — un quiz, en privilégiant une notion de la méthode de Singapour une fois sur deux.
+3. **La leçon du jour** — un chapitre d'histoire, de géographie, de sciences ou d'éducation civique, à relire.
+4. **Le quiz de cette leçon.**
 
 Les deux niveaux sont mêlés dans la même séance : si les maths tombent en CM2, la leçon tombe en 6ème, et inversement.
 
-La séance est **tirée au sort à partir de la date**, donc identique toute la journée même si l'on ferme l'application, et différente le lendemain. Une fois les trois étapes faites, le compteur de **jours consécutifs** 🔥 augmente. Il repart à 1 si un jour est sauté, et ne compte jamais deux fois le même jour.
+La séance est **tirée au sort à partir de la date**, donc identique toute la journée même si l'on ferme l'application, et différente le lendemain. Une fois les quatre étapes faites, le compteur de **jours consécutifs** 🔥 augmente. Il repart à 1 si un jour est sauté, et ne compte jamais deux fois le même jour.
 
 > Il n'y a pas de notification qui sonne toute seule : une application web sans serveur ne peut pas le faire de façon fiable, et pas du tout sur iPhone. La séance et la série jouent le rôle du rappel quand l'enfant ouvre l'application. Pour un rappel qui sonne vraiment, le plus sûr reste une alarme quotidienne dans l'horloge du téléphone.
+
+### Calcul mental : devenir de plus en plus rapide
+
+La rubrique **🧠 Astuces calcul mental** compte 24 astuces en CM2 et 34 en 6ème et en Singapour, classées en trois familles :
+
+- **Additions et soustractions** : compléments à 100 et à 1000, passer la dizaine (en ajoutant et en soustrayant), ajouter/soustraire 8, 9, 19, 38, 49, 199… (nombre rond puis correction), ajouter/soustraire 11, 21, 102…, additionner en découpant, soustraire par le complément.
+- **Multiplications** : doubler un grand nombre, × 10, × 100, × 20/30/40…, multiplier en décomposant, × 3, × 4, × 5, × 9, × 11, × 50, et en 6ème/Singapour × 12, × 15, × 25, × 99, carrés des nombres finissant par 5.
+- **Divisions, moitiés et pourcentages** : moitié d'un grand nombre, ÷ 4, ÷ 5, et en 6ème/Singapour × 0,5, 10 %, 25 %, 50 %.
+
+Les calculs portent sur des nombres de 2 à 4 chiffres (par exemple 1456 − 38). Les mauvaises réponses proposées sont les **erreurs typiques** de l'astuce (oublier la correction, la faire dans le mauvais sens, oublier une retenue…), pas des nombres au hasard.
+
+Outils de vitesse :
+
+- **Paliers par astuce** : 🐢 Débutant (15 s) → 🐇 Apprenti (11 s) → 🚲 Rapide (12 s) → 🏎️ Très rapide (9 s) → ⚡ Éclair (7 s). On monte d'un palier avec au moins 7/8 en moins de 60 % du temps permis en moyenne ; on redescend sous 50 %. À partir de 🚲 Rapide, il n'y a plus de choix : l'enfant **écrit le résultat** au pavé numérique (ou au clavier), ce qui empêche de deviner.
+- **Record** de temps moyen par astuce.
+- **Sprint 60 secondes** : un maximum de calculs, toutes astuces mélangées, avec un record par niveau.
+- **Révision ciblée** : 10 calculs tirés en priorité sur les astuces ratées, lentes ou à un palier bas. Chaque réponse est mémorisée pour affiner ce choix.
 
 ### Fonctionnement sans connexion
 

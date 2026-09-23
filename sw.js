@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calcul-cm2-v8';
+const CACHE_NAME = 'calcul-cm2-v10';
 const ASSETS = [
   './',
   './index.html',
