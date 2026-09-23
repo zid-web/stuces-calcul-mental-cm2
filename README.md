@@ -93,6 +93,13 @@ Les fichiers de l'app sont à la racine du dépôt. C'est ce que tous les héber
 ## Pourquoi une PWA a besoin d'être hébergée
 Android installe une PWA depuis une adresse web en HTTPS (le service worker qui permet le mode hors-ligne l'exige). Ouvrir `index.html` directement depuis le stockage du téléphone ne déclenche pas l'installation. La bonne nouvelle : héberger ces fichiers est gratuit et prend 2 minutes.
 
+### L'installation ne se propose pas sur Android ?
+
+- Ouvre l'adresse **de production** (`https://<projet>.vercel.app`), pas une adresse d'aperçu du type `<projet>-git-...vercel.app` ou `<projet>-abc123.vercel.app` : celles-ci sont souvent protégées par la connexion Vercel, et Chrome ne peut alors pas lire le manifeste.
+- Utilise **Chrome** (ou Samsung Internet). Firefox, et les navigateurs intégrés à WhatsApp, Gmail ou Facebook, n'installent pas les applications web : ouvre le lien « dans Chrome ».
+- Dans Chrome, menu ⋮ puis **« Installer l'application »** ou **« Ajouter à l'écran d'accueil »**.
+- Si l'appli était déjà installée puis supprimée, ou si rien ne change : Chrome > ⋮ > Paramètres > Paramètres des sites > Tous les sites > l'adresse du site > **Effacer et réinitialiser**, puis rouvre la page et attends quelques secondes.
+
 ## Déploiement sur Vercel
 1. Sur https://vercel.com, choisis « Add New » > « Project » et importe ce dépôt
 2. Laisse tous les réglages par défaut : aucune commande de build, aucun framework à choisir
