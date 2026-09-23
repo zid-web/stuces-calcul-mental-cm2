@@ -511,6 +511,28 @@ function sgDeuxNoms() { const s = shuffle(SG_NOMS); return [s[0], s[1]]; }
 function sgObjet() { return SG_OBJETS[rnd(0, SG_OBJETS.length - 1)]; }
 
 /* ================= Astuces de calcul mental (domaine spécial) ================= */
+/* + ou − un nombre qui finit par 8 ou 9 (8, 38, 49, 199, 298…) :
+   on passe par le nombre rond juste au-dessus, puis on corrige l'écart. */
+function genPresqueRond(chiffre, op) {
+  const ecart = 10 - chiffre, t = Math.random();
+  let n;
+  if (t < 0.2) n = chiffre;                                   /* 8 ou 9 */
+  else if (t < 0.6) n = rnd(1, 9) * 10 + chiffre;             /* 18 … 99 */
+  else if (t < 0.8) n = rnd(1, 9) * 100 + 90 + chiffre;       /* 198, 299… */
+  else n = rnd(10, 99) * 10 + chiffre;                        /* 138, 459… */
+  const rond = n + ecart;
+  /* nombre de départ à 2, 3 ou 4 chiffres, assez grand pour la soustraction */
+  const minA = op === '-' ? rond + 10 : 10;
+  const tranches = [[10, 99], [100, 999], [1000, 9999]].filter(([, hi]) => hi >= minA);
+  const [lo, hi] = tranches[rnd(0, tranches.length - 1)];
+  const a = rnd(Math.max(lo, minA), hi);
+  const step = op === '+' ? a + rond : a - rond;
+  const result = op === '+' ? a + n : a - n;
+  const breakdown = op === '+'
+    ? `${n} = ${rond} − ${ecart} : ${formatNum(a)} + ${rond} = ${formatNum(step)}, puis − ${ecart}`
+    : `${n} = ${rond} − ${ecart} : ${formatNum(a)} − ${rond} = ${formatNum(step)}, puis + ${ecart}`;
+  return { formula: `${formatNum(a)} ${op === '+' ? '+' : '−'} ${n}`, breakdown, result };
+}
 const TRICKS = [
   { id: 'mult10', emoji: '🔟', title: 'Multiplier par 10', levels: ['cm2', 'sixieme', 'singapour'],
     explanation: "Pour multiplier par 10, ajoute un zéro (ou décale la virgule d'un rang pour un nombre décimal).",
@@ -538,6 +560,18 @@ const TRICKS = [
   { id: 'sub-complement', emoji: '➖', title: 'Soustraire avec le complément', levels: ['cm2', 'sixieme', 'singapour'],
     explanation: "Compte la distance entre les deux nombres au lieu de soustraire.",
     gen() { const a = rnd(30, 90), b = rnd(5, a - 5), result = a - b; const round = Math.ceil(b / 10) * 10, step1 = round - b, step2 = a - round; return { formula: `${a} - ${b}`, breakdown: `${b} → ${round} (+${step1}), puis ${round} → ${a} (+${step2})`, result }; } },
+  { id: 'add9', emoji: '9️⃣', title: 'Ajouter 9, 19, 49, 199…', levels: ['cm2', 'sixieme', 'singapour'],
+    explanation: "Un nombre qui finit par 9, c'est un nombre rond moins 1. Ajoute le nombre rond, puis retire 1. Exemple : + 49, c'est + 50 − 1.",
+    gen() { return genPresqueRond(9, '+'); } },
+  { id: 'sub9', emoji: '➖', title: 'Soustraire 9, 19, 49, 199…', levels: ['cm2', 'sixieme', 'singapour'],
+    explanation: "Un nombre qui finit par 9, c'est un nombre rond moins 1. Retire le nombre rond, puis rajoute 1 (tu as enlevé 1 de trop). Exemple : − 49, c'est − 50 + 1.",
+    gen() { return genPresqueRond(9, '-'); } },
+  { id: 'add8', emoji: '8️⃣', title: 'Ajouter 8, 18, 38, 198…', levels: ['cm2', 'sixieme', 'singapour'],
+    explanation: "Un nombre qui finit par 8, c'est un nombre rond moins 2. Ajoute le nombre rond, puis retire 2. Exemple : + 38, c'est + 40 − 2.",
+    gen() { return genPresqueRond(8, '+'); } },
+  { id: 'sub8', emoji: '➖', title: 'Soustraire 8, 18, 38, 198…', levels: ['cm2', 'sixieme', 'singapour'],
+    explanation: "Un nombre qui finit par 8, c'est un nombre rond moins 2. Retire le nombre rond, puis rajoute 2 (tu as enlevé 2 de trop). Exemple : − 38, c'est − 40 + 2.",
+    gen() { return genPresqueRond(8, '-'); } },
   { id: 'mult3', emoji: '🔺', title: 'Multiplier par 3', levels: ['cm2', 'sixieme', 'singapour'],
     explanation: "Double le nombre, puis ajoute le nombre de départ.",
     gen() { const a = rnd(2, 40); const result = a * 3; return { formula: `${a} × 3`, breakdown: `(${a} × 2) + ${a} = ${a * 2} + ${a}`, result }; } },
