@@ -57,6 +57,10 @@
   .saisie-affichage.ok { background: var(--success-bg); border-color: var(--success); color: var(--success); }
   .saisie-affichage.ko { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
   .saisie-vide { color: var(--border); }
+  .saisie-zone ~ .correction { margin-top: 12px; }
+  .bravo { background: var(--success-bg); border: 1px solid #A6DFCB; border-radius: 14px; padding: 0.9rem 1rem; margin-top: 12px; }
+  .bravo-titre { font-weight: 800; color: var(--success); font-size: 1.05rem; }
+  .bravo-expl { font-size: 0.88rem; color: var(--text); margin-top: 0.35rem; line-height: 1.45; }
   .pave { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .pave-touche { padding: 0.8rem 0; font-size: 1.3rem; font-weight: 700; border-radius: 12px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; touch-action: manipulation; }
   .pave-touche:active { background: var(--bg); }
@@ -537,8 +541,8 @@ function sgObjet() { return SG_OBJETS[rnd(0, SG_OBJETS.length - 1)]; }
 /* ================= Astuces de calcul mental (domaine spécial) ================= */
 /* Chaque générateur renvoie le calcul, sa décomposition (l'astuce appliquée)
    et, quand c'est possible, des « pièges » : les résultats qu'on obtient en
-   faisant l'erreur typique. Ils servent de mauvaises réponses au QCM, bien
-   plus instructives que des nombres tirés au hasard. */
+   faisant l'erreur typique. Si l'enfant tape l'un d'eux, la correction lui
+   signale qu'il est tombé dans le piège classique de l'astuce. */
 
 /* nombre de départ à 2, 3 ou 4 chiffres, au moins égal à minA */
 function nombreDepart(minA) {
@@ -1756,15 +1760,15 @@ function explicationPour(skill, q) {
 
 /* ---------- Vitesse : des paliers par astuce ----------
    Chaque astuce a son propre palier. On monte quand on réussit presque tout
-   ET vite ; le chrono se resserre alors, et à partir du palier « Rapide »
-   on n'a plus de choix proposés : il faut écrire le résultat soi-même, ce qui
-   interdit de deviner à partir du dernier chiffre. */
+   ET vite, et le chrono se resserre. Il n'y a jamais de réponses proposées :
+   l'enfant tape le résultat lui-même, ce qui interdit de deviner à partir du
+   dernier chiffre. */
 const PALIERS = [
-  { nom: 'Débutant', emoji: '🐢', limite: 15, saisie: false },
-  { nom: 'Apprenti', emoji: '🐇', limite: 11, saisie: false },
-  { nom: 'Rapide', emoji: '🚲', limite: 12, saisie: true },
-  { nom: 'Très rapide', emoji: '🏎️', limite: 9, saisie: true },
-  { nom: 'Éclair', emoji: '⚡', limite: 7, saisie: true }
+  { nom: 'Débutant', emoji: '🐢', limite: 20 },
+  { nom: 'Apprenti', emoji: '🐇', limite: 16 },
+  { nom: 'Rapide', emoji: '🚲', limite: 13 },
+  { nom: 'Très rapide', emoji: '🏎️', limite: 10 },
+  { nom: 'Éclair', emoji: '⚡', limite: 8 }
 ];
 const SEUIL_PALIER = 85;       // 7 bonnes réponses sur 8 au moins
 const RAPIDITE_PALIER = 0.6;   // et en moyenne moins de 60 % du temps permis
@@ -1817,23 +1821,12 @@ function tirerAstuces(level, count, ponderer) {
   return out;
 }
 
-/* Les propositions : la bonne réponse, deux pièges typiques au plus, et des
-   voisins pour compléter. */
-function optionsMentales(ex) {
-  const dec = ex.result % 1 !== 0 ? 1 : 0;
-  const opts = new Set([ex.result]);
-  for (const p of shuffle(ex.pieges || [])) {
-    if (opts.size >= 3) break;
-    if (Number.isFinite(p) && p > 0 && p !== ex.result) opts.add(p);
-  }
-  for (const v of numericOptions(ex.result, dec)) { if (opts.size >= 4) break; opts.add(v); }
-  return shuffle([...opts]).map(formatNum);
-}
+/* Toujours une réponse à taper : pas de propositions parmi lesquelles deviner */
 function questionMentale(t, level, ex, opts) {
   const o = opts || {}, p = palierDe(t.id, level);
-  const saisie = o.saisie !== undefined ? o.saisie : p.saisie;
-  return { category: t.title, trickId: t.id, niveau: level, prompt: saisie ? 'Écris le résultat' : "Utilise l'astuce !", unit: '', svg: null,
-    formula: ex.formula, answer: formatNum(ex.result), options: saisie ? [] : optionsMentales(ex), saisie,
+  const pieges = (ex.pieges || []).filter(v => Number.isFinite(v) && v !== ex.result).map(formatNum);
+  return { category: t.title, trickId: t.id, niveau: level, prompt: 'Écris le résultat', unit: '', svg: null,
+    formula: ex.formula, answer: formatNum(ex.result), options: [], saisie: true, pieges,
     limit: o.limite || p.limite, expl: ex.breakdown || t.explanation };
 }
 function buildMentalQuiz(trickId, count) {
@@ -1854,8 +1847,7 @@ function buildMixQuiz(level, ids, opts) {
 /* Calcul mental du jour : 5 calculs sur l'astuce du jour, 5 révisions des points faibles */
 function buildQuizDuJour(trickId, level) { return buildMixQuiz(level, shuffle([...Array(5).fill(trickId), ...tirerAstuces(level, 5, true)])); }
 function buildRevision(level) { return buildMixQuiz(level, tirerAstuces(level, 10, true)); }
-/* Sprint : toujours en QCM, pour que le record mesure la vitesse de calcul */
-function buildSprint(level) { return buildMixQuiz(level, tirerAstuces(level, 120, false), { saisie: false, limite: DUREE_SPRINT }); }
+function buildSprint(level) { return buildMixQuiz(level, tirerAstuces(level, 120, false), { limite: DUREE_SPRINT }); }
 
 /* La saisie au pavé : « 012,50 » devient « 12,5 », comme les réponses attendues */
 function normaliserSaisie(s) {
@@ -1880,7 +1872,7 @@ function validerSaisie() {
 document.addEventListener('keydown', (e) => {
   if (state.screen !== 'quiz' || !state.quiz) return;
   const qz = state.quiz, cur = qz.questions[qz.index];
-  if (e.key === 'Enter' && qz.attenteCorrection) { e.preventDefault(); questionSuivante(); return; }
+  if (e.key === 'Enter' && (qz.attenteCorrection || qz.bravo)) { e.preventDefault(); questionSuivante(); return; }
   if (!cur.saisie) return;
   if (/^[0-9]$/.test(e.key)) toucher(e.key);
   else if (e.key === ',' || e.key === '.') toucher(',');
@@ -1926,7 +1918,8 @@ function basculerPause() {
 }
 function questionSuivante() {
   const qz = state.quiz;
-  qz.attenteCorrection = false;
+  if (!qz || state.screen !== 'quiz') return;
+  qz.attenteCorrection = false; qz.bravo = false;
   if (qz.index < qz.questions.length - 1) {
     qz.index++; qz.answered = false; qz.lastChosen = null; qz.saisie = ''; qz.debutQuestion = Date.now();
     if (!qz.sprint) { qz.timeLeft = qz.questions[qz.index].limit; runTimer(); }
@@ -1969,15 +1962,15 @@ function answerQuiz(chosen) {
   /* En sprint, on enchaîne toujours : la correction est relue à la fin.
      Sinon, une bonne réponse enchaîne toute seule et une mauvaise s'arrête
      sur la correction : c'est l'enfant qui décide quand il a fini de lire. */
-  if (qz.sprint) {
-    render();
-    setTimeout(() => { if (state.quiz === qz && qz.answered && state.screen === 'quiz') questionSuivante(); }, correct ? 350 : 1300);
-    return;
-  }
+  const idx = qz.index;
+  const suivante = (delai) => setTimeout(() => { if (state.quiz === qz && qz.answered && qz.index === idx && state.screen === 'quiz') questionSuivante(); }, delai);
+  if (qz.sprint) { render(); suivante(correct ? 400 : 2500); return; }
   qz.attenteCorrection = !correct;
+  /* calcul mental : une bonne réponse est confirmée avec l'astuce, le temps de la lire */
+  qz.bravo = correct && !!cur.saisie;
   render();
   if (!correct) return;
-  setTimeout(() => { if (state.quiz === qz && qz.answered) questionSuivante(); }, 1100);
+  suivante(cur.saisie ? 2500 : 1100);
 }
 
 
@@ -2387,7 +2380,7 @@ function renderSkillList() {
       <div class="trick-card outil" data-action="start-revision"><div class="trick-emoji">🎯</div><div class="trick-info"><div class="trick-title">Révision ciblée</div><div class="mode-desc">10 calculs sur tes astuces les plus fragiles</div></div><div class="mode-arrow">→</div></div>
     </div>`;
     return `<div class="screen screen-liste"><button class="btn-back" data-action="go-home">← Retour</button><h1>🧠 Astuces calcul mental</h1><p class="subtitle">Niveau ${levelLabel(lvl)} · ${maitrise} / ${list.length} astuces au palier 🚲 Rapide ou plus</p>
-      <div class="vitesse-aide">Chaque astuce a son palier de vitesse : ${PALIERS.map(p => `${p.emoji} ${p.nom}`).join(' → ')}. Fais au moins 7/8 assez vite pour monter : le chrono se resserre, et à partir de 🚲 Rapide tu écris toi-même le résultat.</div>
+      <div class="vitesse-aide">Chaque astuce a son palier de vitesse : ${PALIERS.map(p => `${p.emoji} ${p.nom}`).join(' → ')}. Tu tapes toujours toi-même le résultat. Fais au moins 7/8 assez vite pour monter : le chrono se resserre.</div>
       ${outils}${groupes}</div>`;
   }
   const d = getDomain(state.currentDomain);
@@ -2418,7 +2411,7 @@ function renderVitesseAstuce(id, level) {
     ? `Pour passer ${PALIERS[i + 1].emoji} ${PALIERS[i + 1].nom} : au moins 7/8, en moins de ${formatNum(Math.round(p.limite * RAPIDITE_PALIER * 10) / 10)} s en moyenne.`
     : 'Tu es au palier le plus rapide. Bats ton record !';
   return `<div class="vitesse-card"><div class="vitesse-titre">Ta vitesse : ${p.emoji} ${p.nom}</div><div class="palier-ligne">${points}</div>
-    <div class="vitesse-texte">${p.limite} s par calcul · ${p.saisie ? 'tu écris le résultat' : 'choix multiples'}${st.record != null ? ` · record : ${formatNum(Math.round(st.record * 10) / 10)} s en moyenne` : ''}</div>
+    <div class="vitesse-texte">${p.limite} s par calcul${st.record != null ? ` · record : ${formatNum(Math.round(st.record * 10) / 10)} s en moyenne` : ''}</div>
     <div class="vitesse-texte">${suite}</div></div>`;
 }
 
@@ -2455,16 +2448,17 @@ function renderQuiz() {
   const bloque = qz.answered || qz.pause;
   const optionsHtml = cur.saisie ? `<div class="saisie-zone">
       <div class="saisie-affichage ${qz.answered ? (qz.lastChosen === cur.answer ? 'ok' : 'ko') : ''}">${qz.saisie || '<span class="saisie-vide">?</span>'}</div>
-      <div class="pave">${['7', '8', '9', '4', '5', '6', '1', '2', '3', ',', '0', '⌫'].map(k => `<button class="pave-touche" data-action="touche" data-k="${k}" ${bloque ? 'disabled' : ''}>${k}</button>`).join('')}</div>
-      <button class="btn btn-primary" data-action="valider-saisie" ${bloque || !qz.saisie ? 'disabled' : ''}>Valider ✓</button>
+      ${qz.answered ? '' : `<div class="pave">${['7', '8', '9', '4', '5', '6', '1', '2', '3', ',', '0', '⌫'].map(k => `<button class="pave-touche" data-action="touche" data-k="${k}" ${bloque ? 'disabled' : ''}>${k}</button>`).join('')}</div>
+      <button class="btn btn-primary" data-action="valider-saisie" ${bloque || !qz.saisie ? 'disabled' : ''}>Valider ✓</button>`}
     </div>` : cur.options.map(opt => { let cls = 'option-btn'; if (qz.answered) { if (opt === cur.answer) cls += ' correct'; else if (opt === qz.lastChosen) cls += ' wrong'; } return `<button class="${cls}" data-action="answer-quiz" data-value="${opt}" ${qz.answered || qz.pause ? 'disabled' : ''}>${opt}</button>`; }).join('');
   const faux = qz.answered && qz.lastChosen !== cur.answer && !qz.sprint;
   const fauxSprint = qz.sprint && qz.answered && qz.lastChosen !== cur.answer;
   const expl = cur.expl ? `<div class="correction-expl"><div class="correction-expl-titre">Pourquoi ?</div>${cur.expl}</div>` : '';
   const carteCorrection = faux ? `<div class="correction">
-      <div class="correction-titre">Correction</div>
+      <div class="correction-titre">${cur.saisie ? '❌ Réponse fausse' : 'Correction'}</div>
       <div class="correction-ligne">${qz.lastChosen ? `Ta réponse : <s>${qz.lastChosen}</s>` : "Le temps est écoulé."}</div>
       <div class="correction-ligne">Bonne réponse : <span class="correction-bonne">${cur.answer}${cur.unit ? ' ' + cur.unit : ''}</span></div>
+      ${cur.pieges && cur.pieges.includes(qz.lastChosen) ? `<div class="correction-ligne">⚠️ C'est l'erreur classique de cette astuce : vérifie bien l'étape de correction.</div>` : ''}
       ${expl}
       <div class="btn-stack" style="margin-top:0.8rem;"><button class="btn btn-primary" data-action="continuer-quiz">J'ai compris, continuer →</button></div>
     </div>` : '';
@@ -2478,7 +2472,9 @@ function renderQuiz() {
     <div class="timer-wrap"><div class="timer-bar-bg"><div class="timer-bar-fill ${low ? 'low' : ''}" style="width:${pctLeft}%"></div></div><div class="timer-num">${Math.max(0, qz.timeLeft)} s</div></div>
     ${carteQuestion}
     ${cur.saisie ? optionsHtml : `<div class="options-grid">${optionsHtml}</div>`}
-    ${fauxSprint ? `<div class="correction"><div class="correction-ligne">Bonne réponse : <span class="correction-bonne">${cur.answer}</span></div></div>` : ''}
+    ${fauxSprint ? `<div class="correction"><div class="correction-titre">❌ Réponse fausse</div><div class="correction-ligne">Bonne réponse : <span class="correction-bonne">${cur.answer}</span></div>${cur.expl ? `<div class="correction-expl">${cur.expl}</div>` : ''}</div>` : ''}
+    ${qz.bravo ? `<div class="bravo"><div class="bravo-titre">✅ Bonne réponse !</div>${cur.expl ? `<div class="bravo-expl">L'astuce : ${cur.expl}</div>` : ''}
+      <div class="btn-stack" style="margin-top:0.7rem;"><button class="btn btn-secondary" data-action="continuer-quiz">Continuer →</button></div></div>` : ''}
     ${carteCorrection}
   </div>`;
 }
@@ -2518,7 +2514,7 @@ function renderBilanVitesse(qz) {
   if (!qz.palier) return '';
   const { avant, apres, nouveauRecord, tempsMoyen } = qz.palier, pa = PALIERS[avant], pn = PALIERS[apres];
   let msg;
-  if (apres > avant) msg = `Tu passes au palier ${pn.emoji} ${pn.nom} : ${pn.limite} s par calcul.${pn.saisie && !pa.saisie ? ' Désormais, tu écris toi-même le résultat !' : ''}`;
+  if (apres > avant) msg = `Tu passes au palier ${pn.emoji} ${pn.nom} : ${pn.limite} s par calcul.`;
   else if (apres < avant) msg = `On revient au palier ${pn.emoji} ${pn.nom} pour consolider. Relis bien l'astuce.`;
   else if (apres === PALIERS.length - 1) msg = 'Tu restes au palier le plus rapide.';
   else msg = `Pour passer ${PALIERS[apres + 1].emoji} ${PALIERS[apres + 1].nom} : au moins 7/8 en moins de ${formatNum(Math.round(pa.limite * RAPIDITE_PALIER * 10) / 10)} s en moyenne (cette fois : ${formatNum(Math.round(tempsMoyen * 10) / 10)} s).`;
