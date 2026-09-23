@@ -37,11 +37,11 @@ La rubrique **🧠 Astuces calcul mental** compte 24 astuces en CM2 et 34 en 6è
 - **Multiplications** : doubler un grand nombre, × 10, × 100, × 20/30/40…, multiplier en décomposant, × 3, × 4, × 5, × 9, × 11, × 50, et en 6ème/Singapour × 12, × 15, × 25, × 99, carrés des nombres finissant par 5.
 - **Divisions, moitiés et pourcentages** : moitié d'un grand nombre, ÷ 4, ÷ 5, et en 6ème/Singapour × 0,5, 10 %, 25 %, 50 %.
 
-Les calculs portent sur des nombres de 2 à 4 chiffres (par exemple 1456 − 38). Les mauvaises réponses proposées sont les **erreurs typiques** de l'astuce (oublier la correction, la faire dans le mauvais sens, oublier une retenue…), pas des nombres au hasard.
+Les calculs portent sur des nombres de 2 à 4 chiffres (par exemple 1456 − 38). **Aucune réponse n'est proposée** : l'enfant tape le résultat au pavé numérique (ou au clavier). Juste après, l'appli dit si c'est **bon ✅ ou faux ❌**, et montre toujours l'astuce appliquée à ce calcul. Si la réponse tapée est l'**erreur typique** de l'astuce (oublier la correction, la faire dans le mauvais sens…), la correction le signale.
 
 Outils de vitesse :
 
-- **Paliers par astuce** : 🐢 Débutant (15 s) → 🐇 Apprenti (11 s) → 🚲 Rapide (12 s) → 🏎️ Très rapide (9 s) → ⚡ Éclair (7 s). On monte d'un palier avec au moins 7/8 en moins de 60 % du temps permis en moyenne ; on redescend sous 50 %. À partir de 🚲 Rapide, il n'y a plus de choix : l'enfant **écrit le résultat** au pavé numérique (ou au clavier), ce qui empêche de deviner.
+- **Paliers par astuce** : 🐢 Débutant (20 s) → 🐇 Apprenti (16 s) → 🚲 Rapide (13 s) → 🏎️ Très rapide (10 s) → ⚡ Éclair (8 s). On monte d'un palier avec au moins 7/8 en moins de 60 % du temps permis en moyenne ; on redescend sous 50 %.
 - **Record** de temps moyen par astuce.
 - **Sprint 60 secondes** : un maximum de calculs, toutes astuces mélangées, avec un record par niveau.
 - **Révision ciblée** : 10 calculs tirés en priorité sur les astuces ratées, lentes ou à un palier bas. Chaque réponse est mémorisée pour affiner ce choix.
