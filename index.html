@@ -6,7 +6,7 @@
 <title>Maths Malin — CM2 &amp; 6ème</title>
 <meta name="theme-color" content="#5B4FE8">
 <meta name="description" content="Réviser en CM2 et 6ème : maths, histoire, géographie et dictée. Méthode de Singapour incluse.">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json" crossorigin="use-credentials">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2623,7 +2623,7 @@ function showInstallBanner() {
   if (document.getElementById('install-banner') || isInstalled() || installSnoozed()) return;
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const banner = document.createElement('div'); banner.id = 'install-banner'; banner.className = 'install-banner';
-  const help = isIOS ? "Appuie sur Partager puis « Sur l'écran d'accueil »" : "Ouvre le menu ⋮ puis « Installer l'application »";
+  const help = isIOS ? "Appuie sur Partager puis « Sur l'écran d'accueil »" : "Ouvre le menu ⋮ puis « Installer l'application » ou « Ajouter à l'écran d'accueil »";
   banner.innerHTML = `<div class="install-text">📲 Installe l'appli sur ton téléphone !${deferredPrompt ? '' : `<span class="install-help">${help}</span>`}</div>${deferredPrompt ? '<button class="install-btn">Installer</button>' : ''}<button class="dismiss-btn">✕</button>`;
   document.body.appendChild(banner);
   /* la bande est fixée en bas de l'écran : on réserve sa hauteur dans #app,
