@@ -46,6 +46,28 @@ Outils de vitesse :
 - **Sprint 60 secondes** : un maximum de calculs, toutes astuces mélangées, avec un record par niveau.
 - **Révision ciblée** : 10 calculs tirés en priorité sur les astuces ratées, lentes ou à un palier bas. Chaque réponse est mémorisée pour affiner ce choix.
 
+### Olympiades de maths
+
+La rubrique **🏅 Olympiades de maths** prépare aux olympiades et au Kangourou. Elle a son propre niveau, choisi en haut de la rubrique : **6ème ⭐** ou **5ème ⭐⭐** (en 5ème, surtout des problèmes 5ème, avec quelques 6ème pour s'échauffer). Le meilleur score est gardé séparément pour chaque niveau.
+
+Neuf techniques, chacune avec sa leçon (la méthode, un exemple résolu, les réflexes à retenir) puis 8 problèmes chronométrés (90 s en 6ème, 120 s en 5ème), tous corrigés et expliqués :
+
+| Technique | Exemples de problèmes |
+|---|---|
+| 🔁 Repérer un motif | 2026e lettre de MATHSMATHS…, jour de la semaine dans 300 jours, chiffre des unités de 7<sup>2026</sup> |
+| ⏪ Raisonner à rebours | « je pense à un nombre », dépenses successives, nénuphar qui double |
+| 🧦 Principe des tiroirs | chaussettes dans le noir, élèves nés le même mois |
+| 🌳 Dénombrer | tenues, poignées de main, diagonales, pages d'un livre |
+| ⚖️ Parité et divisibilité | chiffre manquant, reste par 9, zéros de 1 × 2 × … × n |
+| 🕵️ Logique | âges, files, poteaux, escargot dans le puits, chevaliers et fripons |
+| 📐 Géométrie astucieuse | carrés et rectangles d'un quadrillage, escalier, cube peint |
+| ⚡ Calcul astucieux | astuce de Gauss, factorisation, sommes alternées, fractions en chaîne |
+| 🎯 Stratégies de concours | estimer, éliminer, tester les réponses, cas simple |
+
+Un **🏆 concours blanc** de 12 problèmes mélange toutes les techniques, avec le bilan par technique à la fin.
+
+Les problèmes sont presque tous **générés** (ils changent à chaque fois et sont justes par construction), complétés par une dizaine de grands classiques écrits à la main. Chaque modèle a été vérifié en recalculant la réponse indépendamment (simulation, comptage exhaustif) sur des milliers de tirages.
+
 ### Fonctionnement sans connexion
 
 L'application ne dépend d'**aucune ressource extérieure** : pas de bibliothèque distante, pas de police en ligne, pas d'image téléchargée. Tout tient dans `index.html`, et le service worker met en cache les cinq fichiers du site.

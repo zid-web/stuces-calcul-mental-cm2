@@ -752,6 +752,548 @@ const TRICKS = [
 function tricksForLevel(level) { return TRICKS.filter(t => t.levels.includes(level)); }
 function getTrick(id) { return TRICKS.find(t => t.id === id); }
 
+/* ================= Olympiades de maths ================= */
+/* Une rubrique à part, avec son propre niveau (6ème ou 5ème) choisi à
+   l'intérieur de la rubrique. Chaque technique a sa leçon et ses problèmes.
+   La plupart des problèmes sont générés, donc justes par construction et
+   renouvelés à chaque fois ; quelques grands classiques sont écrits à la main. */
+const OLY_NIVEAUX = [{ id: '6e', label: '6ème ⭐' }, { id: '5e', label: '5ème ⭐⭐' }];
+function olyNiv() { return state.olyNiveau || '6e'; }
+function olyLabel() { return OLY_NIVEAUX.find(n => n.id === olyNiv()).label; }
+/* un problème d'olympiade demande de réfléchir : on laisse le temps */
+function olyLimite() { return olyNiv() === '5e' ? 120 : 90; }
+function oq(o) {
+  const answer = String(o.answer);
+  return q({ category: o.cat, prompt: o.prompt, answer, options: mkOptions(answer, (o.faux || []).map(String)),
+    limit: olyLimite(), expl: o.expl, svg: o.svg || null });
+}
+/* En 6ème : que des problèmes 6ème. En 5ème : surtout des 5ème, et de temps
+   en temps un 6ème pour s'échauffer. */
+function olyTirer(gens) {
+  const n6 = gens.filter(g => g.niv === '6e'), n5 = gens.filter(g => g.niv === '5e');
+  const pool = olyNiv() === '6e' || !n5.length ? n6 : (Math.random() < 0.75 ? n5 : n6);
+  return pool[rnd(0, pool.length - 1)].f();
+}
+/* un grand classique écrit à la main */
+function olyB(niv, cat, prompt, answer, faux, expl) { return { niv, f: () => oq({ cat, prompt, answer, faux, expl }) }; }
+function ordF(n) { return n === 1 ? '1re' : n + 'e'; }
+function ordM(n) { return n === 1 ? '1er' : n + 'e'; }
+function milliers(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+function unNom() { return SG_NOMS[rnd(0, SG_NOMS.length - 1)]; }
+function sommeChiffres(n) { return String(n).split('').reduce((a, c) => a + Number(c), 0); }
+
+function svgGrille(n, m) {
+  const s = Math.min(150 / m, 140 / n), W = s * m, H = s * n, x0 = (220 - W) / 2, y0 = (180 - H) / 2;
+  let lignes = '';
+  for (let i = 0; i <= n; i++) lignes += `<line x1="${x0}" y1="${y0 + i * s}" x2="${x0 + W}" y2="${y0 + i * s}" stroke="#5B4FE8" stroke-width="2"/>`;
+  for (let j = 0; j <= m; j++) lignes += `<line x1="${x0 + j * s}" y1="${y0}" x2="${x0 + j * s}" y2="${y0 + H}" stroke="#5B4FE8" stroke-width="2"/>`;
+  return svgWrap(lignes);
+}
+function svgEscalier(k, L, l) {
+  const W = 140, H = 110, x0 = 22, y0 = 145, w = W / k, h = H / k;
+  const pts = [[x0, y0], [x0 + W, y0], [x0 + W, y0 - H]];
+  for (let i = 1; i <= k; i++) { pts.push([x0 + W - i * w, y0 - H + (i - 1) * h]); pts.push([x0 + W - i * w, y0 - H + i * h]); }
+  return svgWrap(`<polygon points="${pts.map(p => p.join(',')).join(' ')}" fill="#EEEDFE" stroke="#5B4FE8" stroke-width="3"/>
+    <text x="${x0 + W / 2}" y="${y0 + 20}" text-anchor="middle" font-size="14" fill="#232134">${L} cm</text>
+    <text x="${x0 + W + 8}" y="${y0 - H / 2}" font-size="14" fill="#232134">${l} cm</text>`);
+}
+
+/* ---------- 1. Repérer un motif ---------- */
+const OLY_MOTIFS = [
+  { niv: '6e', f() {
+    const mot = ['MATHS', 'NOMBRE', 'OLYMPE', 'CALCUL'][rnd(0, 3)], L = mot.length, N = rnd(100, 2999), r = N % L, pos = r === 0 ? L : r, ans = mot[pos - 1];
+    return oq({ cat: 'Motifs', prompt: `On écrit ${mot}${mot}${mot}… sans jamais s'arrêter. Quelle est la ${N}e lettre ?`, answer: ans,
+      faux: shuffle([...new Set(mot.split(''))].filter(c => c !== ans)),
+      expl: `Le motif « ${mot} » a ${L} lettres et se répète. ${N} = ${L} × ${Math.floor(N / L)} + ${r}. ${r === 0 ? 'Le reste est 0 : on tombe sur la dernière lettre du motif' : `Le reste est ${r} : c'est la ${ordF(r)} lettre du motif`}, « ${ans} ».` });
+  } },
+  { niv: '6e', f() {
+    const J = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+    const d = rnd(0, 6), N = rnd(15, 400), r = N % 7, a = J[(d + r) % 7];
+    return oq({ cat: 'Motifs', prompt: `Aujourd'hui, nous sommes ${J[d]}. Quel jour serons-nous dans ${N} jours ?`, answer: a,
+      faux: [J[(d + r + 1) % 7], J[(d + r + 6) % 7], J[(d + r + 2) % 7]],
+      expl: `Les jours reviennent tous les 7 jours. ${N} = 7 × ${Math.floor(N / 7)} + ${r} : les ${7 * Math.floor(N / 7)} premiers jours ramènent au ${J[d]}, il reste à avancer de ${r} jour${r > 1 ? 's' : ''} → ${a}.` });
+  } },
+  { niv: '6e', f() {
+    const h = rnd(0, 23), N = rnd(30, 200), r = N % 24, a = (h + r) % 24;
+    return oq({ cat: 'Motifs', prompt: `Il est ${h} h. Quelle heure sera-t-il dans ${N} heures ?`, answer: `${a} h`,
+      faux: [`${(a + 1) % 24} h`, `${(a + 12) % 24} h`, `${(a + 23) % 24} h`],
+      expl: `Les heures reviennent toutes les 24 heures. ${N} = 24 × ${Math.floor(N / 24)} + ${r} : on retombe sur ${h} h, puis on avance de ${r} h → ${a} h.` });
+  } },
+  { niv: '5e', f() {
+    const a = [2, 3, 4, 7, 8, 9][rnd(0, 5)], n = rnd(20, 2026), cyc = [];
+    let u = a; do { cyc.push(u); u = (u * a) % 10; } while (u !== cyc[0]);
+    const L = cyc.length, r = n % L, ans = cyc[(r + L - 1) % L];
+    return oq({ cat: 'Motifs', prompt: `Quel est le chiffre des unités de ${a}<sup>${n}</sup> (${a} multiplié ${n} fois par lui-même) ?`, answer: ans,
+      faux: [...cyc.filter(c => c !== ans), (ans + 5) % 10, a === ans ? (a + 1) % 10 : a],
+      expl: `On ne regarde que les unités : ${a}, puis ${cyc.slice(1).concat(cyc[0]).map((c, i) => `× ${a} → ${c}`).join(', ')}… Les unités tournent en boucle : ${cyc.join(', ')} (cycle de ${L}). ${n} = ${L} × ${Math.floor(n / L)} + ${r} ${r === 0 ? ': reste 0, c\'est le dernier du cycle' : `: c'est le ${ordM(r)} du cycle`}, donc ${ans}.` });
+  } },
+  { niv: '5e', f() {
+    const c = [rnd(2, 4), rnd(1, 3), rnd(1, 3)], noms = ['rouge', 'bleue', 'verte'], L = c[0] + c[1] + c[2];
+    const N = rnd(50, 500), r = N % L, pos = r === 0 ? L : r, ans = pos <= c[0] ? 'rouge' : pos <= c[0] + c[1] ? 'bleue' : 'verte';
+    return oq({ cat: 'Motifs', prompt: `Un collier suit toujours le même ordre : ${c[0]} perles rouges, ${c[1]} bleue${c[1] > 1 ? 's' : ''}, ${c[2]} verte${c[2] > 1 ? 's' : ''}, puis on recommence. De quelle couleur est la ${N}e perle ?`, answer: ans,
+      faux: [...noms.filter(x => x !== ans), 'On ne peut pas savoir'],
+      expl: `Le motif compte ${L} perles. ${N} = ${L} × ${Math.floor(N / L)} + ${r}, donc la ${N}e perle est la ${ordF(pos)} du motif. Les perles 1 à ${c[0]} sont rouges, ${c[0] + 1} à ${c[0] + c[1]} bleues, ${c[0] + c[1] + 1} à ${L} vertes : elle est ${ans}.` });
+  } }
+];
+
+/* ---------- 2. Raisonner à rebours ---------- */
+const OLY_REBOURS = [
+  { niv: '6e', f() {
+    let x, a, b, c, v, r;
+    do { x = rnd(2, 30); a = rnd(2, 6); b = rnd(1, 20); v = x * a + b; c = [3, 4, 5, 6, 7, 9].filter(d => v % d === 0)[0]; } while (!c);
+    r = v / c;
+    return oq({ cat: 'À rebours', prompt: `Je pense à un nombre. Je le multiplie par ${a}, j'ajoute ${b}, puis je divise le tout par ${c}. J'obtiens ${r}. Quel est mon nombre ?`, answer: x,
+      faux: [x + 1, x + 2, x > 1 ? x - 1 : x + 3],
+      expl: `On part de la fin et on fait l'inverse de chaque opération, dans l'ordre inverse : ${r} × ${c} = ${v}, puis ${v} − ${b} = ${v - b}, puis ${v - b} ÷ ${a} = ${x}.` });
+  } },
+  { niv: '6e', f() {
+    const n = unNom(), s = rnd(2, 10), r = rnd(3, 20), x = 2 * (r + s);
+    return oq({ cat: 'À rebours', prompt: `${n} dépense la moitié de son argent, puis encore ${s} €. Il reste alors ${r} €. Combien d'euros y avait-il au départ ?`, answer: x,
+      faux: [2 * r + s, 2 * r, r + s],
+      expl: `À rebours : juste avant les ${s} € dépensés, il y avait ${r} + ${s} = ${r + s} €. C'était la moitié de l'argent de départ : ${r + s} × 2 = ${x} €.` });
+  } },
+  { niv: '5e', f() {
+    const n = unNom(), r = rnd(1, 8), avant = 2 * (r + 1), x = 2 * (avant + 1);
+    return oq({ cat: 'À rebours', prompt: `${n} mange la moitié de ses bonbons plus 1. Puis la moitié de ce qui reste plus 1. Il reste alors ${r} bonbon${r > 1 ? 's' : ''}. Combien y en avait-il au départ ?`, answer: x,
+      faux: [4 * r + 2, 4 * r + 4, 4 * r],
+      expl: `À rebours. 2e étape : avant d'en manger 1 de plus, il y en avait ${r} + 1 = ${r + 1}, qui était la moitié : ${avant}. 1re étape : ${avant} + 1 = ${avant + 1}, qui était la moitié : ${x}. Vérification : ${x} → ${x - (x / 2 + 1)} → ${r}.` });
+  } },
+  { niv: '5e', f() {
+    const N = rnd(12, 40), quart = Math.random() < 0.4, ans = quart ? N - 2 : N - 1;
+    return oq({ cat: 'À rebours', prompt: `Un nénuphar double de surface chaque jour. Il couvre tout l'étang au bout de ${N} jours. Au bout de combien de jours couvrait-il ${quart ? 'le quart' : 'la moitié'} de l'étang ?`, answer: ans,
+      faux: quart ? [Math.floor(N / 4), N - 1, Math.floor(N / 2)] : [Math.floor(N / 2), N - 2, N - 3],
+      expl: `À rebours : le jour ${N}, l'étang est couvert. Comme la surface double chaque jour, la veille (jour ${N - 1}) il en couvrait la moitié${quart ? `, et l'avant-veille (jour ${N - 2}) le quart` : ''}.` });
+  } },
+  { niv: '5e', f() {
+    const n = unNom(), a = rnd(2, 5), b = rnd(2, 5), k = rnd(1, 4), x = a * b * k;
+    const apres1 = x * (a - 1) / a, r = apres1 * (b - 1) / b;
+    return oq({ cat: 'À rebours', prompt: `${n} dépense 1/${a} de son argent, puis 1/${b} de ce qui lui reste. Il reste alors ${r} €. Combien d'euros y avait-il au départ ?`, answer: x,
+      faux: [r * a, r * b, x + a * b],
+      expl: `À rebours. Dépenser 1/${b} du reste, c'est en garder ${b - 1}/${b} : avant, il y avait ${r} ÷ ${b - 1} × ${b} = ${apres1} €. Dépenser 1/${a}, c'est en garder ${a - 1}/${a} : au départ, ${apres1} ÷ ${a - 1} × ${a} = ${x} €.` });
+  } }
+];
+
+/* ---------- 3. Le principe des tiroirs ---------- */
+const OLY_COULEURS = ['rouges', 'bleues', 'noires', 'blanches'];
+const OLY_TIROIRS = [
+  { niv: '6e', f() {
+    const k = rnd(2, 4), cs = OLY_COULEURS.slice(0, k), nb = cs.map(() => rnd(3, 9)), tot = nb.reduce((a, b) => a + b, 0);
+    return oq({ cat: 'Tiroirs', prompt: `Un tiroir contient ${cs.map((c, i) => `${nb[i]} chaussettes ${c}`).join(', ')}. Dans le noir, combien faut-il en prendre au minimum pour être sûr d'avoir deux chaussettes de la même couleur ?`, answer: k + 1,
+      faux: [k, 2 * k, tot],
+      expl: `Pire des cas : on tire d'abord une chaussette de chaque couleur, soit ${k} chaussettes toutes différentes. La suivante a forcément la couleur d'une des précédentes : ${k} + 1 = ${k + 1}.` });
+  } },
+  { niv: '6e', f() {
+    const r = rnd(3, 8), b = rnd(3, 9), n = rnd(2, 9), ans = b + n + 2;
+    return oq({ cat: 'Tiroirs', prompt: `Une boîte contient ${r} billes rouges, ${b} bleues et ${n} vertes. Les yeux fermés, combien faut-il en prendre au minimum pour être sûr d'avoir 2 billes rouges ?`, answer: ans,
+      faux: [3, ans - 1, r + b + n],
+      expl: `Pire des cas : on prend d'abord toutes les billes qui ne sont pas rouges, ${b} + ${n} = ${b + n}. Ensuite il ne reste que des rouges : il en faut encore 2. Total : ${b + n} + 2 = ${ans}.` });
+  } },
+  { niv: '6e', f() {
+    const N = rnd(8, 30), ans = Math.ceil(N / 7);
+    return oq({ cat: 'Tiroirs', prompt: `${N} personnes sont réunies. Au minimum, combien sont nées le même jour de la semaine (lundi, mardi…) ?`, answer: ans,
+      faux: [ans + 1, ans + 2, 7],
+      expl: `Les 7 jours sont les « tiroirs ». Si chaque jour avait au plus ${ans - 1} personne${ans - 1 > 1 ? 's' : ''}, on ne pourrait en placer que 7 × ${ans - 1} = ${7 * (ans - 1)}, moins que ${N}. Donc un jour en a au moins ${ans}.` });
+  } },
+  { niv: '5e', f() {
+    const N = rnd(13, 40), ans = Math.ceil(N / 12);
+    return oq({ cat: 'Tiroirs', prompt: `Dans une classe de ${N} élèves, au minimum combien d'élèves sont nés le même mois ?`, answer: ans,
+      faux: [ans + 1, ans > 1 ? ans - 1 : ans + 2, 12],
+      expl: `Les 12 mois sont les « tiroirs ». Si chaque mois avait au plus ${ans - 1} élève${ans - 1 > 1 ? 's' : ''}, il n'y aurait que 12 × ${ans - 1} = ${12 * (ans - 1)} élèves au plus, moins que ${N}. Donc un mois en compte au moins ${ans}.` });
+  } },
+  { niv: '5e', f() {
+    const c = rnd(3, 5), k = rnd(3, 5), ans = c * (k - 1) + 1;
+    return oq({ cat: 'Tiroirs', prompt: `Un sac contient beaucoup de jetons de ${c} couleurs différentes. Combien faut-il en tirer au minimum pour être sûr d'avoir ${k} jetons de la même couleur ?`, answer: ans,
+      faux: [c * k, c * (k - 1), c + k],
+      expl: `Pire des cas : ${k - 1} jetons de chaque couleur, soit ${c} × ${k - 1} = ${c * (k - 1)} jetons, sans en avoir ${k} d'une même couleur. Le suivant fait forcément ${k} : ${c * (k - 1)} + 1 = ${ans}.` });
+  } }
+];
+
+/* ---------- 4. Dénombrer sans rien oublier ---------- */
+const OLY_POLYGONES = { 5: 'pentagone', 6: 'hexagone', 7: 'heptagone', 8: 'octogone', 10: 'décagone', 12: 'dodécagone' };
+function chiffresPourNumeroter(N) { let t = 0; for (let i = 1; i <= N; i++) t += String(i).length; return t; }
+const OLY_DENOMBRER = [
+  { niv: '6e', f() {
+    const a = rnd(2, 6), b = rnd(2, 5);
+    return oq({ cat: 'Dénombrer', prompt: `${unNom()} a ${a} tee-shirts et ${b} pantalons. Combien de tenues différentes (un tee-shirt + un pantalon) peut-on composer ?`, answer: a * b,
+      faux: [a + b, a * b + a, 2 * (a + b)],
+      expl: `Pour chacun des ${a} tee-shirts, on a ${b} choix de pantalon : ${a} × ${b} = ${a * b} tenues. On multiplie les choix, on ne les additionne pas.` });
+  } },
+  { niv: '6e', f() {
+    const n = rnd(4, 12), ans = n * (n - 1) / 2;
+    return oq({ cat: 'Dénombrer', prompt: `${n} amis se retrouvent et chacun serre la main de chacun des autres une seule fois. Combien de poignées de main en tout ?`, answer: ans,
+      faux: [n * (n - 1), n * n, ans + n],
+      expl: `Chacun serre ${n - 1} mains : ${n} × ${n - 1} = ${n * (n - 1)}. Mais chaque poignée de main a été comptée deux fois (une par personne) : ${n * (n - 1)} ÷ 2 = ${ans}.` });
+  } },
+  { niv: '6e', f() {
+    const ch = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]).slice(0, rnd(3, 5)).sort(), k = ch.length, ans = k * (k - 1);
+    return oq({ cat: 'Dénombrer', prompt: `Avec les chiffres ${ch.join(', ')}, combien de nombres de deux chiffres peut-on écrire, sans utiliser deux fois le même chiffre ?`, answer: ans,
+      faux: [k * k, k * (k - 1) / 2, 2 * k],
+      expl: `${k} choix pour le chiffre des dizaines, puis ${k - 1} pour les unités (il doit être différent) : ${k} × ${k - 1} = ${ans}.` });
+  } },
+  { niv: '6e', f() {
+    const k = [3, 4, 6, 7, 8, 9, 11][rnd(0, 6)], N = rnd(50, 300), ans = Math.floor(N / k);
+    return oq({ cat: 'Dénombrer', prompt: `Combien y a-t-il de multiples de ${k} entre 1 et ${N} ?`, answer: ans,
+      faux: [ans + 1, ans - 1, Math.round(N / 10)],
+      expl: `Les multiples de ${k} sont ${k} × 1, ${k} × 2, …, jusqu'au plus grand qui ne dépasse pas ${N} : ${N} = ${k} × ${ans} + ${N % k}. Il y en a donc ${ans}.` });
+  } },
+  { niv: '5e', f() {
+    const a = rnd(2, 5), b = rnd(2, 4), c = rnd(2, 4);
+    return oq({ cat: 'Dénombrer', prompt: `Pour s'habiller, on choisit un tee-shirt parmi ${a}, un pantalon parmi ${b} et une casquette parmi ${c}. Combien de tenues différentes ?`, answer: a * b * c,
+      faux: [a + b + c, a * b + c, a * b * c + a],
+      expl: `On multiplie les choix à chaque étape (principe de l'arbre) : ${a} × ${b} × ${c} = ${a * b * c}.` });
+  } },
+  { niv: '5e', f() {
+    const N = rnd(50, 400), ans = chiffresPourNumeroter(N);
+    const d = Math.min(N, 9), dd = Math.max(0, Math.min(N, 99) - 9), ddd = Math.max(0, N - 99);
+    return oq({ cat: 'Dénombrer', prompt: `On numérote les pages d'un livre de 1 à ${N}. Combien de chiffres faut-il écrire en tout ?`, answer: ans,
+      faux: [N, ans + 9, 3 * N],
+      expl: `Pages 1 à 9 : ${d} chiffres. Pages 10 à ${Math.min(N, 99)} : ${dd} pages × 2 = ${2 * dd}.${ddd ? ` Pages 100 à ${N} : ${ddd} pages × 3 = ${3 * ddd}.` : ''} Total : ${ans}.` });
+  } },
+  { niv: '5e', f() {
+    const n = [5, 6, 7, 8, 10, 12][rnd(0, 5)], ans = n * (n - 3) / 2;
+    return oq({ cat: 'Dénombrer', prompt: `Combien de diagonales a un ${OLY_POLYGONES[n]} (polygone à ${n} côtés) ?`, answer: ans,
+      faux: [n * (n - 3), n * (n - 1) / 2, n],
+      expl: `De chaque sommet partent ${n - 3} diagonales (vers tous les sommets sauf lui-même et ses 2 voisins) : ${n} × ${n - 3} = ${n * (n - 3)}. Chaque diagonale a deux bouts, elle est comptée deux fois : ${n * (n - 3)} ÷ 2 = ${ans}.` });
+  } },
+  { niv: '5e', f() {
+    const n = rnd(4, 10), ans = n * (n - 1);
+    return oq({ cat: 'Dénombrer', prompt: `Dans un championnat de ${n} équipes, chaque équipe rencontre chaque autre équipe deux fois (match aller et match retour). Combien de matchs en tout ?`, answer: ans,
+      faux: [ans / 2, n * n, 2 * n],
+      expl: `Chaque paire d'équipes joue 2 matchs. Nombre de paires : ${n} × ${n - 1} ÷ 2 = ${ans / 2}. Donc ${ans / 2} × 2 = ${ans} matchs (autrement dit : chaque équipe reçoit les ${n - 1} autres, ${n} × ${n - 1}).` });
+  } },
+  { niv: '5e', f() {
+    const k = [3, 4, 6, 7, 8][rnd(0, 4)], A = rnd(20, 100), B = A + rnd(60, 250), ans = Math.floor(B / k) - Math.floor((A - 1) / k);
+    return oq({ cat: 'Dénombrer', prompt: `Combien y a-t-il de multiples de ${k} entre ${A} et ${B} (${A} et ${B} compris) ?`, answer: ans,
+      faux: [ans + 1, ans - 1, Math.floor((B - A) / k)],
+      expl: `Entre 1 et ${B} : ${Math.floor(B / k)} multiples. Entre 1 et ${A - 1} : ${Math.floor((A - 1) / k)}. On retire les seconds des premiers : ${Math.floor(B / k)} − ${Math.floor((A - 1) / k)} = ${ans}.` });
+  } }
+];
+
+/* ---------- 5. Parité et divisibilité ---------- */
+const OLY_PARITE = [
+  { niv: '6e', f() {
+    const k = rnd(1, 7), m = rnd(1, 5), ans = k % 2 ? 'Toujours impair' : 'Toujours pair';
+    return oq({ cat: 'Parité', prompt: `On additionne ${k} nombre${k > 1 ? 's' : ''} impair${k > 1 ? 's' : ''} et ${m} nombre${m > 1 ? 's' : ''} pair${m > 1 ? 's' : ''}. Le résultat est…`, answer: ans,
+      faux: ['Toujours pair', 'Toujours impair', 'Ça dépend des nombres choisis'],
+      expl: `Les nombres pairs ne changent pas la parité. Deux impairs font un pair : les ${k} impairs se groupent par deux${k % 2 ? ', et il en reste un seul' : ''}. Le résultat est donc ${k % 2 ? 'impair' : 'pair'}, quels que soient les nombres.` });
+  } },
+  { niv: '6e', f() {
+    let a, c, s, d;
+    do { a = rnd(1, 9); c = rnd(0, 9); s = a + c; d = (9 - s % 9) % 9; } while (d === 0);
+    return oq({ cat: 'Divisibilité', prompt: `Quel chiffre faut-il écrire à la place de ■ pour que ${a}■${c} soit divisible par 9 ?`, answer: d,
+      faux: [(d + 3) % 10, (d + 1) % 10, (d + 6) % 10],
+      expl: `Un nombre est divisible par 9 quand la somme de ses chiffres l'est. ${a} + ${c} = ${s} ; il faut ajouter ${d} pour arriver à ${s + d}, un multiple de 9. Vérification : ${a}${d}${c} = 9 × ${Number(`${a}${d}${c}`) / 9}.` });
+  } },
+  { niv: '6e', f() {
+    const A = rnd(123, 9876), B = rnd(123, 9876), ans = (A % 10) * (B % 10) % 10;
+    return oq({ cat: 'Divisibilité', prompt: `Sans poser l'opération : quel est le chiffre des unités de ${A} × ${B} ?`, answer: ans,
+      faux: [(A % 10 + B % 10) % 10, (ans + 1) % 10, (ans + 5) % 10],
+      expl: `Seuls les chiffres des unités comptent pour les unités du produit : ${A % 10} × ${B % 10} = ${(A % 10) * (B % 10)}, qui se termine par ${ans}.` });
+  } },
+  olyB('6e', 'Divisibilité', "Quel est le plus petit nombre entier (non nul) divisible à la fois par 2, 3, 4, 5 et 6 ?", 60, [120, 30, 720],
+    "Divisible par 4 et par 3 → divisible par 12 ; et par 5 → par 60. 60 est bien divisible par 2, 3, 4, 5 et 6. Multiplier tous les nombres (720) donne un multiple commun, mais pas le plus petit."),
+  { niv: '5e', f() {
+    const N = rnd(1000, 99999), ans = N % 9;
+    let s = sommeChiffres(N), etapes = [s]; while (s > 9) { s = sommeChiffres(s); etapes.push(s); }
+    return oq({ cat: 'Divisibilité', prompt: `Quel est le reste de la division de ${milliers(N)} par 9 ?`, answer: ans,
+      faux: [(ans + 1) % 9, (ans + 3) % 9, N % 10 === ans ? (ans + 5) % 9 : N % 10],
+      expl: `Un nombre et la somme de ses chiffres ont le même reste dans la division par 9. Somme des chiffres : ${etapes.join(' → ')}${s === 9 ? ', et 9 est divisible par 9 : reste 0' : `, donc le reste est ${ans}`}.` });
+  } },
+  { niv: '5e', f() {
+    const n = rnd(10, 60), ans = Math.floor(n / 5) + Math.floor(n / 25);
+    return oq({ cat: 'Divisibilité', prompt: `On multiplie tous les nombres entiers de 1 à ${n} : 1 × 2 × 3 × … × ${n}. Par combien de zéros le résultat se termine-t-il ?`, answer: ans,
+      faux: [Math.floor(n / 10), ans + 1, Math.floor(n / 5) === ans ? ans - 1 : Math.floor(n / 5)],
+      expl: `Chaque zéro final vient d'un 10 = 2 × 5. Les facteurs 2 sont très nombreux, il suffit de compter les 5. Multiples de 5 jusqu'à ${n} : ${Math.floor(n / 5)}.${Math.floor(n / 25) ? ` Mais ${[25, 50].filter(x => x <= n).join(' et ')} ${n >= 50 ? 'contiennent' : 'contient'} deux fois le facteur 5 : + ${Math.floor(n / 25)}.` : ''} Total : ${ans} zéros.` });
+  } },
+  { niv: '5e', f() {
+    const pairs = rnd(0, 2), impairs = rnd(2, 5), ans = pairs ? 'Toujours pair' : 'Toujours impair';
+    return oq({ cat: 'Parité', prompt: `On multiplie ${impairs} nombres impairs${pairs ? ` et ${pairs} nombre${pairs > 1 ? 's' : ''} pair${pairs > 1 ? 's' : ''}` : ''}. Le produit est…`, answer: ans,
+      faux: ['Toujours pair', 'Toujours impair', 'Ça dépend des nombres choisis'],
+      expl: pairs ? "Dès qu'un facteur est pair (multiple de 2), le produit est multiple de 2, donc pair." : "Un produit de nombres impairs reste impair : aucun facteur 2 n'apparaît jamais." });
+  } }
+];
+
+/* ---------- 6. Logique et raisonnement ---------- */
+const OLY_LOGIQUE = [
+  { niv: '6e', f() {
+    const n = unNom(), a = rnd(5, 12), b = 2 * a + rnd(1, 25), x = b - 2 * a;
+    return oq({ cat: 'Logique', prompt: `Aujourd'hui, ${n} a ${a} ans et son père ${b} ans. Dans combien d'années le père aura-t-il le double de l'âge de ${n} ?`, answer: x,
+      faux: [b - a, x + a, Math.max(1, x - 1) === x ? x + 2 : x - 1],
+      expl: `L'écart d'âge ne change jamais : ${b} − ${a} = ${b - a} ans. Quand le père a le double, cet écart est égal à l'âge de ${n} : ${n} aura ${b - a} ans, c'est-à-dire dans ${b - a} − ${a} = ${x} ans.` });
+  } },
+  { niv: '6e', f() {
+    const pt = rnd(5, 60), D = rnd(2, 30), S = 2 * pt + D, gd = pt + D;
+    return oq({ cat: 'Logique', prompt: `Deux nombres ont pour somme ${S} et pour différence ${D}. Quel est le plus grand des deux ?`, answer: gd,
+      faux: [pt, S / 2, S - D],
+      expl: `Si on enlève la différence ${D} à la somme, il reste deux fois le petit nombre : (${S} − ${D}) ÷ 2 = ${pt}. Le grand vaut ${pt} + ${D} = ${gd}. Vérification : ${gd} + ${pt} = ${S}.` });
+  } },
+  { niv: '6e', f() {
+    const n = unNom(), a = rnd(3, 15), b = rnd(3, 15), ans = a + b - 1;
+    return oq({ cat: 'Logique', prompt: `Dans une file d'attente, ${n} est ${ordF(a)} en partant du début et ${ordF(b)} en partant de la fin. Combien de personnes y a-t-il dans la file ?`, answer: ans,
+      faux: [a + b, a + b + 1, a + b - 2],
+      expl: `Devant ${n} : ${a - 1} personnes. Derrière : ${b - 1}. Avec ${n} : ${a - 1} + ${b - 1} + 1 = ${ans}. (Faire ${a} + ${b} compterait ${n} deux fois.)` });
+  } },
+  { niv: '6e', f() {
+    const t = rnd(2, 6), n = rnd(3, 8), ans = (n - 1) * t;
+    return oq({ cat: 'Logique', prompt: `Il faut ${t} minutes pour scier un tronc en deux morceaux. Combien de minutes faut-il pour le scier en ${n} morceaux ?`, answer: ans,
+      faux: [n * t, (n + 1) * t, (n - 2) * t || t],
+      expl: `Pour obtenir ${n} morceaux, il suffit de ${n - 1} coups de scie (un de moins que de morceaux) : ${n - 1} × ${t} = ${ans} minutes.` });
+  } },
+  { niv: '6e', f() {
+    const d = rnd(2, 5), k = rnd(5, 20), L = d * k;
+    return oq({ cat: 'Logique', prompt: `On plante un poteau tous les ${d} m le long d'une clôture droite de ${L} m, avec un poteau à chaque bout. Combien de poteaux faut-il ?`, answer: k + 1,
+      faux: [k, k + 2, k - 1],
+      expl: `${L} ÷ ${d} = ${k} intervalles entre les poteaux. Sur une ligne ouverte, il y a un poteau de plus que d'intervalles : ${k} + 1 = ${k + 1}.` });
+  } },
+  olyB('6e', 'Logique', "Anne est plus grande que Bruno. Bruno est plus grand que Céline. Qui est le plus petit ?", 'Céline', ['Anne', 'Bruno', 'On ne peut pas savoir'],
+    "On range : Anne > Bruno > Céline. Céline est plus petite que Bruno, qui est plus petit qu'Anne."),
+  olyB('6e', 'Logique', "Une famille a 4 garçons. Chaque garçon a exactement une sœur. Combien d'enfants y a-t-il dans la famille ?", 5, [8, 4, 6],
+    "Les 4 garçons ont la même sœur : il n'y a qu'une fille. 4 + 1 = 5 enfants."),
+  olyB('6e', 'Logique', "Un livre et un cahier coûtent 11 € ensemble. Le livre coûte 10 € de plus que le cahier. Combien coûte le cahier ?", '0,50 €', ['1 €', '0,10 €', '5 €'],
+    "Si le cahier coûtait 1 €, le livre coûterait 11 € et le total 12 €. En enlevant les 10 € d'écart : 11 − 10 = 1 € pour deux cahiers, donc 0,50 € le cahier (et 10,50 € le livre)."),
+  { niv: '5e', f() {
+    const n = unNom(), s0 = rnd(3, 8), D = 2 * s0, x = rnd(2, 10), a = s0 + x, b = a + D;
+    return oq({ cat: 'Logique', prompt: `Aujourd'hui, ${n} a ${a} ans et sa mère ${b} ans. Il y a combien d'années la mère avait-elle le triple de l'âge de ${n} ?`, answer: x,
+      faux: [x + 1, a - x, Math.round(b / 3)],
+      expl: `L'écart d'âge reste toujours ${b} − ${a} = ${D} ans. Quand la mère a le triple de l'âge de ${n}, l'écart vaut deux fois l'âge de ${n} : ${n} avait ${D} ÷ 2 = ${s0} ans, c'était il y a ${a} − ${s0} = ${x} ans.` });
+  } },
+  { niv: '5e', f() {
+    const P = rnd(3, 20), L = rnd(3, 20), t = P + L, p = 2 * P + 4 * L;
+    return oq({ cat: 'Logique', prompt: `Dans une ferme, il y a des poules et des lapins : ${t} têtes et ${p} pattes. Combien de lapins ?`, answer: L,
+      faux: [P, Math.round(t / 2) === L ? L + 1 : Math.round(t / 2), p / 4 === L ? L + 2 : Math.floor(p / 4)],
+      expl: `Si les ${t} animaux étaient des poules, il y aurait ${2 * t} pattes. Il y en a ${p - 2 * t} de plus. Chaque lapin apporte 2 pattes de plus qu'une poule : ${p - 2 * t} ÷ 2 = ${L} lapins (et ${P} poules).` });
+  } },
+  { niv: '5e', f() {
+    const u = rnd(3, 5), dn = rnd(1, u - 1), H = rnd(u + 3, 20), ans = Math.ceil((H - u) / (u - dn)) + 1;
+    return oq({ cat: 'Logique', prompt: `Un escargot est au fond d'un puits de ${H} m. Chaque jour il monte de ${u} m, et chaque nuit il glisse de ${dn} m. Au bout de combien de jours sort-il du puits ?`, answer: ans,
+      faux: [Math.ceil(H / (u - dn)), ans + 1, ans - 1],
+      expl: `Chaque jour complet (jour + nuit), il gagne ${u - dn} m. Mais le dernier jour, il sort avant de glisser : il lui suffit d'être à ${H - u} m au matin. Il y est au bout de ${ans - 1} jour${ans - 1 > 1 ? 's' : ''} complet${ans - 1 > 1 ? 's' : ''} (${(ans - 1) * (u - dn)} m), puis il sort le ${ordM(ans)} jour.` });
+  } },
+  { niv: '5e', f() {
+    const d = rnd(2, 5), k = rnd(3, 10), c = d * k;
+    return oq({ cat: 'Logique', prompt: `Un enclos carré a des côtés de ${c} m. On plante un poteau tous les ${d} m tout autour, avec un poteau à chaque coin. Combien de poteaux faut-il ?`, answer: 4 * k,
+      faux: [4 * k + 4, 4 * (k + 1) - 1, 4 * k - 4],
+      expl: `Le tour mesure 4 × ${c} = ${4 * c} m, soit ${4 * c} ÷ ${d} = ${4 * k} intervalles. Sur une ligne fermée, il y a autant de poteaux que d'intervalles : ${4 * k} (les coins ne comptent qu'une fois).` });
+  } },
+  olyB('5e', 'Logique', "Sur une île, les chevaliers disent toujours la vérité et les fripons mentent toujours. A dit : « B est un fripon. » B dit : « A et moi sommes du même type. » Qui est chevalier ?", 'A seulement', ['B seulement', 'Les deux', 'Aucun des deux'],
+    "Si A ment, B est chevalier et dit vrai : A et B seraient du même type, or A est fripon et B chevalier. Contradiction. Donc A dit vrai : A est chevalier, B est fripon, et B ment bien en disant qu'ils sont du même type."),
+  olyB('5e', 'Logique', "Trois boîtes portent les étiquettes « Pommes », « Poires » et « Mélange », mais TOUTES les étiquettes sont fausses. On peut tirer un seul fruit d'une seule boîte. Laquelle choisir pour pouvoir remettre toutes les étiquettes en place ?", 'La boîte « Mélange »', ['La boîte « Pommes »', 'La boîte « Poires »', "Ce n'est pas possible"],
+    "La boîte « Mélange » ne contient pas le mélange : elle ne contient qu'une sorte de fruit. Si on y tire une pomme, c'est la boîte de pommes. La boîte « Poires » ne peut alors contenir ni poires ni pommes : c'est le mélange, et la dernière contient les poires."),
+  olyB('5e', 'Logique', "Si 3 chats attrapent 3 souris en 3 minutes, combien de chats faut-il pour attraper 100 souris en 100 minutes ?", 3, [100, 33, 300],
+    "3 chats attrapent 3 souris en 3 minutes, donc 1 souris par minute à eux trois. En 100 minutes, ces mêmes 3 chats attrapent 100 souris."),
+  olyB('5e', 'Logique', "Combien de fois écrit-on le chiffre 1 quand on écrit tous les nombres de 1 à 100 ?", 21, [20, 11, 12],
+    "Aux unités : 1, 11, 21, …, 91, soit 10 fois. Aux dizaines : 10 à 19, soit 10 fois (11 compte donc deux fois). Et 100 : 1 fois. Total : 21."),
+  olyB('5e', 'Logique', "Le produit de trois nombres entiers qui se suivent vaut 210. Quelle est leur somme ?", 18, [21, 15, 30],
+    "210 = 2 × 3 × 5 × 7 = 5 × 6 × 7. Les trois nombres sont 5, 6 et 7, leur somme vaut 18."),
+  olyB('5e', 'Logique', "Je suis un nombre à deux chiffres. La somme de mes chiffres vaut 9, et si on inverse mes chiffres, j'augmente de 27. Qui suis-je ?", 36, [63, 27, 45],
+    "Inverser les chiffres change le nombre de 9 × (écart entre les chiffres). 27 = 9 × 3 : le chiffre des unités dépasse celui des dizaines de 3. Avec une somme de 9 : 3 et 6, donc 36 (63 − 36 = 27).")
+];
+
+/* ---------- 7. Géométrie astucieuse ---------- */
+const OLY_GEOMETRIE = [
+  { niv: '6e', f() {
+    const n = rnd(2, 5), parts = []; let tot = 0;
+    for (let k = 1; k <= n; k++) { const c = (n - k + 1) ** 2; parts.push(`${c} de ${k}×${k}`); tot += c; }
+    return oq({ cat: 'Géométrie', prompt: `Combien de carrés (de toutes tailles) voit-on dans ce quadrillage de ${n} × ${n} ?`, svg: svgGrille(n, n), answer: tot,
+      faux: [n * n, tot + 1, n * n + 1],
+      expl: `On compte méthodiquement, taille par taille : ${parts.join(', ')}. Total : ${tot}.` });
+  } },
+  { niv: '6e', f() {
+    const k = rnd(3, 5), L = rnd(6, 15), l = rnd(4, 12), ans = 2 * (L + l);
+    return oq({ cat: 'Géométrie', prompt: `Cette figure en escalier a ${k} marches. Sa base mesure ${L} cm et sa hauteur ${l} cm. Quel est son périmètre ?`, svg: svgEscalier(k, L, l), answer: `${ans} cm`,
+      faux: [`${L + l} cm`, `${L * l} cm`, `${ans + 2 * k} cm`],
+      expl: `Astuce : on « pousse » les marches. Les petits segments horizontaux mis bout à bout font ${L} cm, les verticaux font ${l} cm. Le périmètre est celui du rectangle ${L} × ${l} : 2 × (${L} + ${l}) = ${ans} cm.` });
+  } },
+  { niv: '6e', f() {
+    const c = rnd(2, 12) * 2, P = 4 * c;
+    return oq({ cat: 'Géométrie', prompt: `Un carré a un périmètre de ${P} cm. On le coupe en deux rectangles identiques. Quel est le périmètre d'un des rectangles ?`, answer: `${3 * c} cm`,
+      faux: [`${P / 2} cm`, `${P} cm`, `${2 * c + 2} cm`],
+      expl: `Côté du carré : ${P} ÷ 4 = ${c} cm. Chaque rectangle mesure ${c} cm sur ${c / 2} cm : périmètre 2 × (${c} + ${c / 2}) = ${3 * c} cm.` });
+  } },
+  { niv: '6e', f() {
+    const a = rnd(25, 90), b = rnd(20, 150 - a), ans = 180 - a - b;
+    return oq({ cat: 'Géométrie', prompt: `Dans un triangle, un angle mesure ${a}° et un autre ${b}°. Combien mesure le troisième angle ?`, answer: `${ans}°`,
+      faux: [`${360 - a - b}°`, `${ans + 10}°`, `${Math.abs(a - b)}°`],
+      expl: `La somme des angles d'un triangle vaut toujours 180° : 180 − ${a} − ${b} = ${ans}°.` });
+  } },
+  { niv: '5e', f() {
+    const n = rnd(1, 3), m = rnd(2, 4), ans = (n + 1) * n / 2 * (m + 1) * m / 2;
+    return oq({ cat: 'Géométrie', prompt: `Combien de rectangles (carrés compris, de toutes tailles) voit-on dans ce quadrillage de ${n} × ${m} cases ?`, svg: svgGrille(n, m), answer: ans,
+      faux: [n * m, ans - n * m, ans + 1],
+      expl: `Un rectangle est déterminé par 2 lignes verticales parmi ${m + 1} (${(m + 1) * m / 2} choix) et 2 lignes horizontales parmi ${n + 1} (${(n + 1) * n / 2} choix) : ${(m + 1) * m / 2} × ${(n + 1) * n / 2} = ${ans}.` });
+  } },
+  { niv: '5e', f() {
+    const a = rnd(10, 70) * 2, ans = (180 - a) / 2;
+    return oq({ cat: 'Géométrie', prompt: `Un triangle isocèle a un angle au sommet de ${a}°. Combien mesure chacun de ses deux angles à la base ?`, answer: `${ans}°`,
+      faux: [`${180 - a}°`, `${a}°`, `${ans + 10}°`],
+      expl: `Les deux angles à la base sont égaux et se partagent 180 − ${a} = ${180 - a}°, soit ${ans}° chacun.` });
+  } },
+  { niv: '5e', f() {
+    const A = rnd(4, 60) * 4;
+    return oq({ cat: 'Géométrie', prompt: `Un carré a une aire de ${A} cm². On relie les milieux de ses quatre côtés : on obtient un nouveau carré. Quelle est son aire ?`, answer: `${A / 2} cm²`,
+      faux: [`${A / 4} cm²`, `${3 * A / 4} cm²`, `${A} cm²`],
+      expl: `Les deux diagonales du petit carré découpent le grand en 4 carrés égaux. Dans chacun, le petit carré en prend exactement la moitié (un triangle sur deux). L'aire est donc la moitié : ${A / 2} cm².` });
+  } },
+  { niv: '5e', f() {
+    const n = rnd(3, 6), cas = rnd(0, 3);
+    const donnees = [
+      ['exactement 3 faces peintes', 8, 'Ce sont les coins du cube : il y en a toujours 8.'],
+      ['exactement 2 faces peintes', 12 * (n - 2), `Ils sont sur les 12 arêtes, sans les coins : ${n - 2} par arête, 12 × ${n - 2} = ${12 * (n - 2)}.`],
+      ['exactement 1 face peinte', 6 * (n - 2) ** 2, `Ils sont au milieu des 6 faces : ${n - 2} × ${n - 2} = ${(n - 2) ** 2} par face, 6 × ${(n - 2) ** 2} = ${6 * (n - 2) ** 2}.`],
+      ['aucune face peinte', (n - 2) ** 3, `Ils forment le cube intérieur de côté ${n - 2} : ${n - 2} × ${n - 2} × ${n - 2} = ${(n - 2) ** 3}.`]
+    ];
+    const [txt, ans, ex] = donnees[cas];
+    return oq({ cat: 'Géométrie', prompt: `On peint en rouge l'extérieur d'un grand cube, puis on le découpe en ${n} × ${n} × ${n} = ${n ** 3} petits cubes. Combien de petits cubes ont ${txt} ?`, answer: ans,
+      faux: donnees.filter((_, i) => i !== cas).map(d => d[1]).concat([ans + 4]),
+      expl: ex });
+  } }
+];
+
+/* ---------- 8. Calcul astucieux ---------- */
+const OLY_CALCUL = [
+  { niv: '6e', f() {
+    const n = [10, 20, 30, 40, 50, 100][rnd(0, 5)], ans = n * (n + 1) / 2;
+    return oq({ cat: 'Calcul astucieux', prompt: `Combien vaut 1 + 2 + 3 + … + ${n} ?`, answer: milliers(ans),
+      faux: [milliers(n * n / 2), milliers(n * (n - 1) / 2), milliers(n * (n + 1))],
+      expl: `L'astuce de Gauss : on associe le premier et le dernier (1 + ${n} = ${n + 1}), le 2e et l'avant-dernier (2 + ${n - 1} = ${n + 1})… On obtient ${n / 2} paires qui valent ${n + 1} : ${n / 2} × ${n + 1} = ${milliers(ans)}.` });
+  } },
+  { niv: '6e', f() {
+    const [p, r] = [[25, 4], [5, 2], [125, 8], [50, 2], [20, 5]][rnd(0, 4)], a = rnd(3, 99), ans = p * r * a;
+    return oq({ cat: 'Calcul astucieux', prompt: `Calcule astucieusement : ${p} × ${a} × ${r}`, answer: milliers(ans),
+      faux: [milliers(ans + p), milliers(ans - r * a), milliers(p * a + r)],
+      expl: `On change l'ordre pour regrouper ${p} × ${r} = ${p * r} : ${p * r} × ${a} = ${milliers(ans)}.` });
+  } },
+  { niv: '6e', f() {
+    const a = rnd(12, 99), forme = rnd(0, 2);
+    const [prompt, ans, ex] = [
+      [`${a} × 99 + ${a}`, 100 * a, `${a} × 99 + ${a} × 1 = ${a} × (99 + 1) = ${a} × 100`],
+      [`${a} × 101 − ${a}`, 100 * a, `${a} × 101 − ${a} × 1 = ${a} × (101 − 1) = ${a} × 100`],
+      [`${a} × 7 + ${a} × 3`, 10 * a, `${a} × (7 + 3) = ${a} × 10`]
+    ][forme];
+    return oq({ cat: 'Calcul astucieux', prompt: `Calcule astucieusement : ${prompt}`, answer: milliers(ans),
+      faux: [milliers(ans - a), milliers(ans + a), milliers(ans + 10)],
+      expl: `On met ${a} en facteur : ${ex} = ${milliers(ans)}.` });
+  } },
+  { niv: '6e', f() {
+    const a = rnd(2024, 2035);
+    return oq({ cat: 'Calcul astucieux', prompt: `Combien vaut ${a} × ${a + 1} − ${a} × ${a} ?`, answer: a,
+      faux: [a + 1, 1, 2 * a + 1],
+      expl: `On met ${a} en facteur : ${a} × (${a + 1} − ${a}) = ${a} × 1 = ${a}. Aucun grand calcul n'est nécessaire.` });
+  } },
+  { niv: '5e', f() {
+    const n = rnd(5, 100) * 2;
+    return oq({ cat: 'Calcul astucieux', prompt: `Combien vaut ${n} − ${n - 1} + ${n - 2} − ${n - 3} + … + 2 − 1 ?`, answer: n / 2,
+      faux: [n, 0, n / 2 + 1],
+      expl: `On groupe par deux : (${n} − ${n - 1}) + (${n - 2} − ${n - 3}) + … + (2 − 1). Chaque parenthèse vaut 1, et il y en a ${n} ÷ 2 = ${n / 2}.` });
+  } },
+  { niv: '5e', f() {
+    const n = rnd(5, 25);
+    return oq({ cat: 'Calcul astucieux', prompt: `Combien vaut la somme des ${n} premiers nombres impairs : 1 + 3 + 5 + … + ${2 * n - 1} ?`, answer: n * n,
+      faux: [n * (n + 1), n * (n - 1), 2 * n * n],
+      expl: `1 = 1², 1 + 3 = 4 = 2², 1 + 3 + 5 = 9 = 3²… La somme des n premiers impairs vaut n × n. Ici ${n} × ${n} = ${n * n}. (Ou Gauss : ${n} termes, premier + dernier = ${2 * n}, donc ${n} × ${2 * n} ÷ 2.)` });
+  } },
+  { niv: '5e', f() {
+    const n = rnd(5, 30);
+    return oq({ cat: 'Calcul astucieux', prompt: `Combien vaut 2 + 4 + 6 + … + ${2 * n} ?`, answer: n * (n + 1),
+      faux: [n * n, 2 * n * n, n * (n + 1) / 2],
+      expl: `C'est 2 × (1 + 2 + … + ${n}) = 2 × ${n * (n + 1) / 2} = ${n * (n + 1)} (astuce de Gauss sur 1 + 2 + … + ${n}).` });
+  } },
+  { niv: '5e', f() {
+    const n = rnd(3, 9);
+    return oq({ cat: 'Calcul astucieux', prompt: `Combien vaut 1/(1×2) + 1/(2×3) + 1/(3×4) + … + 1/(${n}×${n + 1}) ?`, answer: `${n}/${n + 1}`,
+      faux: [`1/${n * (n + 1)}`, `${n - 1}/${n}`, `${n + 1}/${n + 2}`],
+      expl: `Chaque fraction se découpe : 1/(k×(k+1)) = 1/k − 1/(k+1). Tout se simplifie en chaîne : (1 − 1/2) + (1/2 − 1/3) + … + (1/${n} − 1/${n + 1}) = 1 − 1/${n + 1} = ${n}/${n + 1}.` });
+  } }
+];
+
+/* ---------- 9. Stratégies de concours ---------- */
+const OLY_STRATEGIE = [
+  { niv: '6e', f() {
+    const h = rnd(2, 9), t = rnd(2, 9), A = h * 100 + rnd(-4, 4), B = t * 10 + rnd(-2, 2), approx = h * t * 1000;
+    return oq({ cat: 'Stratégie', prompt: `Sans calculer exactement : quel nombre est le plus proche de ${A} × ${B} ?`, answer: milliers(approx),
+      faux: [milliers(approx / 100), milliers(approx / 10), milliers(approx * 10)],
+      expl: `On arrondit : ${A} ≈ ${h * 100} et ${B} ≈ ${t * 10}, donc ${h * 100} × ${t * 10} = ${milliers(approx)}. (Le calcul exact donne ${milliers(A * B)}.) Estimer l'ordre de grandeur élimine vite les mauvaises réponses.` });
+  } },
+  { niv: '6e', f() {
+    let n; do { n = rnd(21, 99); } while (n % 10 === 0 || n % 10 === 5);
+    const u = n % 10, t = Math.floor(n / 10), N = n * n, u2 = 10 - u;
+    const faux = [t * 10 + u2, (t + 1) * 10 + u, (t - 1) * 10 + u, (t + 1) * 10 + u2].filter(v => v !== n && v > 10 && v < 100);
+    return oq({ cat: 'Stratégie', prompt: `Quel nombre, multiplié par lui-même, donne ${milliers(N)} ?`, answer: n, faux,
+      expl: `On élimine d'abord : ${milliers(N)} se termine par ${N % 10}, donc le nombre se termine par ${u} ou ${u2}. Puis on encadre : ${t * 10} × ${t * 10} = ${milliers(t * t * 100)} et ${(t + 1) * 10} × ${(t + 1) * 10} = ${milliers((t + 1) * (t + 1) * 100)}, il est donc entre ${t * 10} et ${(t + 1) * 10}. On teste : ${n} × ${n} = ${milliers(N)}.` });
+  } },
+  { niv: '6e', f() {
+    const pairs = shuffle([rnd(10, 60) * 2, rnd(10, 60) * 2 + 20, rnd(5, 40) * 2]), ans = rnd(10, 60) * 2 + 1;
+    return oq({ cat: 'Stratégie', prompt: `Parmi ces nombres, lequel peut être la somme de 5 nombres impairs ?`, answer: ans, faux: pairs,
+      expl: `Pas besoin de chercher les 5 nombres : deux impairs font un pair, donc 5 impairs (2 paires + 1) font un impair. Seul ${ans} est impair : les autres sont éliminés d'office.` });
+  } },
+  { niv: '5e', f() {
+    const k = rnd(2, 4), aire = Math.random() < 0.5, ans = aire ? k * k : k, mot = ['', '', 'double', 'triple', 'quadruple'][k];
+    return oq({ cat: 'Stratégie', prompt: `On ${mot === 'double' ? 'double' : mot === 'triple' ? 'triple' : 'quadruple'} la longueur ET la largeur d'un rectangle. Par combien ${aire ? 'son aire' : 'son périmètre'} est-${aire ? 'elle' : 'il'} multiplié${aire ? 'e' : ''} ?`, answer: ans,
+      faux: aire ? [k, 2 * k, k * k * k] : [k * k, 2 * k, k + 1],
+      expl: `Astuce : on teste sur un cas simple, un carré de 1 × 1 (aire 1, périmètre 4). Il devient ${k} × ${k} : aire ${k * k}, périmètre ${4 * k}. ${aire ? `L'aire est multipliée par ${k * k}` : `Le périmètre est multiplié par ${k}`}.` });
+  } },
+  { niv: '5e', f() {
+    const bon = rnd(112, 1111) * 9, autres = [];
+    while (autres.length < 3) { const v = rnd(1000, 9999); if (sommeChiffres(v) % 9 && !autres.includes(v)) autres.push(v); }
+    return oq({ cat: 'Stratégie', prompt: `Un seul de ces nombres est divisible par 9. Lequel ?`, answer: bon, faux: autres,
+      expl: `Critère de divisibilité par 9 : la somme des chiffres doit être un multiple de 9. ${bon} → ${sommeChiffres(bon)}, ${sommeChiffres(bon) % 9 === 0 ? 'multiple de 9' : ''}. Les autres : ${autres.map(v => `${v} → ${sommeChiffres(v)}`).join(', ')}, pas des multiples de 9.` });
+  } }
+];
+
+/* Chaque technique : sa leçon (méthode, exemple résolu, réflexes) et ses problèmes */
+function olySkill(id, titre, explanation, cours, reperes, gens) {
+  const [emoji, ...mots] = titre.split(' ');
+  return { id, emoji, title: mots.join(' '), explanation, levels: ['cm2', 'sixieme', 'singapour'], cours, reperes, question() { return olyTirer(gens); } };
+}
+
+const OLY_TECHNIQUES = [
+  olySkill('oly-motifs', '🔁 Repérer un motif', "Quand on demande le 2026e élément, on ne les calcule pas tous : on cherche ce qui se répète.", [
+    "Dans beaucoup de problèmes d'olympiade, un nombre énorme (le 2026e terme, dans 1000 jours…) cache une <strong>répétition</strong>. On ne calcule jamais tout : on cherche le <strong>motif</strong> qui revient.",
+    "La méthode : 1) écrire les premiers cas ; 2) repérer la longueur du cycle ; 3) faire la <strong>division euclidienne</strong> du grand nombre par cette longueur ; 4) le <strong>reste</strong> dit où l'on tombe dans le cycle. Attention : un reste de 0 correspond au <em>dernier</em> élément du cycle.",
+    "<strong>Exemple :</strong> quel est le chiffre des unités de 3<sup>2026</sup> ? Les unités des puissances de 3 sont 3, 9, 7, 1, puis 3, 9, 7, 1… (cycle de 4). 2026 = 4 × 506 + 2 : c'est le 2e du cycle, donc <strong>9</strong>."
+  ], [['1. Tester', 'Écrire les premiers cas à la main'], ['2. Cycle', 'Trouver ce qui se répète et sa longueur'], ['3. Diviser', 'Grand nombre = longueur × q + reste'], ['4. Reste', 'Le reste donne la position ; reste 0 = dernier']], OLY_MOTIFS),
+  olySkill('oly-rebours', '⏪ Raisonner à rebours', "Quand on connaît la fin d'une histoire, on la remonte en défaisant chaque étape.", [
+    "Quand un problème donne le <strong>résultat final</strong> d'une suite d'étapes et demande le <strong>départ</strong>, on part de la fin et on remonte.",
+    "Chaque étape se défait par l'opération <strong>inverse</strong>, et dans l'<strong>ordre inverse</strong> : + devient −, × devient ÷, « dépenser la moitié » devient « doubler ». Comme on défait ses chaussures avant ses chaussettes !",
+    "<strong>Exemple :</strong> je pense à un nombre, je le multiplie par 3, j'ajoute 5 et j'obtiens 26. À rebours : 26 − 5 = 21, puis 21 ÷ 3 = <strong>7</strong>. Vérification : 7 × 3 + 5 = 26."
+  ], [['Départ', 'Partir de la valeur finale'], ['Inverser', '+ ↔ −, × ↔ ÷, moitié ↔ double'], ['Ordre', 'Défaire la dernière étape en premier'], ['Vérifier', 'Refaire le chemin dans le bon sens']], OLY_REBOURS),
+  olySkill('oly-tiroirs', '🧦 Le principe des tiroirs', "S'il y a plus d'objets que de tiroirs, un tiroir en contient au moins deux.", [
+    "Si l'on range <strong>plus d'objets que de tiroirs</strong>, au moins un tiroir contient <strong>deux objets</strong>. Plus généralement, avec n tiroirs et plus de n × k objets, un tiroir en contient au moins k + 1.",
+    "Pour les questions « combien faut-il en prendre pour être <strong>sûr</strong> », on imagine le <strong>pire des cas</strong> : on a toute la malchance possible, puis on ajoute un objet.",
+    "<strong>Exemple :</strong> un tiroir contient des chaussettes de 3 couleurs. Pour être sûr d'avoir une paire, dans le pire des cas on tire 3 chaussettes toutes différentes ; la 4e forme forcément une paire : <strong>4</strong>."
+  ], [['Tiroirs', 'Repérer les « tiroirs » : couleurs, mois, jours…'], ['Pire des cas', 'Imaginer toute la malchance possible'], ['+ 1', "Ajouter un objet : c'est le minimum sûr"], ['Formule', 'n tiroirs, k par tiroir : n × (k − 1) + 1']], OLY_TIROIRS),
+  olySkill('oly-denombrer', '🌳 Dénombrer sans rien oublier', "Compter méthodiquement : arbre de choix, multiplication, et attention aux doublons.", [
+    "Pour compter sans en oublier, on <strong>organise</strong> : liste ordonnée, tableau, ou <strong>arbre de choix</strong>.",
+    "Quand on fait plusieurs choix à la suite, on <strong>multiplie</strong> le nombre de possibilités de chaque étape. Quand chaque objet a été compté <strong>deux fois</strong> (une poignée de main, un segment entre deux points), on <strong>divise par 2</strong>.",
+    "<strong>Exemple :</strong> 6 amis se serrent tous la main. Chacun serre 5 mains : 6 × 5 = 30, mais chaque poignée est comptée deux fois (une par personne) : 30 ÷ 2 = <strong>15</strong>."
+  ], [['Organiser', 'Liste ordonnée, tableau ou arbre'], ['Étapes', 'On multiplie les choix successifs'], ['Doublons', 'Compté deux fois ? On divise par 2'], ['Bornes', 'Vérifier le premier et le dernier cas']], OLY_DENOMBRER),
+  olySkill('oly-parite', '⚖️ Parité et divisibilité', "Pair ou impair, critères de divisibilité et restes : de quoi répondre sans tout calculer.", [
+    "<strong>Parité :</strong> pair + pair = pair ; impair + impair = pair ; pair + impair = impair. Un produit est pair dès qu'un facteur est pair. Cela permet souvent d'<strong>éliminer</strong> des réponses sans calculer.",
+    "<strong>Critères :</strong> divisible par 2 (dernier chiffre pair), par 5 (finit par 0 ou 5), par 3 ou par 9 (somme des chiffres divisible par 3 ou 9). Un nombre et la somme de ses chiffres ont le <strong>même reste</strong> dans la division par 9.",
+    "<strong>Exemple :</strong> 1 × 2 × 3 × … × 20 se termine par combien de zéros ? Chaque zéro vient de 2 × 5. On compte les facteurs 5 : 5, 10, 15, 20, soit <strong>4 zéros</strong>."
+  ], [['Pair/impair', 'impair + impair = pair'], ['Par 3 ou 9', 'Somme des chiffres'], ['Unités', "Seules les unités décident des unités d'un produit"], ['Zéros', 'Compter les facteurs 5']], OLY_PARITE),
+  olySkill('oly-logique', '🕵️ Logique et raisonnement', "Âges, files, poteaux, menteurs : lire attentivement et raisonner pas à pas.", [
+    "Beaucoup de problèmes sont des <strong>pièges de lecture</strong> : relis l'énoncé, fais un petit <strong>schéma</strong>, et méfie-toi de la réponse qui vient trop vite.",
+    "Quelques réflexes : l'<strong>écart d'âge</strong> entre deux personnes ne change jamais ; sur une ligne, il y a <strong>un poteau de plus</strong> que d'intervalles ; pour les menteurs et les chevaliers, on fait une <strong>hypothèse</strong> et on cherche une contradiction.",
+    "<strong>Exemple :</strong> Léo est 4e en partant du début et 6e en partant de la fin. Devant lui : 3 personnes, derrière : 5, plus lui : <strong>9</strong> personnes (et non 10)."
+  ], [['Schéma', 'Dessiner la situation'], ['Invariant', "Chercher ce qui ne change pas (écart d'âge…)"], ['Hypothèse', 'Supposer, puis chercher une contradiction'], ['Piège', 'Se méfier de la réponse trop rapide']], OLY_LOGIQUE),
+  olySkill('oly-geometrie', '📐 Géométrie astucieuse', "Découper, déplacer, compter par taille : la géométrie se fait souvent sans formule compliquée.", [
+    "En géométrie d'olympiade, on <strong>découpe</strong> et on <strong>déplace</strong> les morceaux : une figure en escalier a le même périmètre que son rectangle, un carré dans un carré se compare en triangles.",
+    "Pour <strong>compter des figures</strong> (carrés, rectangles, triangles), on procède <strong>taille par taille</strong>. Retiens aussi : la somme des angles d'un triangle vaut <strong>180°</strong>.",
+    "<strong>Exemple :</strong> dans un quadrillage 3 × 3, il y a 9 carrés de 1 × 1, 4 carrés de 2 × 2 et 1 carré de 3 × 3 : <strong>14 carrés</strong>."
+  ], [['Découper', 'Faire apparaître des morceaux égaux'], ['Déplacer', "Pousser les marches d'un escalier"], ['Compter', 'Taille par taille, sans oubli'], ['180°', "Somme des angles d'un triangle"]], OLY_GEOMETRIE),
+  olySkill('oly-calcul', '⚡ Calcul astucieux', "Regrouper, factoriser, associer par paires : les grands calculs deviennent simples.", [
+    "Avant de calculer, on cherche une <strong>structure</strong> : des nombres qui vont bien ensemble (25 × 4 = 100, 125 × 8 = 1000), un facteur commun, des paires.",
+    "L'<strong>astuce de Gauss</strong> : pour 1 + 2 + … + n, on associe le premier et le dernier, le 2e et l'avant-dernier… Chaque paire vaut n + 1, et il y a n ÷ 2 paires.",
+    "<strong>Exemple :</strong> 37 × 99 + 37 = 37 × (99 + 1) = 37 × 100 = <strong>3 700</strong>. Et 1 + 2 + … + 100 = 50 paires de 101 = <strong>5 050</strong>."
+  ], [['Regrouper', '25 × 4, 125 × 8, 5 × 2'], ['Factoriser', 'a × b + a × c = a × (b + c)'], ['Gauss', '1 + … + n = n × (n + 1) ÷ 2'], ['Paires', 'Associer les termes qui se compensent']], OLY_CALCUL),
+  olySkill('oly-strategie', '🎯 Stratégies de concours', "Estimer, éliminer, tester les réponses, essayer un cas simple : gagner du temps le jour du concours.", [
+    "Aux olympiades et au Kangourou, les questions sont souvent à <strong>choix multiples</strong>. On peut les utiliser : <strong>estimer</strong> l'ordre de grandeur, <strong>éliminer</strong> les réponses impossibles (parité, dernier chiffre), puis <strong>tester</strong> celles qui restent.",
+    "Si la réponse ne dépend pas des nombres choisis, on essaie un <strong>cas simple</strong> (un carré de 1 × 1, le nombre 1…). Et on gère son temps : on passe une question bloquante et on y revient à la fin.",
+    "<strong>Exemple :</strong> quel nombre au carré donne 1 369 ? Il finit par 3 ou 7 (car 3 × 3 = 9 et 7 × 7 = 49), et il est entre 30 et 40 (900 et 1 600). On teste 37 : 37 × 37 = <strong>1 369</strong>."
+  ], [['Estimer', 'Arrondir pour avoir un ordre de grandeur'], ['Éliminer', 'Parité, dernier chiffre, bornes'], ['Tester', 'Essayer les réponses restantes'], ['Cas simple', 'Essayer avec 1, un carré 1 × 1…']], OLY_STRATEGIE)
+];
+
 /* ================= Domaines et compétences ================= */
 function q(obj) { return Object.assign({ unit: '', svg: null, limit: 18 }, obj); }
 
@@ -1087,6 +1629,19 @@ const DOMAINS = [
           svg: svgPie([{ label: `${angle}°`, frac: angle / 360 }, { label: 'reste', frac: 1 - angle / 360 }]),
           answer: formatNum(rep), options: spreadOptions(rep, 0), limit: 35 });
       } }
+  ] },
+
+  /* ========== Olympiades ========== */
+  { id: 'olympiades', emoji: '🏅', title: 'Olympiades de maths', skills: [
+    ...OLY_TECHNIQUES,
+    { id: 'oly-concours', emoji: '🏆', title: 'Concours blanc', explanation: "12 problèmes tirés de toutes les techniques, comme le jour de l'épreuve.", levels: ['cm2', 'sixieme', 'singapour'],
+      cours: [
+        "Le concours blanc mélange <strong>toutes les techniques</strong> : à toi de reconnaître laquelle utiliser. C'est le meilleur entraînement avant une olympiade ou le Kangourou.",
+        "Le jour de l'épreuve : <strong>lis chaque énoncé deux fois</strong>, souligne la question, fais un petit schéma. Si tu bloques plus d'une minute, <strong>passe</strong> et reviens-y à la fin.",
+        "Sers-toi des réponses proposées : <strong>estime</strong>, <strong>élimine</strong> celles qui sont impossibles, <strong>teste</strong> celles qui restent. Et relis-toi : la réponse qui vient trop vite est souvent un piège."
+      ],
+      reperes: [['Lire', "Deux fois l'énoncé, souligner la question"], ['Reconnaître', 'Quelle technique ? Motif, rebours, tiroirs…'], ['Temps', 'Bloqué ? On passe et on revient'], ['Vérifier', 'Relire et tester sa réponse']],
+      question() { return OLY_TECHNIQUES[rnd(0, OLY_TECHNIQUES.length - 1)].question(); } }
   ] },
 
   /* ========== Histoire ========== */
@@ -1693,7 +2248,7 @@ function domainesPourNiveau(level) {
 /* ================= État global ================= */
 const LEVELS = [{ id: 'cm2', label: 'CM2' }, { id: 'sixieme', label: '6ème' }, { id: 'singapour', label: 'Singapour' }];
 function levelLabel(id) { const l = LEVELS.find(x => x.id === id); return l ? l.label : id; }
-const state = { screen: 'home', level: loadStore().level || 'cm2', currentDomain: null, currentSkill: null, mentalTrickId: null, quiz: null, dictee: null };
+const state = { screen: 'home', level: loadStore().level || 'cm2', olyNiveau: loadStore().olyNiveau || '6e', currentDomain: null, currentSkill: null, mentalTrickId: null, quiz: null, dictee: null };
 function setLevel(lvl) { state.level = lvl; const s = loadStore(); s.level = lvl; saveStore(s); render(); }
 function clearTimer() { if (state.quiz && state.quiz.timerHandle) { clearInterval(state.quiz.timerHandle); state.quiz.timerHandle = null; } }
 
@@ -2387,9 +2942,18 @@ function renderSkillList() {
   }
   const d = getDomain(state.currentDomain);
   const list = skillsForLevel(state.currentDomain, state.level);
-  const cards = list.map(s => { const best = getBest('skill-' + d.id + '-' + s.id + '-' + state.level); return `<div class="trick-card" data-action="open-skill" data-id="${s.id}"><div class="trick-emoji">${d.emoji}</div><div class="trick-info"><div class="trick-title">${s.title}</div>${best !== undefined ? `<div class="trick-progress">✓ Meilleur score : ${best}%</div>` : ''}</div><div class="mode-arrow">→</div></div>`; }).join('');
-  return `<div class="screen screen-liste"><button class="btn-back" data-action="go-home">← Retour</button><h1>${d.emoji} ${d.title}</h1><p class="subtitle">Niveau ${levelLabel(state.level)}</p><div class="cartes">${cards || '<p class="subtitle">Aucune compétence pour ce niveau pour le moment.</p>'}</div></div>`;
+  const cards = list.map(s => { const best = getBest(cleSkill(d.id, s.id)); return `<div class="trick-card" data-action="open-skill" data-id="${s.id}"><div class="trick-emoji">${s.emoji || d.emoji}</div><div class="trick-info"><div class="trick-title">${s.title}</div>${best !== undefined ? `<div class="trick-progress">✓ Meilleur score : ${best}%</div>` : ''}</div><div class="mode-arrow">→</div></div>`; }).join('');
+  return `<div class="screen screen-liste"><button class="btn-back" data-action="go-home">← Retour</button><h1>${d.emoji} ${d.title}</h1>${d.id === 'olympiades' ? renderOlyEntete() : `<p class="subtitle">Niveau ${levelLabel(state.level)}</p>`}<div class="cartes">${cards || '<p class="subtitle">Aucune compétence pour ce niveau pour le moment.</p>'}</div></div>`;
 }
+
+/* Olympiades : leur propre niveau, 6ème ou 5ème, choisi ici */
+function renderOlyEntete() {
+  return `<p class="subtitle">Techniques de préparation et problèmes corrigés</p>
+    <div class="level-switch">${OLY_NIVEAUX.map(n => `<button class="level-btn ${olyNiv() === n.id ? 'active' : ''}" data-action="oly-niveau" data-niv="${n.id}">${n.label}</button>`).join('')}</div>
+    <div class="vitesse-aide">Lis d'abord la leçon de chaque technique (méthode, exemple résolu, réflexes), puis entraîne-toi : 8 problèmes, ${olyLimite()} s chacun, tous corrigés. Termine par le concours blanc. Les problèmes changent à chaque fois.</div>`;
+}
+/* le meilleur score d'une compétence ; en olympiades, un par niveau (6ème, 5ème) */
+function cleSkill(dId, sId) { return 'skill-' + dId + '-' + sId + '-' + state.level + (dId === 'olympiades' ? '-' + olyNiv() : ''); }
 
 function renderMentalLesson() {
   const t = getTrick(state.mentalTrickId);
@@ -2422,12 +2986,13 @@ function renderVitesseAstuce(id, level) {
 function renderCours(s, d) {
   const reperes = s.reperes ? `<div class="reperes">${s.reperes.map(r => `<div class="repere"><span class="repere-cle">${r[0]}</span><span>${r[1]}</span></div>`).join('')}</div>` : '';
   return `<div class="screen screen-lecon"><button class="btn-back" data-action="back-to-list">← Retour</button>
-    <div class="lesson-hero"><div class="lesson-emoji">${d.emoji}</div><div class="lesson-title">${s.title}</div><div class="lesson-explanation">${s.explanation}</div></div>
-    <div class="section-label">La leçon</div>
+    <div class="lesson-hero"><div class="lesson-emoji">${s.emoji || d.emoji}</div><div class="lesson-title">${s.title}</div><div class="lesson-explanation">${s.explanation}</div></div>
+    <div class="section-label">${d.id === 'olympiades' ? 'La technique' : 'La leçon'}</div>
     <div class="cours-card">${s.cours.map(par => `<p>${par}</p>`).join('')}${reperes}</div>
-    <div class="btn-stack" style="margin-top:0.5rem;"><button class="btn btn-primary" data-action="start-skill-quiz">✨ Pratiquer (8 questions, chrono)</button></div>
+    <div class="btn-stack" style="margin-top:0.5rem;"><button class="btn btn-primary" data-action="start-skill-quiz">${d.id === 'olympiades' ? `✨ S'entraîner (${nbQuestions(d.id, s.id)} problèmes · niveau ${olyLabel()})` : '✨ Pratiquer (8 questions, chrono)'}</button></div>
   </div>`;
 }
+function nbQuestions(dId, sId) { return sId === 'oly-concours' ? 12 : 8; }
 
 function renderSkillLesson() {
   const s = getSkill(state.currentDomain, state.currentSkill); const d = getDomain(state.currentDomain);
@@ -2586,7 +3151,8 @@ function onAction(e) {
   else if (a === 'start-revision') { const lvl = state.level; startQuiz('mix', () => buildRevision(lvl), 'revision-' + lvl); }
   else if (a === 'touche') toucher(e.currentTarget.dataset.k);
   else if (a === 'valider-saisie') validerSaisie();
-  else if (a === 'start-skill-quiz') { const dId = state.currentDomain, sId = state.currentSkill; startQuiz('skill', () => buildSkillQuiz(dId, sId, 8), 'skill-' + dId + '-' + sId + '-' + state.level); }
+  else if (a === 'start-skill-quiz') { const dId = state.currentDomain, sId = state.currentSkill; startQuiz('skill', () => buildSkillQuiz(dId, sId, nbQuestions(dId, sId)), cleSkill(dId, sId)); }
+  else if (a === 'oly-niveau') { state.olyNiveau = e.currentTarget.dataset.niv; const st = loadStore(); st.olyNiveau = state.olyNiveau; saveStore(st); render(); }
   else if (a === 'answer-quiz') { state.quiz.lastChosen = e.currentTarget.dataset.value; answerQuiz(e.currentTarget.dataset.value); }
   else if (a === 'retry-quiz') { const etape = state.quiz.etapeSeance; startQuiz(state.quiz.kind, state.quiz.rebuild, state.quiz.bestKey, state.quiz.extra); state.quiz.etapeSeance = etape; }
   else if (a === 'continuer-quiz') questionSuivante();
