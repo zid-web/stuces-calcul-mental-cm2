@@ -57,6 +57,11 @@
   .saisie-affichage.ok { background: var(--success-bg); border-color: var(--success); color: var(--success); }
   .saisie-affichage.ko { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
   .saisie-vide { color: var(--border); }
+  .ecoute-btns { display: flex; justify-content: center; gap: 8px; margin-top: 0.7rem; }
+  .btn-ecoute { padding: 0.55rem 1rem; font-size: 0.95rem; font-weight: 700; border-radius: 12px; border: 1px solid var(--purple); background: var(--bg); color: var(--purple); cursor: pointer; }
+  .en-texte { text-align: left; font-size: 0.9rem; line-height: 1.5; background: var(--bg); border-radius: 10px; padding: 0.7rem 0.8rem; margin-bottom: 0.6rem; color: var(--text); font-weight: 400; }
+  .ligne-en { display: block; width: 100%; text-align: left; padding: 0.6rem 0.4rem; font-size: 0.92rem; border: none; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; }
+  .ligne-en:last-child { border-bottom: none; }
   .saisie-zone ~ .correction { margin-top: 12px; }
   .bravo { background: var(--success-bg); border: 1px solid #A6DFCB; border-radius: 14px; padding: 0.9rem 1rem; margin-top: 12px; }
   .bravo-titre { font-weight: 800; color: var(--success); font-size: 1.05rem; }
@@ -1294,6 +1299,330 @@ const OLY_TECHNIQUES = [
   ], [['Estimer', 'Arrondir pour avoir un ordre de grandeur'], ['Éliminer', 'Parité, dernier chiffre, bornes'], ['Tester', 'Essayer les réponses restantes'], ['Cas simple', 'Essayer avec 1, un carré 1 × 1…']], OLY_STRATEGIE)
 ];
 
+/* ================= Anglais : Cambridge English A2 Flyers ================= */
+/* Aligné sur l'examen Cambridge English A2 Flyers (Young Learners) : les
+   thèmes de vocabulaire et la liste de grammaire du niveau, et les formats
+   des épreuves (Listening, Reading & Writing). L'écoute utilise la synthèse
+   vocale du téléphone, avec une voix anglaise britannique si elle existe. */
+const EN_NIVEAUX = ['cm2', 'sixieme'];
+function voixAnglaise() {
+  if (!('speechSynthesis' in window)) return null;
+  const v = speechSynthesis.getVoices();
+  return v.find(x => x.lang === 'en-GB') || v.find(x => x.lang && x.lang.toLowerCase().startsWith('en')) || null;
+}
+function direAnglais(texte, vitesse) {
+  if (!('speechSynthesis' in window) || !texte) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(texte);
+  u.lang = 'en-GB';
+  try { const v = voixAnglaise(); if (v) u.voice = v; } catch (e) { /* voix par défaut */ }
+  u.rate = vitesse || 0.85;
+  speechSynthesis.speak(u);
+}
+/* une question d'anglais : toujours trois distracteurs écrits à la main,
+   pour ne jamais tomber sur des variantes numériques absurdes */
+function eq(o) {
+  return q({ category: o.cat, prompt: o.prompt, answer: o.answer, options: mkOptions(o.answer, o.faux), limit: o.limit || 25,
+    expl: o.expl, audio: o.audio || null, ecouteSeule: !!o.ecouteSeule });
+}
+function enBanque(items) { const b = items[rnd(0, items.length - 1)]; return eq(b); }
+function unDe(arr) { return arr[rnd(0, arr.length - 1)]; }
+const EN_PRENOMS = ['Katy', 'Harry', 'Sophia', 'William', 'Emma', 'Richard', 'Holly', 'George', 'Sarah', 'Michael', 'Betty', 'Robert'];
+
+/* ---------- Nombres et heures (Listening, Reading) ---------- */
+const EN_UNITES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const EN_DIZAINES = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+function nombreAnglais(n) {
+  if (n === 1000) return 'one thousand';
+  const c = Math.floor(n / 100), r = n % 100;
+  let reste = '';
+  if (r < 20) reste = r ? EN_UNITES[r] : '';
+  else reste = EN_DIZAINES[Math.floor(r / 10)] + (r % 10 ? '-' + EN_UNITES[r % 10] : '');
+  if (!c) return reste || 'zero';
+  /* à la britannique : « three hundred AND forty-five » */
+  return EN_UNITES[c] + ' hundred' + (reste ? ' and ' + reste : '');
+}
+function heureAnglaise(h, m) {
+  const suiv = h % 12 + 1, nom = (x) => EN_UNITES[x] || (x === 12 ? 'twelve' : String(x));
+  if (m === 0) return `${nom(h)} o'clock`;
+  if (m === 15) return `quarter past ${nom(h)}`;
+  if (m === 30) return `half past ${nom(h)}`;
+  if (m === 45) return `quarter to ${nom(suiv)}`;
+  if (m < 30) return `${nombreAnglais(m)} past ${nom(h)}`;
+  return `${nombreAnglais(60 - m)} to ${nom(suiv)}`;
+}
+const hm = (h, m) => `${h}:${String(m).padStart(2, '0')}`;
+
+/* ---------- Vocabulaire par thèmes (liste A2 Flyers) ---------- */
+/* [anglais, français, définition à la manière de Reading & Writing partie 1] */
+const EN_VOCAB = {
+  metiers: { titre: 'Jobs', mots: [
+    ['a dentist', 'un(e) dentiste', 'This person looks after your teeth.'],
+    ['an engineer', 'un ingénieur, une ingénieure', 'This person designs and builds machines, bridges or roads.'],
+    ['a journalist', 'un(e) journaliste', 'This person writes about the news for newspapers or websites.'],
+    ['a mechanic', 'un mécanicien, une mécanicienne', 'This person repairs cars and other machines.'],
+    ['a pilot', 'un(e) pilote', 'This person flies a plane.'],
+    ['a firefighter', 'un pompier, une pompière', 'This person puts out fires.'],
+    ['a photographer', 'un(e) photographe', 'This person takes photos as a job.'],
+    ['a waiter', 'un serveur', 'This person brings food to your table in a restaurant.'],
+    ['a farmer', 'un agriculteur, une agricultrice', 'This person keeps animals and grows food on a farm.'],
+    ['a nurse', 'un infirmier, une infirmière', 'This person works in a hospital and helps the doctors look after ill people.'],
+    ['an astronaut', 'un(e) astronaute', 'This person travels into space.'],
+    ['a police officer', 'un policier, une policière', 'This person helps keep people safe and catches thieves.']
+  ] },
+  lieux: { titre: 'Places', mots: [
+    ['an airport', 'un aéroport', 'You go here to catch a plane.'],
+    ['a bank', 'une banque', 'People keep their money here.'],
+    ['a castle', 'un château fort', 'Kings and queens lived in this big old building with towers.'],
+    ['a museum', 'un musée', 'You can look at old and interesting things here.'],
+    ['a library', 'une bibliothèque', 'You can borrow books here.'],
+    ['a post office', 'un bureau de poste', 'You go here to send letters and parcels.'],
+    ['a factory', 'une usine', 'People make things like cars or chocolate here.'],
+    ['a hotel', 'un hôtel', 'You can sleep here when you are on holiday.'],
+    ['a stadium', 'un stade', 'You can watch big football matches here.'],
+    ['a university', 'une université', 'Students go here to study after they finish school.'],
+    ['a theatre', 'un théâtre', 'You can watch actors in a play here.']
+  ] },
+  monde: { titre: 'The world around us', mots: [
+    ['a desert', 'un désert', 'This place is very hot and dry, with lots of sand.'],
+    ['an island', 'une île', 'This is land with water all around it.'],
+    ['a forest', 'une forêt', 'This is a big place with lots of trees.'],
+    ['a planet', 'une planète', 'Earth and Mars are examples of this.'],
+    ['a rocket', 'une fusée', 'Astronauts travel into space in this.'],
+    ['the moon', 'la lune', 'You can see this in the sky at night. It goes round the Earth.'],
+    ['a storm', 'une tempête, un orage', 'This is very bad weather with strong wind and rain.'],
+    ['fog', 'le brouillard', "It's like a cloud near the ground. It's difficult to see when there is this."],
+    ['ice', 'la glace', 'This is water that is so cold that it is hard.'],
+    ['autumn', "l'automne", 'In this season, the leaves fall from the trees.'],
+    ['winter', "l'hiver", 'This is the coldest season of the year.'],
+    ['a river', 'une rivière, un fleuve', 'Water moves along this to the sea.']
+  ] },
+  matieres: { titre: 'Materials and things', mots: [
+    ['gold', "l'or", 'This expensive yellow metal is used to make rings.'],
+    ['silver', "l'argent (le métal)", 'This shiny grey metal is used to make spoons and jewellery.'],
+    ['wood', 'le bois', 'Trees are made of this.'],
+    ['glass', 'le verre', 'Windows are made of this.'],
+    ['paper', 'le papier', 'The pages of a book are made of this.'],
+    ['plastic', 'le plastique', 'Many bottles and toys are made of this light material.'],
+    ['an envelope', 'une enveloppe', 'You put a letter inside this before you send it.'],
+    ['a stamp', 'un timbre', 'You stick this on a letter before you post it.'],
+    ['a passport', 'un passeport', 'You need this to travel to another country.'],
+    ['a suitcase', 'une valise', 'You put your clothes in this when you travel.'],
+    ['a torch', 'une lampe de poche', 'You use this to see when it is dark.']
+  ] },
+  sante: { titre: 'Health', mots: [
+    ['a headache', 'un mal de tête', "You've got this when your head hurts."],
+    ['a toothache', 'un mal de dents', "You've got this when one of your teeth hurts."],
+    ['an earache', "un mal d'oreille", "You've got this when your ear hurts."],
+    ['a stomach-ache', 'un mal de ventre', "You've got this when you eat too much and your tummy hurts."],
+    ['a temperature', 'de la fièvre', 'When you have this, your body is too hot because you are ill.'],
+    ['a cold', 'un rhume', 'When you have this, you sneeze and your nose is full.'],
+    ['a cough', 'une toux', 'When you have this, you make a loud noise from your throat.'],
+    ['medicine', 'un médicament', 'You take this when you are ill to feel better.']
+  ] }
+};
+function questionVocab(themes) {
+  const t = EN_VOCAB[unDe(themes)], [en, fr, def] = unDe(t.mots);
+  const autres = shuffle(t.mots.filter(m => m[0] !== en)).slice(0, 3);
+  const type = rnd(0, 2);
+  if (type === 0) return eq({ cat: t.titre, prompt: `Comment dit-on « ${fr} » en anglais ?`, answer: en, faux: autres.map(m => m[0]), audio: en,
+    expl: `« ${fr} » se dit <strong>${en}</strong>. Appuie sur 🔊 pour l'entendre et répète-le à voix haute.` });
+  if (type === 1) return eq({ cat: t.titre, prompt: `Que veut dire « ${en} » ?`, answer: fr, faux: autres.map(m => m[1]), audio: en,
+    expl: `<strong>${en}</strong> veut dire « ${fr} ».` });
+  return eq({ cat: t.titre, prompt: `<em>Reading & Writing, partie 1.</em> Read and choose the word: « ${def} »`, answer: en, faux: autres.map(m => m[0]), audio: def, limit: 30,
+    expl: `« ${def} » → <strong>${en}</strong> (${fr}).` });
+}
+
+/* ---------- Grammaire : formes verbales ---------- */
+/* [base, prétérit, complément] ; les verbes irréguliers les plus fréquents du niveau */
+const EN_PRETERIT = [
+  ['go', 'went', 'to the museum'], ['see', 'saw', 'a big whale'], ['buy', 'bought', 'a new bike'], ['eat', 'ate', 'a huge pizza'],
+  ['drink', 'drank', 'some orange juice'], ['swim', 'swam', 'in the lake'], ['write', 'wrote', 'a postcard'], ['take', 'took', 'a lot of photos'],
+  ['make', 'made', 'a chocolate cake'], ['have', 'had', 'a picnic'], ['find', 'found', 'a key under the sofa'], ['fly', 'flew', 'to London'],
+  ['catch', 'caught', 'a fish'], ['bring', 'brought', 'some sandwiches'], ['lose', 'lost', 'an umbrella'], ['wear', 'wore', 'a yellow raincoat'],
+  ['ride', 'rode', 'a horse'], ['sing', 'sang', 'a song'], ['draw', 'drew', 'a dragon'], ['break', 'broke', 'a glass'],
+  ['meet', 'met', 'a famous singer'], ['win', 'won', 'the race'], ['give', 'gave', 'a present to the teacher'], ['come', 'came', 'home late']
+];
+const EN_REGULIERS = [
+  ['play', 'played', 'tennis'], ['visit', 'visited', 'the castle'], ['travel', 'travelled', 'by train'], ['study', 'studied', 'for the test'],
+  ['stop', 'stopped', 'at the café'], ['carry', 'carried', 'a heavy bag'], ['dance', 'danced', 'at the party'], ['walk', 'walked', 'to school']
+];
+const EN_MARQUEURS = ['Yesterday', 'Last Saturday', 'Two days ago', 'Last summer'];
+function troisiemePers(v) { return /(s|sh|ch|x|o)$/.test(v) ? v + 'es' : /[^aeiou]y$/.test(v) ? v.slice(0, -1) + 'ies' : v === 'have' ? 'has' : v + 's'; }
+function questionPreterit() {
+  const irr = Math.random() < 0.7, [v, p, c] = unDe(irr ? EN_PRETERIT : EN_REGULIERS), sujet = unDe([...EN_PRENOMS.slice(0, 6), 'we', 'they']);
+  const fauxForme = irr ? v.replace(/e$/, '') + 'ed' : (v === 'study' ? 'studyed' : v === 'stop' ? 'stoped' : v === 'carry' ? 'carryed' : v + 'ing');
+  const pres = /^(we|they)$/.test(sujet) ? v : troisiemePers(v);
+  return eq({ cat: 'Past simple', prompt: `${unDe(EN_MARQUEURS)}, ${sujet} ___ ${c}. <em>(${v})</em>`, answer: p, faux: [fauxForme, pres, v === pres ? v + 'ing' : v],
+    expl: `Une action terminée dans le passé (yesterday, last…, … ago) → <strong>past simple</strong>. ${irr ? `« ${v} » est irrégulier : <strong>${p}</strong> (pas « ${v}ed »).` : `Verbe régulier : + ed → <strong>${p}</strong>${/studied|carried|stopped|travelled/.test(p) ? ' (attention à l\'orthographe)' : ''}.`}` });
+}
+/* [base, forme en -ing, complément] */
+const EN_ING = [['watch', 'watching', 'TV'], ['read', 'reading', 'a comic'], ['play', 'playing', 'football'], ['swim', 'swimming', 'in the sea'],
+  ['ride', 'riding', 'a bike'], ['cook', 'cooking', 'dinner'], ['write', 'writing', 'an email'], ['run', 'running', 'in the park'],
+  ['have', 'having', 'a shower'], ['make', 'making', 'a sandcastle'], ['sit', 'sitting', 'in the garden']];
+const EN_INTERRUPTIONS = ['when the phone rang', 'when it started to rain', 'when the bus arrived', 'when Mum came home', 'when the lights went out'];
+function questionPastContinuous() {
+  const [v, ing, c] = unDe(EN_ING), pluriel = Math.random() < 0.4, sujet = pluriel ? unDe(['We', 'They', 'My friends']) : unDe([...EN_PRENOMS.slice(0, 8), 'I']);
+  const aux = pluriel ? 'were' : 'was', autre = pluriel ? 'was' : 'were';
+  return eq({ cat: 'Past continuous', prompt: `${sujet} ___ ${c} ${unDe(EN_INTERRUPTIONS)}. <em>(${v})</em>`, answer: `${aux} ${ing}`, faux: [`${autre} ${ing}`, `${aux} ${v}`, `is ${ing}`],
+    expl: `Une action <strong>en cours</strong> dans le passé, interrompue par une autre (when…) → <strong>past continuous</strong> : was/were + verbe-ing. Avec ${sujet === 'I' || !pluriel ? `« ${sujet} » → was` : `« ${sujet} » → were`}.` });
+}
+/* [base, prétérit, participe passé, complément] : seulement des verbes où les trois formes diffèrent */
+const EN_PARTICIPES = [['see', 'saw', 'seen', 'a dolphin'], ['eat', 'ate', 'eaten', 'Chinese food'], ['ride', 'rode', 'ridden', 'a camel'],
+  ['fly', 'flew', 'flown', 'in a helicopter'], ['write', 'wrote', 'written', 'a poem'], ['swim', 'swam', 'swum', 'in a river'],
+  ['drink', 'drank', 'drunk', 'coconut milk'], ['take', 'took', 'taken', 'a photo of a lion'], ['break', 'broke', 'broken', 'your arm'],
+  ['wear', 'wore', 'worn', 'a costume'], ['sing', 'sang', 'sung', 'on a stage'], ['draw', 'drew', 'drawn', 'a map']];
+function questionPresentPerfect() {
+  const [v, p, pp, c] = unDe(EN_PARTICIPES);
+  return eq({ cat: 'Present perfect', prompt: `Have you ever ___ ${c}? <em>(${v})</em>`, answer: pp, faux: [p, v, v + 'ing'], audio: `Have you ever ${pp} ${c}?`,
+    expl: `« Have you ever… ? » = « As-tu déjà… ? » → <strong>present perfect</strong> : have/has + participe passé. ${v} → ${p} → <strong>${pp}</strong>.` });
+}
+/* [adjectif, comparatif, superlatif, phrase comparative, phrase superlative] */
+const EN_ADJ = [
+  ['big', 'bigger', 'biggest', 'An elephant is ___ than a mouse.', 'The blue whale is the ___ animal in the world.'],
+  ['tall', 'taller', 'tallest', 'A giraffe is ___ than a horse.', 'My brother is the ___ person in our family.'],
+  ['hot', 'hotter', 'hottest', 'The desert is ___ than the forest.', 'August was the ___ month of the year.'],
+  ['happy', 'happier', 'happiest', 'Lucy is ___ today than yesterday.', 'It was the ___ day of my life!'],
+  ['good', 'better', 'best', 'Your drawing is ___ than mine.', 'This is the ___ film I have ever seen.'],
+  ['bad', 'worse', 'worst', 'The weather today is ___ than yesterday.', 'That was the ___ storm this year.'],
+  ['beautiful', 'more beautiful', 'most beautiful', 'This garden is ___ than that one.', "It's the ___ beach on the island."],
+  ['dangerous', 'more dangerous', 'most dangerous', 'A shark is ___ than a dolphin.', 'This is the ___ road in the town.'],
+  ['heavy', 'heavier', 'heaviest', 'My suitcase is ___ than yours.', 'This is the ___ box of all.'],
+  ['fast', 'faster', 'fastest', 'A plane is ___ than a train.', 'The cheetah is the ___ animal on land.'],
+  ['interesting', 'more interesting', 'most interesting', 'This book is ___ than the film.', "History is the ___ subject at my school."],
+  ['easy', 'easier', 'easiest', 'Maths is ___ than French for me.', 'This was the ___ question in the test.']
+];
+function questionComparatif() {
+  const [a, c, s, pc, ps] = unDe(EN_ADJ), sup = Math.random() < 0.5;
+  const longs = c.startsWith('more');
+  const faux = sup ? (longs ? [`more ${a}`, `${a}est`, `most ${a}er`] : [c, `most ${a}`, `${a}est` === s ? `more ${s}` : `${a}est`])
+                   : (longs ? [`${a}er`, s, `most ${a}`] : [`more ${a}`, s, `${a}er` === c ? `more ${c}` : `${a}er`]);
+  return eq({ cat: sup ? 'Superlatifs' : 'Comparatifs', prompt: `${sup ? ps : pc} <em>(${a})</em>`, answer: sup ? s : c, faux,
+    expl: sup ? `Le plus… de tous → <strong>superlatif</strong> : the ${s}. ${longs ? 'Adjectif long : the most + adjectif.' : a === 'good' || a === 'bad' ? 'Forme irrégulière à retenir.' : 'Adjectif court : the + adjectif-est.'}`
+              : `Comparer deux choses (… than …) → <strong>comparatif</strong> : ${c}. ${longs ? 'Adjectif long : more + adjectif.' : a === 'good' || a === 'bad' ? 'Forme irrégulière à retenir.' : 'Adjectif court : adjectif-er.'}` });
+}
+
+/* ---------- Écoute (Listening) ---------- */
+function questionEcoute() {
+  const type = rnd(0, 3);
+  if (type === 0) {
+    const n = rnd(101, 999), mots = nombreAnglais(n);
+    const proches = [n + (n % 10 === 9 ? -1 : 1), Number(String(n).split('').reverse().join('')) || n + 10, n + (n % 100 >= 90 ? -10 : 10), n + 100 <= 1000 ? n + 100 : n - 100].filter(v => v !== n && v > 100 && v < 1000);
+    return eq({ cat: 'Listening : numbers', prompt: '🎧 Écoute le nombre, puis choisis-le.', answer: String(n), faux: [...new Set(proches.map(String))].slice(0, 3), audio: mots, ecouteSeule: true, limit: 30,
+      expl: `Tu as entendu : « <strong>${mots}</strong> » = ${n}. En anglais britannique, on dit « and » après hundred.` });
+  }
+  if (type === 1) {
+    const h = rnd(1, 12), m = unDe([0, 5, 10, 15, 20, 30, 40, 45, 50]), dit = heureAnglaise(h, m), juste = hm(h, m);
+    const suiv = h % 12 + 1, prec = (h + 10) % 12 + 1;
+    const pieges = m === 45 ? [hm(suiv, 45), hm(suiv, 15), hm(h, 15)] : m === 15 ? [hm(h, 45), hm(prec, 45), hm(h, 50)]
+      : m === 30 ? [hm(suiv, 30), hm(h, 3), hm(h, 0)] : m > 30 ? [hm(suiv, 60 - m), hm(h, 60 - m), hm(suiv, m)] : m === 0 ? [hm(h, 30), hm(suiv, 0), hm(prec, 0)] : [hm(h, 60 - m), hm(prec, 60 - m), hm(suiv, m)];
+    return eq({ cat: 'Listening : time', prompt: "🎧 Écoute l'heure, puis choisis-la.", answer: juste, faux: [...new Set(pieges)].filter(x => x !== juste).slice(0, 3), audio: `It's ${dit}.`, ecouteSeule: true, limit: 30,
+      expl: `Tu as entendu : « <strong>It's ${dit}</strong> » = ${juste}. Rappel : <em>past</em> = après l'heure, <em>to</em> = avant l'heure suivante, <em>quarter</em> = 15 minutes, <em>half</em> = 30 minutes.` });
+  }
+  if (type === 2) {
+    const [nom, ...variantes] = unDe([['Katy', 'Katie', 'Kathy', 'Caty'], ['Harry', 'Hary', 'Harrie', 'Hurry'], ['Sophia', 'Sofia', 'Sophie', 'Sofya'], ['Clare', 'Claire', 'Clair', 'Clara'],
+      ['Holly', 'Hollie', 'Holy', 'Molly'], ['Vicky', 'Vicki', 'Viky', 'Nicky'], ['Lily', 'Lilly', 'Lili', 'Lila'], ['Zoe', 'Zoey', 'Zoé', 'Joe'], ['Frank', 'Franck', 'Frankie', 'Fran'], ['Jane', 'Jayne', 'Jean', 'June']]);
+    const lettres = nom.toUpperCase().split('').join(', ');
+    return eq({ cat: 'Listening : spelling', prompt: '🎧 Écoute le prénom épelé, puis choisis la bonne orthographe.', answer: nom, faux: variantes, audio: `My name is ${nom}. ${lettres}.`, ecouteSeule: true, limit: 35,
+      expl: `On a épelé : ${nom.toUpperCase().split('').join(' – ')} → <strong>${nom}</strong>. À l'examen (Listening, partie 2), on doit écrire les prénoms épelés sans faute.` });
+  }
+  const [phrase, fr, faux] = unDe([
+    ["The cat is sleeping under the table.", 'Le chat dort sous la table.', ['Le chat dort sur la table.', 'Le chien dort sous la table.', 'Le chat mange sous la table.']],
+    ["My grandmother lives next to the post office.", "Ma grand-mère habite à côté de la poste.", ["Ma grand-mère travaille à la poste.", "Ma tante habite à côté de la poste.", "Ma grand-mère habite en face de la banque."]],
+    ["We're going to the airport by taxi.", "Nous allons à l'aéroport en taxi.", ["Nous allons à la gare en taxi.", "Nous allons à l'aéroport en bus.", "Nous revenons de l'aéroport en taxi."]],
+    ["It was snowing when we arrived at the castle.", 'Il neigeait quand nous sommes arrivés au château.', ['Il pleuvait quand nous sommes arrivés au château.', 'Il neigeait quand nous avons quitté le château.', 'Il neigera quand nous arriverons au château.']],
+    ["Have you ever been to a museum in London?", 'Es-tu déjà allé dans un musée à Londres ?', ['Vas-tu dans un musée à Londres ?', 'Es-tu déjà allé dans un parc à Londres ?', 'As-tu déjà travaillé dans un musée à Londres ?']],
+    ["You should take an umbrella because it might rain.", 'Tu devrais prendre un parapluie parce qu\'il pourrait pleuvoir.', ['Tu dois rendre le parapluie parce qu\'il pleut.', 'Tu devrais prendre un manteau parce qu\'il pourrait neiger.', 'Tu as pris un parapluie mais il ne pleut pas.']],
+    ["The pilot is taller than the engineer.", "Le pilote est plus grand que l'ingénieur.", ["L'ingénieur est plus grand que le pilote.", 'Le pilote est aussi grand que l\'ingénieur.', 'Le pilote est le plus grand de tous.']],
+    ["I've got a headache and a temperature.", 'J\'ai mal à la tête et de la fièvre.', ['J\'ai mal au ventre et de la fièvre.', 'J\'ai mal à la tête et un rhume.', 'J\'ai mal aux dents et de la toux.']]
+  ]);
+  return eq({ cat: 'Listening : sentences', prompt: '🎧 Écoute la phrase, puis choisis ce qu\'elle veut dire.', answer: fr, faux, audio: phrase, ecouteSeule: true, limit: 35,
+    expl: `Tu as entendu : « <strong>${phrase}</strong> ». Réécoute en lisant la phrase : c'est comme ça qu'on habitue son oreille.` });
+}
+
+/* ---------- Banques de grammaire (liste A2 Flyers) ---------- */
+const EN_FUTUR_MODAUX = [
+  { cat: 'Future', prompt: "Look at those black clouds! It ___ rain.", answer: 'is going to', faux: ['will be', 'is raining', 'rained'], expl: "On voit un signe qui annonce la suite (des nuages noirs) → <strong>be going to</strong>." },
+  { cat: 'Future', prompt: "I'm thirsty. — Wait, I ___ get you some water.", answer: "'ll", faux: ["'m going", 'was', 'did'], expl: "Décision prise sur le moment, ou offre d'aide → <strong>will</strong> ('ll)." },
+  { cat: 'Future', prompt: "We ___ visit our cousins in Scotland next summer. We've already bought the tickets.", answer: 'are going to', faux: ['went to', 'are visit', 'was going'], expl: "Un projet déjà décidé → <strong>be going to</strong>." },
+  { cat: 'Future', prompt: "I'm not sure, but Vicky ___ come to the party.", answer: 'might', faux: ['must', 'is', 'did'], expl: "<strong>might</strong> (ou may) = peut-être, ce n'est pas sûr." },
+  { cat: 'Future', prompt: "It ___ be sunny tomorrow, so take your sun hat.", answer: 'will', faux: ['was', 'is being', 'were'], expl: "Une prévision pour l'avenir → <strong>will</strong> + verbe." },
+  { cat: 'Modals', prompt: "You've got a toothache. You ___ go to the dentist.", answer: 'should', faux: ["shouldn't", 'might not', 'could not'], expl: "Donner un conseil → <strong>should</strong> (tu devrais)." },
+  { cat: 'Modals', prompt: "It's very late. You ___ watch TV now — go to bed!", answer: "shouldn't", faux: ['should', 'could', 'will'], expl: "Conseiller de NE PAS faire → <strong>shouldn't</strong>." },
+  { cat: 'Modals', prompt: "___ we have a picnic in the park?", answer: 'Shall', faux: ['Do', 'Are', 'Must'], expl: "Faire une proposition → <strong>Shall we…?</strong> (Et si on… ?)" },
+  { cat: 'Modals', prompt: "When I was five, I ___ swim, but now I can.", answer: "couldn't", faux: ["can't", "don't", "wasn't"], expl: "Capacité dans le passé → <strong>could / couldn't</strong>." },
+  { cat: 'Modals', prompt: "At my school, we ___ wear a uniform. It's a rule.", answer: 'have to', faux: ['might', 'shall', 'are'], expl: "Une obligation, une règle → <strong>have to</strong> (ou must)." },
+  { cat: 'Modals', prompt: "You ___ touch that! It's very hot.", answer: "mustn't", faux: ["don't have to", 'should', 'might'], expl: "Une interdiction → <strong>mustn't</strong>. (« don't have to » = ce n'est pas obligatoire.)" },
+  { cat: 'Modals', prompt: "___ I help you carry your suitcase?", answer: 'Shall', faux: ['Will', 'Am', 'Must'], expl: "Proposer son aide → <strong>Shall I…?</strong>" }
+];
+const EN_QUESTIONS = [
+  { cat: 'Tag questions', prompt: "It's cold today, ___?", answer: "isn't it", faux: ['is it', "doesn't it", "wasn't it"], expl: "Phrase affirmative avec <em>is</em> → question-tag négative : <strong>isn't it?</strong>" },
+  { cat: 'Tag questions', prompt: "You like pizza, ___?", answer: "don't you", faux: ["aren't you", 'do you', "didn't you"], expl: "Présent simple affirmatif → <strong>don't you?</strong>" },
+  { cat: 'Tag questions', prompt: "She can swim, ___?", answer: "can't she", faux: ["doesn't she", 'can she', "isn't she"], expl: "On reprend l'auxiliaire <em>can</em>, à la forme négative : <strong>can't she?</strong>" },
+  { cat: 'Tag questions', prompt: "They were at the beach yesterday, ___?", answer: "weren't they", faux: ["didn't they", "wasn't they", 'were they'], expl: "<em>were</em> affirmatif → <strong>weren't they?</strong>" },
+  { cat: 'Tag questions', prompt: "Tom didn't come to school, ___?", answer: 'did he', faux: ["didn't he", 'was he', 'does he'], expl: "Phrase négative → question-tag affirmative : <strong>did he?</strong>" },
+  { cat: 'Tag questions', prompt: "You'll help me, ___?", answer: "won't you", faux: ["will you", "don't you", "aren't you"], expl: "<em>will</em> ('ll) affirmatif → <strong>won't you?</strong>" },
+  { cat: 'Questions', prompt: "___ bike is this? — It's Harry's.", answer: 'Whose', faux: ['Who', 'Which', 'Where'], expl: "Pour demander à qui appartient quelque chose → <strong>Whose</strong>." },
+  { cat: 'Questions', prompt: "___ do you go swimming? — Twice a week.", answer: 'How often', faux: ['How long', 'How much', 'When'], expl: "Pour demander la fréquence → <strong>How often</strong>." },
+  { cat: 'Questions', prompt: "___ did the film last? — Two hours.", answer: 'How long', faux: ['How often', 'How many', 'What time'], expl: "Pour demander la durée → <strong>How long</strong>." },
+  { cat: 'Questions', prompt: "___ does the train leave? — At half past six.", answer: 'What time', faux: ['How long', 'Whose', 'How often'], expl: "Pour demander l'heure précise → <strong>What time</strong>." },
+  { cat: 'Questions', prompt: "What's your new teacher ___? — She's very kind and funny.", answer: 'like', faux: ['look', 'as', 'about'], expl: "<strong>What is … like?</strong> = Comment est… ? (le caractère, la description)." },
+  { cat: 'Questions', prompt: "What ___ did you buy at the market? — Some bananas and a T-shirt.", answer: 'else', faux: ['next', 'more', 'other'], expl: "<strong>What else…?</strong> = Quoi d'autre… ?" }
+];
+const EN_PHRASES = [
+  { cat: 'Present perfect', prompt: "I've lived in this town ___ 2020.", answer: 'since', faux: ['for', 'ago', 'from'], expl: "<strong>since</strong> + point de départ (une date, une année). <strong>for</strong> + durée." },
+  { cat: 'Present perfect', prompt: "We've known each other ___ three years.", answer: 'for', faux: ['since', 'ago', 'during'], expl: "<strong>for</strong> + durée (three years). <strong>since</strong> + point de départ." },
+  { cat: 'Present perfect', prompt: "Hurry up! The film has ___ started.", answer: 'just', faux: ['yet', 'ever', 'since'], expl: "<strong>just</strong> = vient juste de (se place avant le participe passé)." },
+  { cat: 'Present perfect', prompt: "Have you finished your homework ___?", answer: 'yet', faux: ['already', 'just', 'ever'], expl: "<strong>yet</strong> se place en fin de question ou de phrase négative." },
+  { cat: 'Present perfect', prompt: "No thanks, I've ___ eaten. I'm not hungry.", answer: 'already', faux: ['yet', 'ever', 'since'], expl: "<strong>already</strong> = déjà (plus tôt que prévu)." },
+  { cat: 'Connectors', prompt: "I stayed at home ___ I had a cold.", answer: 'because', faux: ['so', 'but', 'until'], expl: "<strong>because</strong> introduit la cause (parce que)." },
+  { cat: 'Connectors', prompt: "It was raining, ___ we didn't go to the park.", answer: 'so', faux: ['because', 'if', 'while'], expl: "<strong>so</strong> introduit la conséquence (donc)." },
+  { cat: 'Connectors', prompt: "I was reading ___ my sister was watching TV.", answer: 'while', faux: ['until', 'so', 'than'], expl: "<strong>while</strong> = pendant que (deux actions en même temps)." },
+  { cat: 'Connectors', prompt: "Wait here ___ I come back.", answer: 'until', faux: ['while', 'so', 'because'], expl: "<strong>until</strong> = jusqu'à ce que." },
+  { cat: 'Connectors', prompt: "Wash your hands ___ you eat.", answer: 'before', faux: ['so', 'because', 'than'], expl: "<strong>before</strong> = avant (de). <strong>after</strong> = après." },
+  { cat: 'If clauses', prompt: "If it ___ tomorrow, we'll stay at home.", answer: 'rains', faux: ['will rain', 'rained', 'raining'], expl: "Après <strong>if</strong>, on utilise le <strong>présent</strong>, même pour parler du futur : If it rains, we'll…" },
+  { cat: 'If clauses', prompt: "If you mix blue and yellow, you ___ green.", answer: 'get', faux: ['got', 'getting', 'will got'], expl: "Une vérité générale : if + présent, puis présent." },
+  { cat: 'Relatives', prompt: "This is the museum ___ we saw the dinosaur.", answer: 'where', faux: ['who', 'which', 'when'], expl: "Pour un lieu → <strong>where</strong>." },
+  { cat: 'Relatives', prompt: "The woman ___ lives next door is a journalist.", answer: 'who', faux: ['which', 'where', 'what'], expl: "Pour une personne → <strong>who</strong>." },
+  { cat: 'Relatives', prompt: "I've lost the book ___ you gave me.", answer: 'which', faux: ['who', 'where', 'whose'], expl: "Pour une chose → <strong>which</strong> (ou that)." },
+  { cat: 'Expressions', prompt: "This soup ___ like chicken.", answer: 'tastes', faux: ['hears', 'sounds', 'is'], expl: "<strong>taste like</strong> = avoir le goût de. (look like = ressembler, sound like = on dirait, au son)." },
+  { cat: 'Expressions', prompt: "The funny film made me ___.", answer: 'laugh', faux: ['to laugh', 'laughing', 'laughed'], expl: "<strong>make somebody + verbe</strong> (sans to) : It made me laugh." },
+  { cat: 'Expressions', prompt: "The table is made ___ wood.", answer: 'of', faux: ['in', 'with', 'on'], expl: "<strong>made of</strong> + matière : made of wood, made of glass…" }
+];
+
+/* ---------- Lecture d'histoires (Reading & Writing, parties 3 et 5) ---------- */
+const EN_HISTOIRES = [
+  { titre: "Holly's trip", texte: "Last summer, Holly went to Scotland with her grandparents. They travelled by train because Grandpa doesn't like planes. On the second day, they visited an old castle on an island. While they were walking round the castle, it started to rain, so they had lunch in a small café. Holly had a big bowl of soup and some bread. In the afternoon, the sun came out and they saw a rainbow over the lake.",
+    q: [['How did Holly and her grandparents travel?', 'By train', ['By plane', 'By car', 'By boat']], ['Why didn\'t they take the plane?', "Grandpa doesn't like planes.", ['It was too expensive.', 'Holly was ill.', 'There was a storm.']],
+      ['Where was the castle?', 'On an island', ['In a forest', 'In the town', 'In a desert']], ['What happened while they were walking round the castle?', 'It started to rain.', ['They saw a rainbow.', 'Holly lost her bag.', 'They met a pilot.']],
+      ['What did Holly have for lunch?', 'Soup and bread', ['A pizza', 'Fish and chips', 'A sandwich']]] },
+  { titre: "The lost passport", texte: "Richard is a journalist. Last month, he was at the airport when he found a passport on the floor. It belonged to a girl called Sophia. Richard took it to a police officer, who called Sophia's name. Ten minutes later, Sophia ran to them. She was very happy because she was going to fly to Japan that afternoon. To say thank you, she gave Richard a box of chocolates. Richard has written a story about it for his newspaper.",
+    q: [["What is Richard's job?", 'He is a journalist.', ['He is a pilot.', 'He is a police officer.', 'He is a waiter.']], ['Where did Richard find the passport?', 'At the airport', ['At the station', 'In a hotel', 'At the post office']],
+      ['Who did Richard give the passport to?', 'A police officer', ['A pilot', 'A nurse', 'A waiter']], ['Why was Sophia happy?', 'She was going to fly to Japan.', ['She won a prize.', 'It was her birthday.', 'She found her suitcase.']],
+      ['What has Richard done since then?', 'He has written a story about it.', ['He has flown to Japan.', 'He has lost his passport.', 'He has eaten the chocolates.']]] },
+  { titre: "A day at the museum", texte: "On Friday, George's class went to the science museum. First, they watched a film about planets and rockets. George thought it was the most interesting part of the day. After that, they saw a robot which could play the piano. At lunchtime, they ate their sandwiches in the museum garden. Before they went home, everybody bought a postcard in the shop. George bought two, one for his mum and one for his best friend, William.",
+    q: [['What did the class do first?', 'They watched a film.', ['They ate sandwiches.', 'They bought postcards.', 'They played the piano.']], ['What was the film about?', 'Planets and rockets', ['Robots', 'Dinosaurs', 'Castles']],
+      ['What could the robot do?', 'Play the piano', ['Sing a song', 'Draw a dragon', 'Ride a bike']], ['Where did they have lunch?', 'In the museum garden', ['In the classroom', 'In a restaurant', 'On the bus']],
+      ['How many postcards did George buy?', 'Two', ['One', 'Three', 'Four']]] }
+];
+function questionLecture() {
+  const h = unDe(EN_HISTOIRES), [question, rep, faux] = unDe(h.q);
+  return eq({ cat: 'Reading', prompt: `<div class="en-texte"><strong>${h.titre}</strong><br>${h.texte}</div><strong>${question}</strong>`, answer: rep, faux, limit: 75, audio: h.texte,
+    expl: `Retrouve la phrase du texte qui répond : relis-la et repère les mots-clés de la question (« ${question.split(' ').slice(0, 3).join(' ')}… »). Bonne réponse : <strong>${rep}</strong>.` });
+}
+
+/* ---------- La méthode et l'examen ---------- */
+const EN_METHODE = [
+  { cat: "L'examen", prompt: "Quelles sont les trois épreuves de l'examen A2 Flyers ?", answer: 'Listening, Reading & Writing, Speaking', faux: ['Grammar, Vocabulary, Spelling', 'Reading, Maths, Speaking', 'Listening, Singing, Writing'], expl: "Listening (environ 25 min), Reading & Writing (40 min) et Speaking (7 à 9 min)." },
+  { cat: "L'examen", prompt: "Combien de temps dure l'épreuve de Reading & Writing ?", answer: '40 minutes', faux: ['10 minutes', '2 heures', '25 minutes'], expl: "40 minutes pour 7 parties : il faut gérer son temps." },
+  { cat: "L'examen", prompt: "Combien de boucliers (shields) peut-on obtenir au maximum pour chaque épreuve ?", answer: '5', faux: ['3', '10', '20'], expl: "Jusqu'à 5 boucliers par épreuve, soit 15 au total. Il n'y a ni réussite ni échec." },
+  { cat: "L'examen", prompt: "Pendant le Listening, combien de fois entend-on chaque enregistrement ?", answer: 'Deux fois', faux: ['Une seule fois', 'Trois fois', 'Autant qu\'on veut'], expl: "On l'entend deux fois : la 1re pour comprendre, la 2e pour vérifier." },
+  { cat: 'Méthode', prompt: "Quelle est la meilleure façon de retenir un nouveau mot ?", answer: "Le dire à voix haute, l'utiliser dans une phrase et le revoir plusieurs jours", faux: ['Le lire une seule fois', 'Le recopier 50 fois le même jour', 'Le traduire mot à mot sans le prononcer'], expl: "Entendre, dire, utiliser et revoir à intervalles réguliers : c'est ce qui fixe un mot." },
+  { cat: 'Méthode', prompt: "À l'examen, que faire si on ne connaît pas un mot dans un texte ?", answer: 'Deviner son sens grâce au reste de la phrase', faux: ['Arrêter de lire', 'Laisser toutes les questions vides', 'Écrire la réponse en français'], expl: "Le contexte aide souvent à comprendre un mot inconnu." },
+  { cat: 'Méthode', prompt: "Dans le Speaking, l'examinateur montre deux images presque pareilles. Que faut-il faire ?", answer: 'Dire les différences en anglais', faux: ['Rester silencieux', 'Dessiner les différences', 'Répondre en français'], expl: "Partie 1 du Speaking : « In my picture, the cat is black. In your picture, it's white. »" },
+  { cat: 'Méthode', prompt: "Que veut dire « library » ?", answer: 'Une bibliothèque', faux: ['Une librairie', 'Une liberté', 'Un livre'], expl: "Faux ami ! library = bibliothèque ; une librairie = a bookshop." }
+];
+
 /* ================= Domaines et compétences ================= */
 function q(obj) { return Object.assign({ unit: '', svg: null, limit: 18 }, obj); }
 
@@ -1852,6 +2181,118 @@ const DOMAINS = [
         { cat: 'Monde', prompt: "Yayoi Kusama, artiste japonaise, est célèbre pour…", answer: 'Ses pois (polka dots)', faux: ['Ses gibbons', 'Ses batiks', 'Ses cubes'], expl: "Elle couvre ses œuvres et ses installations de pois répétés à l'infini." },
         { cat: 'Monde', prompt: "Quelle influence les artistes du style Nanyang ont-ils reçue d'Europe ?", answer: "L'École de Paris", faux: ['Le pop art américain', "L'art numérique", 'Aucune'], expl: "Plusieurs pionniers, comme Liu Kang et Georgette Chen, ont étudié ou vécu à Paris." }
       ]); } }
+  ] },
+
+  /* ========== Anglais : Cambridge English A2 Flyers ========== */
+  { id: 'anglais', emoji: '🇬🇧', title: 'Anglais · A2 Flyers', skills: [
+    { id: 'en-methode', emoji: '🎯', title: "L'examen A2 Flyers et la méthode", explanation: "Comment se passe l'examen Cambridge, et comment apprendre l'anglais efficacement.", levels: EN_NIVEAUX,
+      cours: [
+        "<strong>A2 Flyers</strong> est le plus haut des trois examens Cambridge English pour les 9-12 ans (après Pre A1 Starters et A1 Movers). Il correspond au niveau <strong>A2</strong> du Cadre européen : on se débrouille dans les situations simples de la vie quotidienne. On y connaît environ <strong>1 200 mots</strong>.",
+        "Trois épreuves : <strong>Listening</strong> (environ 25 min, 5 parties ; chaque enregistrement passe <strong>deux fois</strong>), <strong>Reading & Writing</strong> (40 min, 7 parties : définitions, dialogues, histoires à compléter, écrire une petite histoire à partir d'images) et <strong>Speaking</strong> (7 à 9 min, 4 parties : différences entre deux images, échange d'informations, raconter une histoire, questions sur soi). Pas de réussite ni d'échec : on obtient jusqu'à <strong>5 boucliers</strong> (<em>shields</em>) par épreuve.",
+        "La méthode, comme au British Council : apprendre les mots <strong>par thèmes et en contexte</strong> (dans une phrase), <strong>écouter et répéter à voix haute</strong> (bouton 🔊), travailler <strong>un peu chaque jour</strong> plutôt que beaucoup une fois, <strong>lire de petites histoires</strong>, et oser parler même avec des fautes. Attention aux <strong>faux amis</strong> : library = bibliothèque, pas librairie !"
+      ],
+      reperes: [['3 épreuves', 'Listening · Reading & Writing · Speaking'], ['Boucliers', "Jusqu'à 5 par épreuve"], ['Chaque jour', 'Un peu, souvent, à voix haute'], ['Faux amis', 'library = bibliothèque']],
+      exemplesEn: ["In my picture, the cat is black. In your picture, it's white.", "Can you spell your name, please?", "I don't understand. Can you say that again, please?"],
+      question() { return enBanque(EN_METHODE); } },
+    { id: 'en-vocab-metiers', emoji: '🧑‍🚒', title: 'Vocabulaire : métiers et lieux', explanation: "Les métiers et les lieux de la ville de la liste A2 Flyers.", levels: EN_NIVEAUX,
+      cours: [
+        "Les <strong>métiers</strong> (<em>jobs</em>) : a dentist, an engineer, a journalist, a mechanic, a pilot, a firefighter, a photographer, a waiter, a farmer, a nurse, an astronaut, a police officer. On dit toujours <strong>a / an</strong> devant un métier : <em>She's a pilot.</em> (et non « She's pilot »).",
+        "Les <strong>lieux</strong> (<em>places</em>) : an airport, a bank, a castle, a museum, a library, a post office, a factory, a hotel, a stadium, a university, a theatre.",
+        "À l'examen (Reading & Writing, partie 1), on lit une <strong>définition</strong> et on trouve le mot : « <em>This person flies a plane.</em> » → <strong>a pilot</strong>. Entraîne-toi à faire l'inverse : décris un métier en anglais avec <em>This person…</em>"
+      ],
+      reperes: [['a / an', "Toujours devant un métier : He's an engineer."], ['This person…', 'Définir un métier'], ['You go here to…', 'Définir un lieu'], ['library', 'bibliothèque (faux ami)']],
+      exemplesEn: ['She is a pilot. She flies planes.', 'My uncle is an engineer.', 'You can borrow books at the library.'],
+      question() { return questionVocab(['metiers', 'lieux']); } },
+    { id: 'en-vocab-monde', emoji: '🌍', title: 'Vocabulaire : le monde, la météo, la santé', explanation: "La nature, l'espace, les saisons, la météo, et dire qu'on ne se sent pas bien.", levels: EN_NIVEAUX,
+      cours: [
+        "<strong>The world around us</strong> : a desert, an island, a forest, a river, a planet, a rocket, the moon. Les saisons : <strong>spring</strong>, <strong>summer</strong>, <strong>autumn</strong>, <strong>winter</strong>. La météo : a storm, fog (<em>foggy</em>), ice, snow, wind (<em>windy</em>).",
+        "<strong>Health</strong> : pour dire où l'on a mal, on ajoute <strong>-ache</strong> : a headache, a toothache, an earache, a stomach-ache. On dit aussi : <em>I've got a cold / a cough / a temperature.</em> Pour demander : <strong>What's the matter?</strong> (Qu'est-ce qui ne va pas ?)",
+        "Astuce : on dit <strong>I've got a headache</strong> (j'ai mal à la tête), avec <em>a</em>, comme un objet qu'on « possède »."
+      ],
+      reperes: [['Saisons', 'spring, summer, autumn, winter'], ['-ache', 'headache, toothache, earache'], ["What's the matter?", "Qu'est-ce qui ne va pas ?"], ["I've got…", 'a cold, a cough, a temperature']],
+      exemplesEn: ["What's the matter? — I've got a headache.", 'In autumn, the leaves fall from the trees.', "It's foggy today. I can't see the island."],
+      question() { return questionVocab(['monde', 'sante']); } },
+    { id: 'en-vocab-matieres', emoji: '🧳', title: 'Vocabulaire : matières et objets', explanation: "De quoi les choses sont faites, et les objets du voyage et du courrier.", levels: EN_NIVEAUX,
+      cours: [
+        "Les <strong>matières</strong> (<em>materials</em>) : gold, silver, wood, glass, paper, plastic, metal. Pour dire de quoi un objet est fait : <strong>It's made of</strong> wood. Pour demander : <strong>What's it made of?</strong>",
+        "Les <strong>objets</strong> du voyage et du courrier : a passport, a suitcase, an envelope, a stamp, a torch. Ces mots reviennent souvent dans les histoires de l'examen.",
+        "Faux ami : <strong>silver</strong> = l'argent, le métal ; l'argent qu'on dépense se dit <strong>money</strong>."
+      ],
+      reperes: [['made of', "It's made of glass."], ['silver', "l'argent (métal) ≠ money"], ['Voyage', 'passport, suitcase'], ['Courrier', 'envelope, stamp']],
+      exemplesEn: ["What's it made of? — It's made of wood.", 'Put a stamp on the envelope.', "Don't forget your passport!"],
+      question() { return questionVocab(['matieres']); } },
+    { id: 'en-passe', emoji: '⏪', title: 'Past simple et past continuous', explanation: "Raconter au passé : ce qui s'est passé, et ce qui était en train de se passer.", levels: EN_NIVEAUX,
+      cours: [
+        "Le <strong>past simple</strong> raconte une action <strong>terminée</strong> : <em>Yesterday, I visited the castle.</em> Verbes réguliers : <strong>+ ed</strong> (play → played ; study → studied ; stop → stopped ; travel → travelled). Les <strong>irréguliers</strong> s'apprennent par cœur : go → went, see → saw, buy → bought, eat → ate, take → took, fly → flew…",
+        "Le <strong>past continuous</strong> (<strong>was / were + verbe-ing</strong>) décrit une action <strong>en cours</strong> dans le passé : <em>I was walking down the road…</em> On l'utilise souvent avec une action courte au past simple : <em>…when I saw her.</em>",
+        "Mots-repères : <strong>yesterday, last week, two days ago</strong> → past simple ; <strong>when</strong> (une action courte qui interrompt) et <strong>while</strong> (pendant que) → souvent avec le past continuous. I / he / she / it → <strong>was</strong> ; we / you / they → <strong>were</strong>."
+      ],
+      reperes: [['Past simple', 'Action terminée : went, saw, played'], ['Past continuous', 'was/were + -ing : action en cours'], ['when', 'I was reading when the phone rang.'], ['was / were', 'I, he, she → was ; we, they → were']],
+      exemplesEn: ['Last summer, we went to Scotland.', 'I was walking down the road when I saw her.', 'It was a very cold day and snow was falling.'],
+      question() { return Math.random() < 0.55 ? questionPreterit() : questionPastContinuous(); } },
+    { id: 'en-present-perfect', emoji: '✅', title: 'Present perfect', explanation: "Parler de ses expériences et de ce qui vient de se passer : ever, never, just, already, yet, for, since.", levels: EN_NIVEAUX,
+      cours: [
+        "Le <strong>present perfect</strong> se forme avec <strong>have / has + participe passé</strong> : <em>I have (I've) seen</em>, <em>she has (she's) eaten</em>. Il relie le passé au présent.",
+        "On l'utilise pour les <strong>expériences</strong> : <em>Have you <strong>ever</strong> been to the circus?</em> (As-tu déjà… ?) — <em>I've <strong>never</strong> eaten sushi.</em> ; pour ce qui <strong>vient</strong> de se passer : <em>He's <strong>just</strong> eaten his dinner.</em> ; avec <strong>already</strong> (déjà) et <strong>yet</strong> (en fin de question ou de négation).",
+        "Durée : <strong>for</strong> + une durée (<em>for three years</em>), <strong>since</strong> + un point de départ (<em>since 2020</em>). Participes irréguliers à connaître : seen, eaten, been, done, written, ridden, flown, taken, broken, worn, sung, drawn."
+      ],
+      reperes: [['have/has + participe', "I've seen, she's eaten"], ['ever / never', 'Expériences'], ['just / already / yet', 'Vient de / déjà / pas encore'], ['for / since', 'for + durée, since + départ']],
+      exemplesEn: ['Have you ever been to the circus?', "He's just eaten his dinner.", "I've lived here since twenty twenty."],
+      question() { return Math.random() < 0.5 ? questionPresentPerfect() : enBanque(EN_PHRASES.filter(x => x.cat === 'Present perfect')); } },
+    { id: 'en-futur', emoji: '🔮', title: 'Le futur et les modaux', explanation: "will, be going to, might, et les verbes pour conseiller, proposer, obliger : should, shall, must, have to, could.", levels: EN_NIVEAUX,
+      cours: [
+        "<strong>be going to</strong> : un projet déjà décidé, ou ce qu'on voit venir (<em>Look at the clouds! It's going to rain.</em>). <strong>will</strong> : une prévision, ou une décision prise sur le moment (<em>I'll help you!</em>). <strong>might / may</strong> : peut-être (<em>Vicky might come to the party.</em>).",
+        "Conseiller : <strong>should / shouldn't</strong> (<em>You should go to the dentist.</em>). Proposer : <strong>Shall we…? / Shall I…?</strong> Obligation : <strong>must</strong> ou <strong>have to</strong> ; interdiction : <strong>mustn't</strong> ; pas obligatoire : <strong>don't have to</strong>. Capacité dans le passé : <strong>could / couldn't</strong>.",
+        "Après ces modaux (will, might, should, must, could, shall), le verbe est à la forme de base, <strong>sans to</strong> : <em>You should go</em> (pas « should to go »)."
+      ],
+      reperes: [['going to', 'Projet, ou signe visible'], ['will', 'Prévision, décision immédiate'], ['might', 'Peut-être'], ['should / shall / must', 'Conseil / proposition / obligation']],
+      exemplesEn: ["Look at those clouds! It's going to rain.", 'Shall we have a picnic in the park?', 'You should go to the dentist.'],
+      question() { return enBanque(EN_FUTUR_MODAUX); } },
+    { id: 'en-comparer', emoji: '📏', title: 'Comparatifs et superlatifs', explanation: "Comparer deux choses, ou dire laquelle est « la plus… ».", levels: EN_NIVEAUX,
+      cours: [
+        "<strong>Comparatif</strong> (entre deux) : adjectif court + <strong>-er … than</strong> (<em>taller than</em>) ; adjectif long : <strong>more … than</strong> (<em>more beautiful than</em>).",
+        "<strong>Superlatif</strong> (le plus… de tous) : <strong>the …-est</strong> (<em>the tallest</em>) ou <strong>the most …</strong> (<em>the most beautiful</em>).",
+        "Orthographe : big → bigger → biggest (on double la consonne) ; happy → happier → happiest (y devient i). Irréguliers : <strong>good → better → best</strong>, <strong>bad → worse → worst</strong>."
+      ],
+      reperes: [['Court', 'tall → taller → the tallest'], ['Long', 'more / the most beautiful'], ['Orthographe', 'big → bigger, happy → happier'], ['Irréguliers', 'good/better/best, bad/worse/worst']],
+      exemplesEn: ['An elephant is bigger than a mouse.', 'The cheetah is the fastest animal on land.', 'This is the best film I have ever seen.'],
+      question() { return questionComparatif(); } },
+    { id: 'en-questions', emoji: '❓', title: 'Questions et question tags', explanation: "Whose, how often, how long, what time, what… like, et les « n'est-ce pas ? » anglais.", levels: EN_NIVEAUX,
+      cours: [
+        "Les mots interrogatifs du niveau : <strong>Whose</strong> (à qui ?), <strong>How often</strong> (à quelle fréquence ?), <strong>How long</strong> (combien de temps ?), <strong>What time</strong> (à quelle heure ?), <strong>What … like?</strong> (comment est… ?), <strong>What else?</strong> (quoi d'autre ?).",
+        "Les <strong>question tags</strong> = « n'est-ce pas ? ». On reprend l'auxiliaire de la phrase, à la forme <strong>inverse</strong> : phrase affirmative → tag négatif (<em>It's cold, <strong>isn't it</strong>?</em>) ; phrase négative → tag affirmatif (<em>He didn't come, <strong>did he</strong>?</em>).",
+        "Sans auxiliaire visible (présent ou passé simple), on utilise <strong>do / does / did</strong> : <em>You like pizza, <strong>don't you</strong>?</em>"
+      ],
+      reperes: [['Whose', 'À qui ?'], ['How often / How long', 'Fréquence / durée'], ['Tag', 'Auxiliaire inversé : isn\'t it? did he?'], ['Pas d\'auxiliaire', "do/does/did : don't you?"]],
+      exemplesEn: ["It's cold today, isn't it?", 'How often do you go swimming?', "What's your teacher like?"],
+      question() { return enBanque(EN_QUESTIONS); } },
+    { id: 'en-relier', emoji: '🔗', title: 'Relier les idées', explanation: "because, so, while, until, before, if, who, which, where, et les expressions avec like et make.", levels: EN_NIVEAUX,
+      cours: [
+        "Les <strong>connecteurs</strong> : <strong>because</strong> (parce que), <strong>so</strong> (donc), <strong>but</strong> (mais), <strong>while</strong> (pendant que), <strong>until</strong> (jusqu'à ce que), <strong>before / after</strong> (avant / après). <strong>if</strong> + présent : <em>If it rains, we'll stay at home.</em>",
+        "Les <strong>relatifs</strong> : <strong>who</strong> pour une personne, <strong>which</strong> pour une chose, <strong>where</strong> pour un lieu : <em>the woman who lives next door</em>, <em>the book which you gave me</em>, <em>the museum where we saw the dinosaur</em>.",
+        "Expressions du niveau : <strong>look like / sound like / taste like</strong> (ressembler à, on dirait, avoir le goût de), <strong>make somebody + verbe</strong> (<em>It made me laugh</em>), <strong>made of</strong> + matière."
+      ],
+      reperes: [['because / so', 'Cause / conséquence'], ['if + présent', "If it rains, we'll…"], ['who / which / where', 'Personne / chose / lieu'], ['make me laugh', 'make + verbe sans to']],
+      exemplesEn: ["If it rains tomorrow, we'll stay at home.", 'The woman who lives next door is a journalist.', 'The funny film made me laugh.'],
+      question() { return enBanque(EN_PHRASES.filter(x => x.cat !== 'Present perfect')); } },
+    { id: 'en-ecoute', emoji: '🎧', title: 'Listening', explanation: "Comprendre les nombres, l'heure, les prénoms épelés et des phrases, à l'oral.", levels: EN_NIVEAUX,
+      cours: [
+        "Au <strong>Listening</strong>, on entend chaque enregistrement <strong>deux fois</strong>. La première fois, on comprend l'idée ; la seconde, on vérifie. Ici, appuie sur <strong>🔊</strong> autant de fois que tu veux, et essaie <strong>🐢</strong> pour écouter plus lentement.",
+        "Pièges fréquents : les <strong>nombres</strong> (<em>three hundred and forty-five</em> = 345 ; attention à thirteen / thirty), l'<strong>heure</strong> (<em>quarter past</em> = et quart, <em>quarter to</em> = moins le quart, <em>half past</em> = et demie) et les <strong>prénoms épelés</strong> (Listening, partie 2) : connais bien l'alphabet anglais, surtout <strong>A</strong> (« ei »), <strong>E</strong> (« i »), <strong>I</strong> (« aï »), <strong>G</strong> et <strong>J</strong>.",
+        "L'écoute utilise la voix anglaise de ton téléphone. Si tu n'entends rien ou si l'accent est français, installe une voix anglaise (Paramètres → Synthèse vocale → langue anglaise)."
+      ],
+      reperes: [['Deux écoutes', 'Comprendre, puis vérifier'], ['past / to', 'quarter past 3 = 3:15 ; quarter to 4 = 3:45'], ['Nombres', '… hundred AND …'], ['Alphabet', 'A « ei », E « i », I « aï »']],
+      exemplesEn: ["It's quarter to nine.", 'Three hundred and forty-five.', 'My name is Katy. K, A, T, Y.'],
+      question() { return questionEcoute(); } },
+    { id: 'en-lecture', emoji: '📖', title: 'Reading', explanation: "Lire une petite histoire et répondre aux questions, comme dans Reading & Writing.", levels: EN_NIVEAUX,
+      cours: [
+        "Dans <strong>Reading & Writing</strong>, plusieurs parties demandent de lire une histoire et de répondre : choisir le bon mot, compléter des phrases, ou répondre à des questions.",
+        "La méthode : 1) lis d'abord <strong>la question</strong> ; 2) repère ses <strong>mots-clés</strong> (who, where, why, how many…) ; 3) retrouve dans le texte <strong>la phrase</strong> qui en parle ; 4) vérifie que ta réponse répond exactement à la question (<em>Why…?</em> → <em>because…</em>).",
+        "Si un mot est inconnu, devine son sens grâce au reste de la phrase. Et lis le texte à voix haute avec 🔊 pour travailler aussi la prononciation."
+      ],
+      reperes: [['1. La question', "Lis-la avant le texte"], ['2. Mots-clés', 'who, where, why, how many'], ['3. La phrase', 'Retrouve-la dans le texte'], ['4. Vérifier', 'Ma réponse répond-elle à la question ?']],
+      exemplesEn: ['Last summer, Holly went to Scotland with her grandparents.', 'They travelled by train because Grandpa doesn\'t like planes.'],
+      question() { return questionLecture(); } }
   ] },
 
   /* ========== Histoire ========== */
@@ -2660,7 +3101,12 @@ function startQuiz(kind, builderFn, bestKey, extra) {
   state.quiz = { kind, rebuild: builderFn, bestKey, extra: x, sprint: !!x.sprint, trickId: x.trickId, niveau: x.niveau, index: 0, score: 0, questions, answered: false, lastChosen: null,
     timeLeft: x.sprint ? DUREE_SPRINT : questions[0].limit, timerHandle: null, times: [], catStats: {}, pause: false, gain: null, erreurs: [], attenteCorrection: false,
     saisie: '', debutQuestion: Date.now(), pauseDebut: null };
-  state.screen = 'quiz'; render(); runTimer();
+  state.screen = 'quiz'; render(); runTimer(); jouerSiEcoute();
+}
+/* une question d'écoute se lit toute seule dès qu'elle apparaît */
+function jouerSiEcoute() {
+  const qz = state.quiz, c = qz && qz.questions[qz.index];
+  if (c && c.ecouteSeule) setTimeout(() => { if (state.quiz === qz && qz.questions[qz.index] === c) direAnglais(c.audio); }, 350);
 }
 function runTimer() {
   clearTimer();
@@ -2688,7 +3134,7 @@ function questionSuivante() {
   if (qz.index < qz.questions.length - 1) {
     qz.index++; qz.answered = false; qz.lastChosen = null; qz.saisie = ''; qz.debutQuestion = Date.now();
     if (!qz.sprint) { qz.timeLeft = qz.questions[qz.index].limit; runTimer(); }
-    render(); return;
+    render(); jouerSiEcoute(); return;
   }
   finirQuiz();
 }
@@ -3199,6 +3645,7 @@ function renderCours(s, d) {
     <div class="lesson-hero"><div class="lesson-emoji">${s.emoji || d.emoji}</div><div class="lesson-title">${s.title}</div><div class="lesson-explanation">${s.explanation}</div></div>
     <div class="section-label">${d.id === 'olympiades' ? 'La technique' : 'La leçon'}</div>
     <div class="cours-card">${s.cours.map(par => `<p>${par}</p>`).join('')}${reperes}</div>
+    ${s.exemplesEn ? `<div class="section-label">🔊 Écoute et répète</div><div class="cours-card">${s.exemplesEn.map((t, i) => `<button class="ligne-en" data-action="dire-exemple-en" data-i="${i}">🔊 ${t}</button>`).join('')}</div>` : ''}
     <div class="btn-stack" style="margin-top:0.5rem;"><button class="btn btn-primary" data-action="start-skill-quiz">${d.id === 'olympiades' ? `✨ S'entraîner (${nbQuestions(d.id, s.id)} problèmes · niveau ${olyLabel()})` : '✨ Pratiquer (8 questions, chrono)'}</button></div>
   </div>`;
 }
@@ -3243,6 +3690,7 @@ function renderQuiz() {
     ? `<div class="pause-panel"><div class="pause-emoji">⏸️</div><div class="pause-title">Pause</div><div class="pause-note">Le chrono est arrêté. La question réapparaîtra quand tu reprendras.</div></div>`
     : `<div class="question-card">
       ${cur.formula ? `<div class="question-label">${cur.prompt}</div><div class="question-formula">${cur.formula}</div>` : `<div class="question-label">${cur.prompt}</div>${cur.svg ? `<div class="question-shape">${cur.svg}</div>` : ''}${cur.unit ? `<div style="font-size:0.78rem;color:var(--text-secondary);">Réponse en ${cur.unit}</div>` : ''}`}
+      ${cur.audio ? `<div class="ecoute-btns"><button class="btn-ecoute" data-action="ecouter-en">🔊 ${cur.ecouteSeule ? 'Écouter' : 'Listen'}</button><button class="btn-ecoute" data-action="ecouter-en-lent" title="Plus lentement">🐢</button></div>` : ''}
     </div>`;
   return `<div class="screen screen-quiz">
     <div class="quiz-topbar"><div class="quiz-progress">${qz.sprint ? `⚡ Sprint · ${qz.times.length} réponse${qz.times.length > 1 ? 's' : ''}` : `${cur.category} · ${qz.index + 1}/${total}`}</div><button class="btn-pause" data-action="toggle-pause">${qz.pause ? '▶ Reprendre' : '⏸ Pause'}</button><div class="quiz-score">⭐ ${qz.score}</div></div>
@@ -3366,6 +3814,9 @@ function onAction(e) {
   else if (a === 'answer-quiz') { state.quiz.lastChosen = e.currentTarget.dataset.value; answerQuiz(e.currentTarget.dataset.value); }
   else if (a === 'retry-quiz') { const etape = state.quiz.etapeSeance; startQuiz(state.quiz.kind, state.quiz.rebuild, state.quiz.bestKey, state.quiz.extra); state.quiz.etapeSeance = etape; }
   else if (a === 'continuer-quiz') questionSuivante();
+  else if (a === 'ecouter-en') direAnglais(state.quiz.questions[state.quiz.index].audio);
+  else if (a === 'ecouter-en-lent') direAnglais(state.quiz.questions[state.quiz.index].audio, 0.6);
+  else if (a === 'dire-exemple-en') direAnglais(getSkill(state.currentDomain, state.currentSkill).exemplesEn[Number(e.currentTarget.dataset.i)]);
   else if (a === 'toggle-pause') basculerPause();
 }
 
