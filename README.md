@@ -68,6 +68,22 @@ Un **🏆 concours blanc** de 12 problèmes mélange toutes les techniques, avec
 
 Les problèmes sont presque tous **générés** (ils changent à chaque fois et sont justes par construction), complétés par une dizaine de grands classiques écrits à la main. Chaque modèle a été vérifié en recalculant la réponse indépendamment (simulation, comptage exhaustif) sur des milliers de tirages.
 
+### Art (programme de Singapour)
+
+Au niveau **Singapour**, le module **🎨 Art** suit le programme d'Art du collège à Singapour (MOE, *Lower Secondary Art Syllabus 2024*, Sec 1–2) : ses trois domaines d'apprentissage (*Perceive, Communicate, Appreciate*), ses trois compétences (*observe-inquire, create-innovate, connect-respond*) et ses quatre composantes (*Context, Artistic Processes, Media, Visual Qualities*). Dix leçons, chacune avec ses questions corrigées : le cadre du programme, les éléments visuels, les principes de composition, la couleur, le dessin (outil principal du programme), les médias (dessin et numérique essentiels, gravure, sculpture, batik, stop-motion), le processus artistique et le carnet de recherche, la discussion d'œuvre selon Feldman (décrire, analyser, interpréter, évaluer) et les contextes, l'art à Singapour (NAFA, style Nanyang, voyage à Bali de 1952, pionniers, art contemporain, National Gallery) et l'Asie du Sud-Est et le monde. Les termes anglais du programme sont donnés entre parenthèses.
+
+### Anglais : Cambridge English A2 Flyers
+
+Aux niveaux CM2 et 6ème, le module **🇬🇧 Anglais · A2 Flyers** prépare à l'examen Cambridge English A2 Flyers (*Young Learners*, 9-12 ans) :
+
+- **L'examen et la méthode** : les trois épreuves (Listening, Reading & Writing, Speaking), les boucliers, et la méthode d'apprentissage (mots par thèmes et en contexte, écouter et répéter, un peu chaque jour, faux amis).
+- **Vocabulaire** de la liste Flyers par thèmes : métiers et lieux, le monde, la météo et la santé, matières et objets. Trois formats : français → anglais, anglais → français, et définition à la manière de Reading & Writing partie 1.
+- **Grammaire** de la liste Flyers : past simple et past continuous, present perfect (ever, just, already, yet, for, since), futur (will, going to, might) et modaux (should, shall, must, have to, could), comparatifs et superlatifs, questions (whose, how often, how long, what… like) et question tags, connecteurs, if, relatifs, expressions (look/sound/taste like, make somebody…, made of).
+- **Listening** : nombres de 101 à 1000, heure, prénoms épelés et phrases, lus par la **voix anglaise** du téléphone (🔊, et 🐢 pour ralentir). La question d'écoute se lit toute seule dès qu'elle apparaît.
+- **Reading** : petites histoires suivies de questions, comme dans Reading & Writing.
+
+Chaque leçon a une rubrique **« Écoute et répète »** avec des phrases modèles à faire lire par le téléphone. Si l'accent entendu est français, il faut installer une voix anglaise dans les réglages de synthèse vocale du téléphone.
+
 ### Fonctionnement sans connexion
 
 L'application ne dépend d'**aucune ressource extérieure** : pas de bibliothèque distante, pas de police en ligne, pas d'image téléchargée. Tout tient dans `index.html`, et le service worker met en cache les cinq fichiers du site.

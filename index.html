@@ -57,6 +57,11 @@
   .saisie-affichage.ok { background: var(--success-bg); border-color: var(--success); color: var(--success); }
   .saisie-affichage.ko { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
   .saisie-vide { color: var(--border); }
+  .ecoute-btns { display: flex; justify-content: center; gap: 8px; margin-top: 0.7rem; }
+  .btn-ecoute { padding: 0.55rem 1rem; font-size: 0.95rem; font-weight: 700; border-radius: 12px; border: 1px solid var(--purple); background: var(--bg); color: var(--purple); cursor: pointer; }
+  .en-texte { text-align: left; font-size: 0.9rem; line-height: 1.5; background: var(--bg); border-radius: 10px; padding: 0.7rem 0.8rem; margin-bottom: 0.6rem; color: var(--text); font-weight: 400; }
+  .ligne-en { display: block; width: 100%; text-align: left; padding: 0.6rem 0.4rem; font-size: 0.92rem; border: none; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; }
+  .ligne-en:last-child { border-bottom: none; }
   .saisie-zone ~ .correction { margin-top: 12px; }
   .bravo { background: var(--success-bg); border: 1px solid #A6DFCB; border-radius: 14px; padding: 0.9rem 1rem; margin-top: 12px; }
   .bravo-titre { font-weight: 800; color: var(--success); font-size: 1.05rem; }
@@ -1294,6 +1299,330 @@ const OLY_TECHNIQUES = [
   ], [['Estimer', 'Arrondir pour avoir un ordre de grandeur'], ['Éliminer', 'Parité, dernier chiffre, bornes'], ['Tester', 'Essayer les réponses restantes'], ['Cas simple', 'Essayer avec 1, un carré 1 × 1…']], OLY_STRATEGIE)
 ];
 
+/* ================= Anglais : Cambridge English A2 Flyers ================= */
+/* Aligné sur l'examen Cambridge English A2 Flyers (Young Learners) : les
+   thèmes de vocabulaire et la liste de grammaire du niveau, et les formats
+   des épreuves (Listening, Reading & Writing). L'écoute utilise la synthèse
+   vocale du téléphone, avec une voix anglaise britannique si elle existe. */
+const EN_NIVEAUX = ['cm2', 'sixieme'];
+function voixAnglaise() {
+  if (!('speechSynthesis' in window)) return null;
+  const v = speechSynthesis.getVoices();
+  return v.find(x => x.lang === 'en-GB') || v.find(x => x.lang && x.lang.toLowerCase().startsWith('en')) || null;
+}
+function direAnglais(texte, vitesse) {
+  if (!('speechSynthesis' in window) || !texte) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(texte);
+  u.lang = 'en-GB';
+  try { const v = voixAnglaise(); if (v) u.voice = v; } catch (e) { /* voix par défaut */ }
+  u.rate = vitesse || 0.85;
+  speechSynthesis.speak(u);
+}
+/* une question d'anglais : toujours trois distracteurs écrits à la main,
+   pour ne jamais tomber sur des variantes numériques absurdes */
+function eq(o) {
+  return q({ category: o.cat, prompt: o.prompt, answer: o.answer, options: mkOptions(o.answer, o.faux), limit: o.limit || 25,
+    expl: o.expl, audio: o.audio || null, ecouteSeule: !!o.ecouteSeule });
+}
+function enBanque(items) { const b = items[rnd(0, items.length - 1)]; return eq(b); }
+function unDe(arr) { return arr[rnd(0, arr.length - 1)]; }
+const EN_PRENOMS = ['Katy', 'Harry', 'Sophia', 'William', 'Emma', 'Richard', 'Holly', 'George', 'Sarah', 'Michael', 'Betty', 'Robert'];
+
+/* ---------- Nombres et heures (Listening, Reading) ---------- */
+const EN_UNITES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const EN_DIZAINES = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+function nombreAnglais(n) {
+  if (n === 1000) return 'one thousand';
+  const c = Math.floor(n / 100), r = n % 100;
+  let reste = '';
+  if (r < 20) reste = r ? EN_UNITES[r] : '';
+  else reste = EN_DIZAINES[Math.floor(r / 10)] + (r % 10 ? '-' + EN_UNITES[r % 10] : '');
+  if (!c) return reste || 'zero';
+  /* à la britannique : « three hundred AND forty-five » */
+  return EN_UNITES[c] + ' hundred' + (reste ? ' and ' + reste : '');
+}
+function heureAnglaise(h, m) {
+  const suiv = h % 12 + 1, nom = (x) => EN_UNITES[x] || (x === 12 ? 'twelve' : String(x));
+  if (m === 0) return `${nom(h)} o'clock`;
+  if (m === 15) return `quarter past ${nom(h)}`;
+  if (m === 30) return `half past ${nom(h)}`;
+  if (m === 45) return `quarter to ${nom(suiv)}`;
+  if (m < 30) return `${nombreAnglais(m)} past ${nom(h)}`;
+  return `${nombreAnglais(60 - m)} to ${nom(suiv)}`;
+}
+const hm = (h, m) => `${h}:${String(m).padStart(2, '0')}`;
+
+/* ---------- Vocabulaire par thèmes (liste A2 Flyers) ---------- */
+/* [anglais, français, définition à la manière de Reading & Writing partie 1] */
+const EN_VOCAB = {
+  metiers: { titre: 'Jobs', mots: [
+    ['a dentist', 'un(e) dentiste', 'This person looks after your teeth.'],
+    ['an engineer', 'un ingénieur, une ingénieure', 'This person designs and builds machines, bridges or roads.'],
+    ['a journalist', 'un(e) journaliste', 'This person writes about the news for newspapers or websites.'],
+    ['a mechanic', 'un mécanicien, une mécanicienne', 'This person repairs cars and other machines.'],
+    ['a pilot', 'un(e) pilote', 'This person flies a plane.'],
+    ['a firefighter', 'un pompier, une pompière', 'This person puts out fires.'],
+    ['a photographer', 'un(e) photographe', 'This person takes photos as a job.'],
+    ['a waiter', 'un serveur', 'This person brings food to your table in a restaurant.'],
+    ['a farmer', 'un agriculteur, une agricultrice', 'This person keeps animals and grows food on a farm.'],
+    ['a nurse', 'un infirmier, une infirmière', 'This person works in a hospital and helps the doctors look after ill people.'],
+    ['an astronaut', 'un(e) astronaute', 'This person travels into space.'],
+    ['a police officer', 'un policier, une policière', 'This person helps keep people safe and catches thieves.']
+  ] },
+  lieux: { titre: 'Places', mots: [
+    ['an airport', 'un aéroport', 'You go here to catch a plane.'],
+    ['a bank', 'une banque', 'People keep their money here.'],
+    ['a castle', 'un château fort', 'Kings and queens lived in this big old building with towers.'],
+    ['a museum', 'un musée', 'You can look at old and interesting things here.'],
+    ['a library', 'une bibliothèque', 'You can borrow books here.'],
+    ['a post office', 'un bureau de poste', 'You go here to send letters and parcels.'],
+    ['a factory', 'une usine', 'People make things like cars or chocolate here.'],
+    ['a hotel', 'un hôtel', 'You can sleep here when you are on holiday.'],
+    ['a stadium', 'un stade', 'You can watch big football matches here.'],
+    ['a university', 'une université', 'Students go here to study after they finish school.'],
+    ['a theatre', 'un théâtre', 'You can watch actors in a play here.']
+  ] },
+  monde: { titre: 'The world around us', mots: [
+    ['a desert', 'un désert', 'This place is very hot and dry, with lots of sand.'],
+    ['an island', 'une île', 'This is land with water all around it.'],
+    ['a forest', 'une forêt', 'This is a big place with lots of trees.'],
+    ['a planet', 'une planète', 'Earth and Mars are examples of this.'],
+    ['a rocket', 'une fusée', 'Astronauts travel into space in this.'],
+    ['the moon', 'la lune', 'You can see this in the sky at night. It goes round the Earth.'],
+    ['a storm', 'une tempête, un orage', 'This is very bad weather with strong wind and rain.'],
+    ['fog', 'le brouillard', "It's like a cloud near the ground. It's difficult to see when there is this."],
+    ['ice', 'la glace', 'This is water that is so cold that it is hard.'],
+    ['autumn', "l'automne", 'In this season, the leaves fall from the trees.'],
+    ['winter', "l'hiver", 'This is the coldest season of the year.'],
+    ['a river', 'une rivière, un fleuve', 'Water moves along this to the sea.']
+  ] },
+  matieres: { titre: 'Materials and things', mots: [
+    ['gold', "l'or", 'This expensive yellow metal is used to make rings.'],
+    ['silver', "l'argent (le métal)", 'This shiny grey metal is used to make spoons and jewellery.'],
+    ['wood', 'le bois', 'Trees are made of this.'],
+    ['glass', 'le verre', 'Windows are made of this.'],
+    ['paper', 'le papier', 'The pages of a book are made of this.'],
+    ['plastic', 'le plastique', 'Many bottles and toys are made of this light material.'],
+    ['an envelope', 'une enveloppe', 'You put a letter inside this before you send it.'],
+    ['a stamp', 'un timbre', 'You stick this on a letter before you post it.'],
+    ['a passport', 'un passeport', 'You need this to travel to another country.'],
+    ['a suitcase', 'une valise', 'You put your clothes in this when you travel.'],
+    ['a torch', 'une lampe de poche', 'You use this to see when it is dark.']
+  ] },
+  sante: { titre: 'Health', mots: [
+    ['a headache', 'un mal de tête', "You've got this when your head hurts."],
+    ['a toothache', 'un mal de dents', "You've got this when one of your teeth hurts."],
+    ['an earache', "un mal d'oreille", "You've got this when your ear hurts."],
+    ['a stomach-ache', 'un mal de ventre', "You've got this when you eat too much and your tummy hurts."],
+    ['a temperature', 'de la fièvre', 'When you have this, your body is too hot because you are ill.'],
+    ['a cold', 'un rhume', 'When you have this, you sneeze and your nose is full.'],
+    ['a cough', 'une toux', 'When you have this, you make a loud noise from your throat.'],
+    ['medicine', 'un médicament', 'You take this when you are ill to feel better.']
+  ] }
+};
+function questionVocab(themes) {
+  const t = EN_VOCAB[unDe(themes)], [en, fr, def] = unDe(t.mots);
+  const autres = shuffle(t.mots.filter(m => m[0] !== en)).slice(0, 3);
+  const type = rnd(0, 2);
+  if (type === 0) return eq({ cat: t.titre, prompt: `Comment dit-on « ${fr} » en anglais ?`, answer: en, faux: autres.map(m => m[0]), audio: en,
+    expl: `« ${fr} » se dit <strong>${en}</strong>. Appuie sur 🔊 pour l'entendre et répète-le à voix haute.` });
+  if (type === 1) return eq({ cat: t.titre, prompt: `Que veut dire « ${en} » ?`, answer: fr, faux: autres.map(m => m[1]), audio: en,
+    expl: `<strong>${en}</strong> veut dire « ${fr} ».` });
+  return eq({ cat: t.titre, prompt: `<em>Reading & Writing, partie 1.</em> Read and choose the word: « ${def} »`, answer: en, faux: autres.map(m => m[0]), audio: def, limit: 30,
+    expl: `« ${def} » → <strong>${en}</strong> (${fr}).` });
+}
+
+/* ---------- Grammaire : formes verbales ---------- */
+/* [base, prétérit, complément] ; les verbes irréguliers les plus fréquents du niveau */
+const EN_PRETERIT = [
+  ['go', 'went', 'to the museum'], ['see', 'saw', 'a big whale'], ['buy', 'bought', 'a new bike'], ['eat', 'ate', 'a huge pizza'],
+  ['drink', 'drank', 'some orange juice'], ['swim', 'swam', 'in the lake'], ['write', 'wrote', 'a postcard'], ['take', 'took', 'a lot of photos'],
+  ['make', 'made', 'a chocolate cake'], ['have', 'had', 'a picnic'], ['find', 'found', 'a key under the sofa'], ['fly', 'flew', 'to London'],
+  ['catch', 'caught', 'a fish'], ['bring', 'brought', 'some sandwiches'], ['lose', 'lost', 'an umbrella'], ['wear', 'wore', 'a yellow raincoat'],
+  ['ride', 'rode', 'a horse'], ['sing', 'sang', 'a song'], ['draw', 'drew', 'a dragon'], ['break', 'broke', 'a glass'],
+  ['meet', 'met', 'a famous singer'], ['win', 'won', 'the race'], ['give', 'gave', 'a present to the teacher'], ['come', 'came', 'home late']
+];
+const EN_REGULIERS = [
+  ['play', 'played', 'tennis'], ['visit', 'visited', 'the castle'], ['travel', 'travelled', 'by train'], ['study', 'studied', 'for the test'],
+  ['stop', 'stopped', 'at the café'], ['carry', 'carried', 'a heavy bag'], ['dance', 'danced', 'at the party'], ['walk', 'walked', 'to school']
+];
+const EN_MARQUEURS = ['Yesterday', 'Last Saturday', 'Two days ago', 'Last summer'];
+function troisiemePers(v) { return /(s|sh|ch|x|o)$/.test(v) ? v + 'es' : /[^aeiou]y$/.test(v) ? v.slice(0, -1) + 'ies' : v === 'have' ? 'has' : v + 's'; }
+function questionPreterit() {
+  const irr = Math.random() < 0.7, [v, p, c] = unDe(irr ? EN_PRETERIT : EN_REGULIERS), sujet = unDe([...EN_PRENOMS.slice(0, 6), 'we', 'they']);
+  const fauxForme = irr ? v.replace(/e$/, '') + 'ed' : (v === 'study' ? 'studyed' : v === 'stop' ? 'stoped' : v === 'carry' ? 'carryed' : v + 'ing');
+  const pres = /^(we|they)$/.test(sujet) ? v : troisiemePers(v);
+  return eq({ cat: 'Past simple', prompt: `${unDe(EN_MARQUEURS)}, ${sujet} ___ ${c}. <em>(${v})</em>`, answer: p, faux: [fauxForme, pres, v === pres ? v + 'ing' : v],
+    expl: `Une action terminée dans le passé (yesterday, last…, … ago) → <strong>past simple</strong>. ${irr ? `« ${v} » est irrégulier : <strong>${p}</strong> (pas « ${v}ed »).` : `Verbe régulier : + ed → <strong>${p}</strong>${/studied|carried|stopped|travelled/.test(p) ? ' (attention à l\'orthographe)' : ''}.`}` });
+}
+/* [base, forme en -ing, complément] */
+const EN_ING = [['watch', 'watching', 'TV'], ['read', 'reading', 'a comic'], ['play', 'playing', 'football'], ['swim', 'swimming', 'in the sea'],
+  ['ride', 'riding', 'a bike'], ['cook', 'cooking', 'dinner'], ['write', 'writing', 'an email'], ['run', 'running', 'in the park'],
+  ['have', 'having', 'a shower'], ['make', 'making', 'a sandcastle'], ['sit', 'sitting', 'in the garden']];
+const EN_INTERRUPTIONS = ['when the phone rang', 'when it started to rain', 'when the bus arrived', 'when Mum came home', 'when the lights went out'];
+function questionPastContinuous() {
+  const [v, ing, c] = unDe(EN_ING), pluriel = Math.random() < 0.4, sujet = pluriel ? unDe(['We', 'They', 'My friends']) : unDe([...EN_PRENOMS.slice(0, 8), 'I']);
+  const aux = pluriel ? 'were' : 'was', autre = pluriel ? 'was' : 'were';
+  return eq({ cat: 'Past continuous', prompt: `${sujet} ___ ${c} ${unDe(EN_INTERRUPTIONS)}. <em>(${v})</em>`, answer: `${aux} ${ing}`, faux: [`${autre} ${ing}`, `${aux} ${v}`, `is ${ing}`],
+    expl: `Une action <strong>en cours</strong> dans le passé, interrompue par une autre (when…) → <strong>past continuous</strong> : was/were + verbe-ing. Avec ${sujet === 'I' || !pluriel ? `« ${sujet} » → was` : `« ${sujet} » → were`}.` });
+}
+/* [base, prétérit, participe passé, complément] : seulement des verbes où les trois formes diffèrent */
+const EN_PARTICIPES = [['see', 'saw', 'seen', 'a dolphin'], ['eat', 'ate', 'eaten', 'Chinese food'], ['ride', 'rode', 'ridden', 'a camel'],
+  ['fly', 'flew', 'flown', 'in a helicopter'], ['write', 'wrote', 'written', 'a poem'], ['swim', 'swam', 'swum', 'in a river'],
+  ['drink', 'drank', 'drunk', 'coconut milk'], ['take', 'took', 'taken', 'a photo of a lion'], ['break', 'broke', 'broken', 'your arm'],
+  ['wear', 'wore', 'worn', 'a costume'], ['sing', 'sang', 'sung', 'on a stage'], ['draw', 'drew', 'drawn', 'a map']];
+function questionPresentPerfect() {
+  const [v, p, pp, c] = unDe(EN_PARTICIPES);
+  return eq({ cat: 'Present perfect', prompt: `Have you ever ___ ${c}? <em>(${v})</em>`, answer: pp, faux: [p, v, v + 'ing'], audio: `Have you ever ${pp} ${c}?`,
+    expl: `« Have you ever… ? » = « As-tu déjà… ? » → <strong>present perfect</strong> : have/has + participe passé. ${v} → ${p} → <strong>${pp}</strong>.` });
+}
+/* [adjectif, comparatif, superlatif, phrase comparative, phrase superlative] */
+const EN_ADJ = [
+  ['big', 'bigger', 'biggest', 'An elephant is ___ than a mouse.', 'The blue whale is the ___ animal in the world.'],
+  ['tall', 'taller', 'tallest', 'A giraffe is ___ than a horse.', 'My brother is the ___ person in our family.'],
+  ['hot', 'hotter', 'hottest', 'The desert is ___ than the forest.', 'August was the ___ month of the year.'],
+  ['happy', 'happier', 'happiest', 'Lucy is ___ today than yesterday.', 'It was the ___ day of my life!'],
+  ['good', 'better', 'best', 'Your drawing is ___ than mine.', 'This is the ___ film I have ever seen.'],
+  ['bad', 'worse', 'worst', 'The weather today is ___ than yesterday.', 'That was the ___ storm this year.'],
+  ['beautiful', 'more beautiful', 'most beautiful', 'This garden is ___ than that one.', "It's the ___ beach on the island."],
+  ['dangerous', 'more dangerous', 'most dangerous', 'A shark is ___ than a dolphin.', 'This is the ___ road in the town.'],
+  ['heavy', 'heavier', 'heaviest', 'My suitcase is ___ than yours.', 'This is the ___ box of all.'],
+  ['fast', 'faster', 'fastest', 'A plane is ___ than a train.', 'The cheetah is the ___ animal on land.'],
+  ['interesting', 'more interesting', 'most interesting', 'This book is ___ than the film.', "History is the ___ subject at my school."],
+  ['easy', 'easier', 'easiest', 'Maths is ___ than French for me.', 'This was the ___ question in the test.']
+];
+function questionComparatif() {
+  const [a, c, s, pc, ps] = unDe(EN_ADJ), sup = Math.random() < 0.5;
+  const longs = c.startsWith('more');
+  const faux = sup ? (longs ? [`more ${a}`, `${a}est`, `most ${a}er`] : [c, `most ${a}`, `${a}est` === s ? `more ${s}` : `${a}est`])
+                   : (longs ? [`${a}er`, s, `most ${a}`] : [`more ${a}`, s, `${a}er` === c ? `more ${c}` : `${a}er`]);
+  return eq({ cat: sup ? 'Superlatifs' : 'Comparatifs', prompt: `${sup ? ps : pc} <em>(${a})</em>`, answer: sup ? s : c, faux,
+    expl: sup ? `Le plus… de tous → <strong>superlatif</strong> : the ${s}. ${longs ? 'Adjectif long : the most + adjectif.' : a === 'good' || a === 'bad' ? 'Forme irrégulière à retenir.' : 'Adjectif court : the + adjectif-est.'}`
+              : `Comparer deux choses (… than …) → <strong>comparatif</strong> : ${c}. ${longs ? 'Adjectif long : more + adjectif.' : a === 'good' || a === 'bad' ? 'Forme irrégulière à retenir.' : 'Adjectif court : adjectif-er.'}` });
+}
+
+/* ---------- Écoute (Listening) ---------- */
+function questionEcoute() {
+  const type = rnd(0, 3);
+  if (type === 0) {
+    const n = rnd(101, 999), mots = nombreAnglais(n);
+    const proches = [n + (n % 10 === 9 ? -1 : 1), Number(String(n).split('').reverse().join('')) || n + 10, n + (n % 100 >= 90 ? -10 : 10), n + 100 <= 1000 ? n + 100 : n - 100].filter(v => v !== n && v > 100 && v < 1000);
+    return eq({ cat: 'Listening : numbers', prompt: '🎧 Écoute le nombre, puis choisis-le.', answer: String(n), faux: [...new Set(proches.map(String))].slice(0, 3), audio: mots, ecouteSeule: true, limit: 30,
+      expl: `Tu as entendu : « <strong>${mots}</strong> » = ${n}. En anglais britannique, on dit « and » après hundred.` });
+  }
+  if (type === 1) {
+    const h = rnd(1, 12), m = unDe([0, 5, 10, 15, 20, 30, 40, 45, 50]), dit = heureAnglaise(h, m), juste = hm(h, m);
+    const suiv = h % 12 + 1, prec = (h + 10) % 12 + 1;
+    const pieges = m === 45 ? [hm(suiv, 45), hm(suiv, 15), hm(h, 15)] : m === 15 ? [hm(h, 45), hm(prec, 45), hm(h, 50)]
+      : m === 30 ? [hm(suiv, 30), hm(h, 3), hm(h, 0)] : m > 30 ? [hm(suiv, 60 - m), hm(h, 60 - m), hm(suiv, m)] : m === 0 ? [hm(h, 30), hm(suiv, 0), hm(prec, 0)] : [hm(h, 60 - m), hm(prec, 60 - m), hm(suiv, m)];
+    return eq({ cat: 'Listening : time', prompt: "🎧 Écoute l'heure, puis choisis-la.", answer: juste, faux: [...new Set(pieges)].filter(x => x !== juste).slice(0, 3), audio: `It's ${dit}.`, ecouteSeule: true, limit: 30,
+      expl: `Tu as entendu : « <strong>It's ${dit}</strong> » = ${juste}. Rappel : <em>past</em> = après l'heure, <em>to</em> = avant l'heure suivante, <em>quarter</em> = 15 minutes, <em>half</em> = 30 minutes.` });
+  }
+  if (type === 2) {
+    const [nom, ...variantes] = unDe([['Katy', 'Katie', 'Kathy', 'Caty'], ['Harry', 'Hary', 'Harrie', 'Hurry'], ['Sophia', 'Sofia', 'Sophie', 'Sofya'], ['Clare', 'Claire', 'Clair', 'Clara'],
+      ['Holly', 'Hollie', 'Holy', 'Molly'], ['Vicky', 'Vicki', 'Viky', 'Nicky'], ['Lily', 'Lilly', 'Lili', 'Lila'], ['Zoe', 'Zoey', 'Zoé', 'Joe'], ['Frank', 'Franck', 'Frankie', 'Fran'], ['Jane', 'Jayne', 'Jean', 'June']]);
+    const lettres = nom.toUpperCase().split('').join(', ');
+    return eq({ cat: 'Listening : spelling', prompt: '🎧 Écoute le prénom épelé, puis choisis la bonne orthographe.', answer: nom, faux: variantes, audio: `My name is ${nom}. ${lettres}.`, ecouteSeule: true, limit: 35,
+      expl: `On a épelé : ${nom.toUpperCase().split('').join(' – ')} → <strong>${nom}</strong>. À l'examen (Listening, partie 2), on doit écrire les prénoms épelés sans faute.` });
+  }
+  const [phrase, fr, faux] = unDe([
+    ["The cat is sleeping under the table.", 'Le chat dort sous la table.', ['Le chat dort sur la table.', 'Le chien dort sous la table.', 'Le chat mange sous la table.']],
+    ["My grandmother lives next to the post office.", "Ma grand-mère habite à côté de la poste.", ["Ma grand-mère travaille à la poste.", "Ma tante habite à côté de la poste.", "Ma grand-mère habite en face de la banque."]],
+    ["We're going to the airport by taxi.", "Nous allons à l'aéroport en taxi.", ["Nous allons à la gare en taxi.", "Nous allons à l'aéroport en bus.", "Nous revenons de l'aéroport en taxi."]],
+    ["It was snowing when we arrived at the castle.", 'Il neigeait quand nous sommes arrivés au château.', ['Il pleuvait quand nous sommes arrivés au château.', 'Il neigeait quand nous avons quitté le château.', 'Il neigera quand nous arriverons au château.']],
+    ["Have you ever been to a museum in London?", 'Es-tu déjà allé dans un musée à Londres ?', ['Vas-tu dans un musée à Londres ?', 'Es-tu déjà allé dans un parc à Londres ?', 'As-tu déjà travaillé dans un musée à Londres ?']],
+    ["You should take an umbrella because it might rain.", 'Tu devrais prendre un parapluie parce qu\'il pourrait pleuvoir.', ['Tu dois rendre le parapluie parce qu\'il pleut.', 'Tu devrais prendre un manteau parce qu\'il pourrait neiger.', 'Tu as pris un parapluie mais il ne pleut pas.']],
+    ["The pilot is taller than the engineer.", "Le pilote est plus grand que l'ingénieur.", ["L'ingénieur est plus grand que le pilote.", 'Le pilote est aussi grand que l\'ingénieur.', 'Le pilote est le plus grand de tous.']],
+    ["I've got a headache and a temperature.", 'J\'ai mal à la tête et de la fièvre.', ['J\'ai mal au ventre et de la fièvre.', 'J\'ai mal à la tête et un rhume.', 'J\'ai mal aux dents et de la toux.']]
+  ]);
+  return eq({ cat: 'Listening : sentences', prompt: '🎧 Écoute la phrase, puis choisis ce qu\'elle veut dire.', answer: fr, faux, audio: phrase, ecouteSeule: true, limit: 35,
+    expl: `Tu as entendu : « <strong>${phrase}</strong> ». Réécoute en lisant la phrase : c'est comme ça qu'on habitue son oreille.` });
+}
+
+/* ---------- Banques de grammaire (liste A2 Flyers) ---------- */
+const EN_FUTUR_MODAUX = [
+  { cat: 'Future', prompt: "Look at those black clouds! It ___ rain.", answer: 'is going to', faux: ['will be', 'is raining', 'rained'], expl: "On voit un signe qui annonce la suite (des nuages noirs) → <strong>be going to</strong>." },
+  { cat: 'Future', prompt: "I'm thirsty. — Wait, I ___ get you some water.", answer: "'ll", faux: ["'m going", 'was', 'did'], expl: "Décision prise sur le moment, ou offre d'aide → <strong>will</strong> ('ll)." },
+  { cat: 'Future', prompt: "We ___ visit our cousins in Scotland next summer. We've already bought the tickets.", answer: 'are going to', faux: ['went to', 'are visit', 'was going'], expl: "Un projet déjà décidé → <strong>be going to</strong>." },
+  { cat: 'Future', prompt: "I'm not sure, but Vicky ___ come to the party.", answer: 'might', faux: ['must', 'is', 'did'], expl: "<strong>might</strong> (ou may) = peut-être, ce n'est pas sûr." },
+  { cat: 'Future', prompt: "It ___ be sunny tomorrow, so take your sun hat.", answer: 'will', faux: ['was', 'is being', 'were'], expl: "Une prévision pour l'avenir → <strong>will</strong> + verbe." },
+  { cat: 'Modals', prompt: "You've got a toothache. You ___ go to the dentist.", answer: 'should', faux: ["shouldn't", 'might not', 'could not'], expl: "Donner un conseil → <strong>should</strong> (tu devrais)." },
+  { cat: 'Modals', prompt: "It's very late. You ___ watch TV now — go to bed!", answer: "shouldn't", faux: ['should', 'could', 'will'], expl: "Conseiller de NE PAS faire → <strong>shouldn't</strong>." },
+  { cat: 'Modals', prompt: "___ we have a picnic in the park?", answer: 'Shall', faux: ['Do', 'Are', 'Must'], expl: "Faire une proposition → <strong>Shall we…?</strong> (Et si on… ?)" },
+  { cat: 'Modals', prompt: "When I was five, I ___ swim, but now I can.", answer: "couldn't", faux: ["can't", "don't", "wasn't"], expl: "Capacité dans le passé → <strong>could / couldn't</strong>." },
+  { cat: 'Modals', prompt: "At my school, we ___ wear a uniform. It's a rule.", answer: 'have to', faux: ['might', 'shall', 'are'], expl: "Une obligation, une règle → <strong>have to</strong> (ou must)." },
+  { cat: 'Modals', prompt: "You ___ touch that! It's very hot.", answer: "mustn't", faux: ["don't have to", 'should', 'might'], expl: "Une interdiction → <strong>mustn't</strong>. (« don't have to » = ce n'est pas obligatoire.)" },
+  { cat: 'Modals', prompt: "___ I help you carry your suitcase?", answer: 'Shall', faux: ['Will', 'Am', 'Must'], expl: "Proposer son aide → <strong>Shall I…?</strong>" }
+];
+const EN_QUESTIONS = [
+  { cat: 'Tag questions', prompt: "It's cold today, ___?", answer: "isn't it", faux: ['is it', "doesn't it", "wasn't it"], expl: "Phrase affirmative avec <em>is</em> → question-tag négative : <strong>isn't it?</strong>" },
+  { cat: 'Tag questions', prompt: "You like pizza, ___?", answer: "don't you", faux: ["aren't you", 'do you', "didn't you"], expl: "Présent simple affirmatif → <strong>don't you?</strong>" },
+  { cat: 'Tag questions', prompt: "She can swim, ___?", answer: "can't she", faux: ["doesn't she", 'can she', "isn't she"], expl: "On reprend l'auxiliaire <em>can</em>, à la forme négative : <strong>can't she?</strong>" },
+  { cat: 'Tag questions', prompt: "They were at the beach yesterday, ___?", answer: "weren't they", faux: ["didn't they", "wasn't they", 'were they'], expl: "<em>were</em> affirmatif → <strong>weren't they?</strong>" },
+  { cat: 'Tag questions', prompt: "Tom didn't come to school, ___?", answer: 'did he', faux: ["didn't he", 'was he', 'does he'], expl: "Phrase négative → question-tag affirmative : <strong>did he?</strong>" },
+  { cat: 'Tag questions', prompt: "You'll help me, ___?", answer: "won't you", faux: ["will you", "don't you", "aren't you"], expl: "<em>will</em> ('ll) affirmatif → <strong>won't you?</strong>" },
+  { cat: 'Questions', prompt: "___ bike is this? — It's Harry's.", answer: 'Whose', faux: ['Who', 'Which', 'Where'], expl: "Pour demander à qui appartient quelque chose → <strong>Whose</strong>." },
+  { cat: 'Questions', prompt: "___ do you go swimming? — Twice a week.", answer: 'How often', faux: ['How long', 'How much', 'When'], expl: "Pour demander la fréquence → <strong>How often</strong>." },
+  { cat: 'Questions', prompt: "___ did the film last? — Two hours.", answer: 'How long', faux: ['How often', 'How many', 'What time'], expl: "Pour demander la durée → <strong>How long</strong>." },
+  { cat: 'Questions', prompt: "___ does the train leave? — At half past six.", answer: 'What time', faux: ['How long', 'Whose', 'How often'], expl: "Pour demander l'heure précise → <strong>What time</strong>." },
+  { cat: 'Questions', prompt: "What's your new teacher ___? — She's very kind and funny.", answer: 'like', faux: ['look', 'as', 'about'], expl: "<strong>What is … like?</strong> = Comment est… ? (le caractère, la description)." },
+  { cat: 'Questions', prompt: "What ___ did you buy at the market? — Some bananas and a T-shirt.", answer: 'else', faux: ['next', 'more', 'other'], expl: "<strong>What else…?</strong> = Quoi d'autre… ?" }
+];
+const EN_PHRASES = [
+  { cat: 'Present perfect', prompt: "I've lived in this town ___ 2020.", answer: 'since', faux: ['for', 'ago', 'from'], expl: "<strong>since</strong> + point de départ (une date, une année). <strong>for</strong> + durée." },
+  { cat: 'Present perfect', prompt: "We've known each other ___ three years.", answer: 'for', faux: ['since', 'ago', 'during'], expl: "<strong>for</strong> + durée (three years). <strong>since</strong> + point de départ." },
+  { cat: 'Present perfect', prompt: "Hurry up! The film has ___ started.", answer: 'just', faux: ['yet', 'ever', 'since'], expl: "<strong>just</strong> = vient juste de (se place avant le participe passé)." },
+  { cat: 'Present perfect', prompt: "Have you finished your homework ___?", answer: 'yet', faux: ['already', 'just', 'ever'], expl: "<strong>yet</strong> se place en fin de question ou de phrase négative." },
+  { cat: 'Present perfect', prompt: "No thanks, I've ___ eaten. I'm not hungry.", answer: 'already', faux: ['yet', 'ever', 'since'], expl: "<strong>already</strong> = déjà (plus tôt que prévu)." },
+  { cat: 'Connectors', prompt: "I stayed at home ___ I had a cold.", answer: 'because', faux: ['so', 'but', 'until'], expl: "<strong>because</strong> introduit la cause (parce que)." },
+  { cat: 'Connectors', prompt: "It was raining, ___ we didn't go to the park.", answer: 'so', faux: ['because', 'if', 'while'], expl: "<strong>so</strong> introduit la conséquence (donc)." },
+  { cat: 'Connectors', prompt: "I was reading ___ my sister was watching TV.", answer: 'while', faux: ['until', 'so', 'than'], expl: "<strong>while</strong> = pendant que (deux actions en même temps)." },
+  { cat: 'Connectors', prompt: "Wait here ___ I come back.", answer: 'until', faux: ['while', 'so', 'because'], expl: "<strong>until</strong> = jusqu'à ce que." },
+  { cat: 'Connectors', prompt: "Wash your hands ___ you eat.", answer: 'before', faux: ['so', 'because', 'than'], expl: "<strong>before</strong> = avant (de). <strong>after</strong> = après." },
+  { cat: 'If clauses', prompt: "If it ___ tomorrow, we'll stay at home.", answer: 'rains', faux: ['will rain', 'rained', 'raining'], expl: "Après <strong>if</strong>, on utilise le <strong>présent</strong>, même pour parler du futur : If it rains, we'll…" },
+  { cat: 'If clauses', prompt: "If you mix blue and yellow, you ___ green.", answer: 'get', faux: ['got', 'getting', 'will got'], expl: "Une vérité générale : if + présent, puis présent." },
+  { cat: 'Relatives', prompt: "This is the museum ___ we saw the dinosaur.", answer: 'where', faux: ['who', 'which', 'when'], expl: "Pour un lieu → <strong>where</strong>." },
+  { cat: 'Relatives', prompt: "The woman ___ lives next door is a journalist.", answer: 'who', faux: ['which', 'where', 'what'], expl: "Pour une personne → <strong>who</strong>." },
+  { cat: 'Relatives', prompt: "I've lost the book ___ you gave me.", answer: 'which', faux: ['who', 'where', 'whose'], expl: "Pour une chose → <strong>which</strong> (ou that)." },
+  { cat: 'Expressions', prompt: "This soup ___ like chicken.", answer: 'tastes', faux: ['hears', 'sounds', 'is'], expl: "<strong>taste like</strong> = avoir le goût de. (look like = ressembler, sound like = on dirait, au son)." },
+  { cat: 'Expressions', prompt: "The funny film made me ___.", answer: 'laugh', faux: ['to laugh', 'laughing', 'laughed'], expl: "<strong>make somebody + verbe</strong> (sans to) : It made me laugh." },
+  { cat: 'Expressions', prompt: "The table is made ___ wood.", answer: 'of', faux: ['in', 'with', 'on'], expl: "<strong>made of</strong> + matière : made of wood, made of glass…" }
+];
+
+/* ---------- Lecture d'histoires (Reading & Writing, parties 3 et 5) ---------- */
+const EN_HISTOIRES = [
+  { titre: "Holly's trip", texte: "Last summer, Holly went to Scotland with her grandparents. They travelled by train because Grandpa doesn't like planes. On the second day, they visited an old castle on an island. While they were walking round the castle, it started to rain, so they had lunch in a small café. Holly had a big bowl of soup and some bread. In the afternoon, the sun came out and they saw a rainbow over the lake.",
+    q: [['How did Holly and her grandparents travel?', 'By train', ['By plane', 'By car', 'By boat']], ['Why didn\'t they take the plane?', "Grandpa doesn't like planes.", ['It was too expensive.', 'Holly was ill.', 'There was a storm.']],
+      ['Where was the castle?', 'On an island', ['In a forest', 'In the town', 'In a desert']], ['What happened while they were walking round the castle?', 'It started to rain.', ['They saw a rainbow.', 'Holly lost her bag.', 'They met a pilot.']],
+      ['What did Holly have for lunch?', 'Soup and bread', ['A pizza', 'Fish and chips', 'A sandwich']]] },
+  { titre: "The lost passport", texte: "Richard is a journalist. Last month, he was at the airport when he found a passport on the floor. It belonged to a girl called Sophia. Richard took it to a police officer, who called Sophia's name. Ten minutes later, Sophia ran to them. She was very happy because she was going to fly to Japan that afternoon. To say thank you, she gave Richard a box of chocolates. Richard has written a story about it for his newspaper.",
+    q: [["What is Richard's job?", 'He is a journalist.', ['He is a pilot.', 'He is a police officer.', 'He is a waiter.']], ['Where did Richard find the passport?', 'At the airport', ['At the station', 'In a hotel', 'At the post office']],
+      ['Who did Richard give the passport to?', 'A police officer', ['A pilot', 'A nurse', 'A waiter']], ['Why was Sophia happy?', 'She was going to fly to Japan.', ['She won a prize.', 'It was her birthday.', 'She found her suitcase.']],
+      ['What has Richard done since then?', 'He has written a story about it.', ['He has flown to Japan.', 'He has lost his passport.', 'He has eaten the chocolates.']]] },
+  { titre: "A day at the museum", texte: "On Friday, George's class went to the science museum. First, they watched a film about planets and rockets. George thought it was the most interesting part of the day. After that, they saw a robot which could play the piano. At lunchtime, they ate their sandwiches in the museum garden. Before they went home, everybody bought a postcard in the shop. George bought two, one for his mum and one for his best friend, William.",
+    q: [['What did the class do first?', 'They watched a film.', ['They ate sandwiches.', 'They bought postcards.', 'They played the piano.']], ['What was the film about?', 'Planets and rockets', ['Robots', 'Dinosaurs', 'Castles']],
+      ['What could the robot do?', 'Play the piano', ['Sing a song', 'Draw a dragon', 'Ride a bike']], ['Where did they have lunch?', 'In the museum garden', ['In the classroom', 'In a restaurant', 'On the bus']],
+      ['How many postcards did George buy?', 'Two', ['One', 'Three', 'Four']]] }
+];
+function questionLecture() {
+  const h = unDe(EN_HISTOIRES), [question, rep, faux] = unDe(h.q);
+  return eq({ cat: 'Reading', prompt: `<div class="en-texte"><strong>${h.titre}</strong><br>${h.texte}</div><strong>${question}</strong>`, answer: rep, faux, limit: 75, audio: h.texte,
+    expl: `Retrouve la phrase du texte qui répond : relis-la et repère les mots-clés de la question (« ${question.split(' ').slice(0, 3).join(' ')}… »). Bonne réponse : <strong>${rep}</strong>.` });
+}
+
+/* ---------- La méthode et l'examen ---------- */
+const EN_METHODE = [
+  { cat: "L'examen", prompt: "Quelles sont les trois épreuves de l'examen A2 Flyers ?", answer: 'Listening, Reading & Writing, Speaking', faux: ['Grammar, Vocabulary, Spelling', 'Reading, Maths, Speaking', 'Listening, Singing, Writing'], expl: "Listening (environ 25 min), Reading & Writing (40 min) et Speaking (7 à 9 min)." },
+  { cat: "L'examen", prompt: "Combien de temps dure l'épreuve de Reading & Writing ?", answer: '40 minutes', faux: ['10 minutes', '2 heures', '25 minutes'], expl: "40 minutes pour 7 parties : il faut gérer son temps." },
+  { cat: "L'examen", prompt: "Combien de boucliers (shields) peut-on obtenir au maximum pour chaque épreuve ?", answer: '5', faux: ['3', '10', '20'], expl: "Jusqu'à 5 boucliers par épreuve, soit 15 au total. Il n'y a ni réussite ni échec." },
+  { cat: "L'examen", prompt: "Pendant le Listening, combien de fois entend-on chaque enregistrement ?", answer: 'Deux fois', faux: ['Une seule fois', 'Trois fois', 'Autant qu\'on veut'], expl: "On l'entend deux fois : la 1re pour comprendre, la 2e pour vérifier." },
+  { cat: 'Méthode', prompt: "Quelle est la meilleure façon de retenir un nouveau mot ?", answer: "Le dire à voix haute, l'utiliser dans une phrase et le revoir plusieurs jours", faux: ['Le lire une seule fois', 'Le recopier 50 fois le même jour', 'Le traduire mot à mot sans le prononcer'], expl: "Entendre, dire, utiliser et revoir à intervalles réguliers : c'est ce qui fixe un mot." },
+  { cat: 'Méthode', prompt: "À l'examen, que faire si on ne connaît pas un mot dans un texte ?", answer: 'Deviner son sens grâce au reste de la phrase', faux: ['Arrêter de lire', 'Laisser toutes les questions vides', 'Écrire la réponse en français'], expl: "Le contexte aide souvent à comprendre un mot inconnu." },
+  { cat: 'Méthode', prompt: "Dans le Speaking, l'examinateur montre deux images presque pareilles. Que faut-il faire ?", answer: 'Dire les différences en anglais', faux: ['Rester silencieux', 'Dessiner les différences', 'Répondre en français'], expl: "Partie 1 du Speaking : « In my picture, the cat is black. In your picture, it's white. »" },
+  { cat: 'Méthode', prompt: "Que veut dire « library » ?", answer: 'Une bibliothèque', faux: ['Une librairie', 'Une liberté', 'Un livre'], expl: "Faux ami ! library = bibliothèque ; une librairie = a bookshop." }
+];
+
 /* ================= Domaines et compétences ================= */
 function q(obj) { return Object.assign({ unit: '', svg: null, limit: 18 }, obj); }
 
@@ -1642,6 +1971,328 @@ const DOMAINS = [
       ],
       reperes: [['Lire', "Deux fois l'énoncé, souligner la question"], ['Reconnaître', 'Quelle technique ? Motif, rebours, tiroirs…'], ['Temps', 'Bloqué ? On passe et on revient'], ['Vérifier', 'Relire et tester sa réponse']],
       question() { return OLY_TECHNIQUES[rnd(0, OLY_TECHNIQUES.length - 1)].question(); } }
+  ] },
+
+  /* ========== Art (programme de Singapour, Lower Secondary) ========== */
+  /* Calqué sur le programme d'Art du collège à Singapour (MOE, Lower Secondary
+     Art Syllabus 2024, Sec 1–2) : trois domaines d'apprentissage (Perceive,
+     Communicate, Appreciate) et quatre composantes de contenu (Context,
+     Artistic Processes, Media, Visual Qualities). Les termes anglais du
+     programme sont donnés entre parenthèses. */
+  { id: 'art-sg', emoji: '🎨', title: 'Art (programme de Singapour)', skills: [
+    { id: 'art-cadre', emoji: '🧭', title: 'Le programme : percevoir, communiquer, apprécier', explanation: "Comment le programme d'Art du collège à Singapour est organisé, et ce qu'on y attend de toi.", levels: ['singapour'],
+      cours: [
+        "Au collège à Singapour (Secondary 1 et 2), le programme d'Art veut faire de chaque élève un <strong>artiste actif</strong> (<em>active artist</em>) et un <strong>public averti</strong> (<em>informed audience</em>) : quelqu'un qui crée, et qui sait regarder et discuter les œuvres.",
+        "Il est organisé en <strong>trois domaines d'apprentissage</strong> : <strong>Percevoir</strong> (<em>Perceive</em>) : observer avec attention et se poser des questions ; <strong>Communiquer</strong> (<em>Communicate</em>) : exprimer ses idées en créant ; <strong>Apprécier</strong> (<em>Appreciate</em>) : comprendre et discuter les œuvres et leur contexte.",
+        "Ces domaines développent trois compétences : <strong>observer-enquêter</strong> (<em>observe-inquire</em>), <strong>créer-innover</strong> (<em>create-innovate</em>) et <strong>relier-réagir</strong> (<em>connect-respond</em>).",
+        "On apprend à travers <strong>quatre composantes</strong> : le <strong>contexte</strong> (<em>Context</em>), les <strong>processus artistiques</strong> (<em>Artistic Processes</em>), les <strong>médias</strong> (<em>Media</em>) et les <strong>qualités visuelles</strong> (<em>Visual Qualities</em>). Deux activités se complètent : <strong>faire de l'art</strong> (<em>art making</em>) et <strong>discuter de l'art</strong> (<em>art discussion</em>). Le <strong>dessin</strong> est l'outil principal pour rendre sa pensée visible."
+      ],
+      reperes: [['Percevoir', 'Observer, enquêter, se poser des questions'], ['Communiquer', 'Créer pour exprimer une idée'], ['Apprécier', 'Comprendre, relier, discuter les œuvres'], ['4 composantes', 'Contexte · Processus · Médias · Qualités visuelles']],
+      question() { return questionDeBanque([
+        { cat: 'Le programme', prompt: "Quels sont les trois domaines d'apprentissage du programme d'Art du collège à Singapour ?", answer: 'Percevoir, communiquer, apprécier', faux: ['Lire, écrire, compter', 'Dessiner, peindre, sculpter', 'Observer, copier, exposer'], expl: "Perceive, Communicate, Appreciate : observer, exprimer par la création, et comprendre les œuvres." },
+        { cat: 'Le programme', prompt: "Quel profil d'élève le programme veut-il former ?", answer: 'Un artiste actif et un public averti', faux: ['Un artiste professionnel uniquement', 'Un spectateur qui ne crée pas', 'Un copiste très précis'], expl: "Active artists and informed audience : on crée, et on sait aussi regarder et discuter l'art." },
+        { cat: 'Le programme', prompt: "Lequel de ces éléments n'est PAS une des quatre composantes du contenu ?", answer: 'Le prix des œuvres', faux: ['Le contexte', 'Les médias', 'Les qualités visuelles'], expl: "Les quatre composantes sont : contexte, processus artistiques, médias et qualités visuelles." },
+        { cat: 'Le programme', prompt: "Quel est l'outil principal pour rendre sa pensée visible en Art ?", answer: 'Le dessin', faux: ['La photocopie', 'Le texte écrit', 'La pâte à modeler'], expl: "Le dessin sert à enregistrer, visualiser, développer et communiquer ses idées." },
+        { cat: 'Le programme', prompt: "À quel domaine se rattache surtout la compétence « observer-enquêter » (observe-inquire) ?", answer: 'Percevoir', faux: ['Communiquer', 'Apprécier', 'Aucun'], expl: "Percevoir, c'est observer avec attention et se poser des questions sur ce qu'on voit." },
+        { cat: 'Le programme', prompt: "À quel domaine se rattache surtout la compétence « créer-innover » (create-innovate) ?", answer: 'Communiquer', faux: ['Percevoir', 'Apprécier', 'Aucun'], expl: "Communiquer, c'est exprimer ses idées en créant, en explorant matériaux et techniques." },
+        { cat: 'Le programme', prompt: "À quel domaine se rattache surtout la compétence « relier-réagir » (connect-respond) ?", answer: 'Apprécier', faux: ['Percevoir', 'Communiquer', 'Aucun'], expl: "Apprécier, c'est relier les œuvres à leur contexte et réagir avec des arguments." },
+        { cat: 'Le programme', prompt: "Quelles sont les deux grandes activités du cours d'Art ?", answer: "Faire de l'art et discuter de l'art", faux: ["Copier et recopier", "Écouter et réciter", "Mesurer et calculer"], expl: "Art making (créer) et art discussion (parler des œuvres) se nourrissent l'une l'autre." },
+        { cat: 'Le programme', prompt: "Pourquoi le programme encourage-t-il à voir des œuvres « en vrai », dans des expositions ?", answer: "Pour les découvrir directement et rencontrer des artistes", faux: ['Pour les acheter', 'Pour les copier exactement', "Parce que c'est noté à l'examen"], expl: "Voir les œuvres en personne et échanger avec des praticiens enrichit la compréhension." },
+        { cat: 'Le programme', prompt: "Que signifie la composante « contexte » (Context) ?", answer: "Le sujet, l'arrière-plan et le sens d'une œuvre", faux: ['La taille du cadre', 'La marque du crayon', 'Le nombre de couleurs'], expl: "Le contexte : de quoi parle l'œuvre, d'où viennent ses idées, pourquoi l'artiste a fait ces choix, et ce qu'elle signifie." }
+      ]); } },
+
+    { id: 'art-elements', emoji: '✏️', title: 'Les éléments visuels', explanation: "Les briques de toute image : ligne, forme, volume, espace, valeur, texture et couleur.", levels: ['singapour'],
+      cours: [
+        "Les <strong>qualités visuelles</strong> (<em>Visual Qualities</em>) regroupent les <strong>éléments</strong> de l'art et les <strong>principes</strong> de composition. Les éléments sont les « briques » de toute image.",
+        "<strong>Ligne</strong> (<em>line</em>) : trace continue ; un contour délimite un objet. <strong>Forme</strong> (<em>shape</em>) : surface plate en 2 dimensions (cercle, carré…). <strong>Volume</strong> (<em>form</em>) : objet en 3 dimensions (sphère, cube…), ou qui en donne l'illusion.",
+        "<strong>Espace</strong> (<em>space</em>) : l'espace <strong>positif</strong> est occupé par le sujet, l'espace <strong>négatif</strong> est le vide autour. <strong>Valeur</strong> (<em>value</em>) : degré de clarté ou d'obscurité. <strong>Texture</strong> : aspect d'une surface, <strong>réelle</strong> (qu'on touche) ou <strong>suggérée</strong> (dessinée). <strong>Couleur</strong> (<em>colour</em>) : voir la leçon dédiée."
+      ],
+      reperes: [['Forme (shape)', 'Plate, 2 dimensions'], ['Volume (form)', '3 dimensions, ou son illusion'], ['Valeur', 'Clair ↔ foncé'], ['Espace négatif', 'Le vide autour du sujet']],
+      question() { return questionDeBanque([
+        { cat: 'Éléments', prompt: "Quelle est la différence entre une forme (shape) et un volume (form) ?", answer: 'La forme est plate, le volume a trois dimensions', faux: ['Il n\'y en a aucune', 'La forme est toujours ronde', 'Le volume est toujours coloré'], expl: "Un cercle est une forme (2D) ; une sphère est un volume (3D)." },
+        { cat: 'Éléments', prompt: "Comment appelle-t-on le degré de clarté ou d'obscurité d'une couleur ou d'un gris ?", answer: 'La valeur', faux: ['La texture', 'La ligne', 'Le rythme'], expl: "La valeur (value) va du blanc au noir ; elle sert à créer le modelé et le contraste." },
+        { cat: 'Éléments', prompt: "Dans un dessin, comment appelle-t-on l'espace vide autour du sujet ?", answer: "L'espace négatif", faux: ["L'espace positif", 'Le point de fuite', 'Le contour'], expl: "L'espace positif est occupé par le sujet ; l'espace négatif est ce qui l'entoure." },
+        { cat: 'Éléments', prompt: "Des hachures qui imitent l'écorce d'un arbre sur une feuille lisse créent une texture…", answer: 'Suggérée (visuelle)', faux: ['Réelle (tactile)', 'Négative', 'Symétrique'], expl: "On voit la texture, mais on ne la sent pas au toucher : elle est suggérée." },
+        { cat: 'Éléments', prompt: "Un collage avec du tissu et du papier froissé a une texture…", answer: 'Réelle (tactile)', faux: ['Suggérée (visuelle)', 'Négative', 'Invisible'], expl: "On peut toucher les reliefs du tissu et du papier : la texture est réelle." },
+        { cat: 'Éléments', prompt: "Comment appelle-t-on la ligne qui suit le bord extérieur d'un objet ?", answer: 'Le contour', faux: ['La hachure', "La ligne d'horizon", 'La diagonale'], expl: "La ligne de contour (contour line) délimite la forme d'un objet." },
+        { cat: 'Éléments', prompt: "Quel élément visuel donne l'illusion du relief grâce aux ombres et à la lumière ?", answer: 'La valeur', faux: ['La ligne seule', 'La texture réelle', 'La forme plate'], expl: "En passant du clair au foncé, la valeur fait apparaître un volume sur une surface plate." },
+        { cat: 'Éléments', prompt: "Combien d'éléments de l'art le programme cite-t-il (ligne, forme, volume, espace, valeur, texture, couleur) ?", answer: '7', faux: ['3', '5', '10'], expl: "Ligne, forme, volume, espace, valeur, texture et couleur : 7 éléments." },
+        { cat: 'Éléments', prompt: "Une sculpture qu'on peut regarder de tous les côtés travaille surtout…", answer: 'Le volume et l\'espace', faux: ['La forme plate', 'La ligne d\'horizon', 'La texture suggérée'], expl: "Une œuvre en 3 dimensions occupe l'espace réel : elle a un volume." },
+        { cat: 'Éléments', prompt: "Des lignes diagonales et ondulées donnent plutôt une impression…", answer: 'De mouvement et d\'énergie', faux: ['De calme total', 'D\'immobilité', 'De silence'], expl: "Les horizontales évoquent le calme ; les diagonales et les courbes, le mouvement." }
+      ]); } },
+
+    { id: 'art-principes', emoji: '⚖️', title: 'Les principes de composition', explanation: "Comment organiser les éléments : équilibre, accent, harmonie, mouvement, proportion, rythme, unité, variété.", levels: ['singapour'],
+      cours: [
+        "Les <strong>principes</strong> (<em>principles of design</em>) disent comment <strong>organiser</strong> les éléments pour produire un effet. Le programme en retient huit.",
+        "<strong>Équilibre</strong> (<em>balance</em>) : symétrique (les deux moitiés se répondent), asymétrique (poids visuels différents mais compensés) ou radial (autour d'un centre). <strong>Accent</strong> (<em>emphasis</em>) : un <strong>point focal</strong> qui attire l'œil, souvent grâce au contraste. <strong>Proportion</strong> : les tailles relatives des parties.",
+        "<strong>Rythme</strong> (<em>rhythm</em>) : répétition organisée d'éléments. <strong>Mouvement</strong> (<em>movement</em>) : chemin que suit l'œil. <strong>Harmonie</strong> : éléments qui s'accordent. <strong>Variété</strong> : différences qui créent de l'intérêt. <strong>Unité</strong> : impression que tout va ensemble."
+      ],
+      reperes: [['Équilibre', 'Symétrique, asymétrique, radial'], ['Accent', 'Le point focal attire le regard'], ['Rythme', 'Répétition organisée'], ['Unité + variété', 'Cohérence et intérêt à la fois']],
+      question() { return questionDeBanque([
+        { cat: 'Principes', prompt: "Une rosace ou un mandala, organisés autour d'un centre, ont un équilibre…", answer: 'Radial', faux: ['Asymétrique', 'Vertical', 'Négatif'], expl: "L'équilibre radial rayonne à partir d'un point central." },
+        { cat: 'Principes', prompt: "Un grand arbre à gauche compensé par trois petites maisons à droite : c'est un équilibre…", answer: 'Asymétrique', faux: ['Symétrique', 'Radial', 'Impossible'], expl: "Les deux côtés sont différents mais leurs « poids visuels » se compensent." },
+        { cat: 'Principes', prompt: "Comment appelle-t-on la partie d'une œuvre qui attire le regard en premier ?", answer: 'Le point focal', faux: ['Le point de fuite', "L'espace négatif", 'La ligne d\'horizon'], expl: "Créer un point focal, c'est le principe d'accent (emphasis)." },
+        { cat: 'Principes', prompt: "Une seule fleur rouge au milieu de fleurs grises crée surtout…", answer: 'Un accent (point focal)', faux: ['Un équilibre radial', 'Une texture réelle', 'Un rythme régulier'], expl: "Le contraste de couleur isole la fleur rouge : elle devient le point focal." },
+        { cat: 'Principes', prompt: "La répétition régulière de motifs, comme sur un batik, crée…", answer: 'Un rythme', faux: ['Une proportion', 'Un point de fuite', 'Un espace négatif'], expl: "Le rythme naît de la répétition organisée d'éléments." },
+        { cat: 'Principes', prompt: "Quel principe concerne la taille des parties les unes par rapport aux autres ?", answer: 'La proportion', faux: ['Le rythme', 'La variété', 'Le mouvement'], expl: "Une tête trop grande par rapport au corps est un problème (ou un choix) de proportion." },
+        { cat: 'Principes', prompt: "Quel principe désigne le chemin que suit l'œil dans une image ?", answer: 'Le mouvement', faux: ["L'harmonie", "L'unité", 'La proportion'], expl: "Lignes, formes et couleurs guident l'œil d'un point à un autre : c'est le mouvement." },
+        { cat: 'Principes', prompt: "Une œuvre où tout semble aller ensemble, comme un tout cohérent, montre…", answer: "L'unité", faux: ['La variété', "L'accent", 'Le mouvement'], expl: "L'unité donne l'impression que chaque partie appartient au même ensemble." },
+        { cat: 'Principes', prompt: "Ajouter des formes et des tailles différentes pour éviter la monotonie, c'est utiliser…", answer: 'La variété', faux: ["L'unité", 'La symétrie', 'La valeur'], expl: "La variété crée de l'intérêt ; l'artiste l'équilibre avec l'unité." },
+        { cat: 'Principes', prompt: "Un visage dont la moitié gauche est le reflet exact de la moitié droite présente un équilibre…", answer: 'Symétrique', faux: ['Asymétrique', 'Radial', 'Aléatoire'], expl: "Les deux moitiés se répondent comme dans un miroir : équilibre symétrique." }
+      ]); } },
+
+    { id: 'art-couleur', emoji: '🌈', title: 'La couleur', explanation: "Le cercle chromatique, les couleurs primaires, secondaires, complémentaires, chaudes et froides.", levels: ['singapour'],
+      cours: [
+        "Sur le <strong>cercle chromatique</strong>, les couleurs <strong>primaires</strong> (rouge, jaune, bleu) ne s'obtiennent pas par mélange. Mélangées deux à deux, elles donnent les <strong>secondaires</strong> : orange (rouge + jaune), vert (jaune + bleu), violet (bleu + rouge).",
+        "Les <strong>complémentaires</strong> sont face à face sur le cercle (rouge/vert, bleu/orange, jaune/violet) : côte à côte, elles créent un <strong>contraste</strong> très fort. Les couleurs <strong>analogues</strong> sont voisines sur le cercle et créent l'<strong>harmonie</strong>.",
+        "Couleurs <strong>chaudes</strong> (rouge, orange, jaune) : elles semblent avancer et évoquent l'énergie. Couleurs <strong>froides</strong> (bleu, vert, violet) : elles semblent reculer et évoquent le calme. <strong>Teinte claire</strong> (<em>tint</em>) = couleur + blanc ; <strong>teinte foncée</strong> (<em>shade</em>) = couleur + noir. Une composition <strong>monochrome</strong> utilise une seule couleur et ses nuances."
+      ],
+      reperes: [['Primaires', 'Rouge, jaune, bleu'], ['Secondaires', 'Orange, vert, violet'], ['Complémentaires', 'Face à face : contraste fort'], ['Tint / shade', '+ blanc / + noir']],
+      question() { return questionDeBanque([
+        { cat: 'Couleur', prompt: "Quelles sont les trois couleurs primaires du cercle chromatique traditionnel ?", answer: 'Rouge, jaune, bleu', faux: ['Rouge, vert, bleu', 'Orange, vert, violet', 'Noir, blanc, gris'], expl: "Rouge, jaune et bleu ne s'obtiennent pas par mélange de peintures." },
+        { cat: 'Couleur', prompt: "Que donne le mélange du jaune et du bleu ?", answer: 'Du vert', faux: ['Du violet', "De l'orange", 'Du marron'], expl: "Jaune + bleu = vert, une couleur secondaire." },
+        { cat: 'Couleur', prompt: "Quelle est la couleur complémentaire du rouge ?", answer: 'Le vert', faux: ['Le bleu', "L'orange", 'Le violet'], expl: "Le vert est face au rouge sur le cercle chromatique." },
+        { cat: 'Couleur', prompt: "Quelle est la couleur complémentaire du bleu ?", answer: "L'orange", faux: ['Le vert', 'Le violet', 'Le jaune'], expl: "Le bleu et l'orange sont face à face sur le cercle chromatique." },
+        { cat: 'Couleur', prompt: "Comment obtient-on une teinte claire (tint) ?", answer: 'En ajoutant du blanc', faux: ['En ajoutant du noir', 'En ajoutant de l\'eau sale', 'En ajoutant la complémentaire'], expl: "Couleur + blanc = tint ; couleur + noir = shade." },
+        { cat: 'Couleur', prompt: "Lequel de ces groupes ne contient que des couleurs chaudes ?", answer: 'Rouge, orange, jaune', faux: ['Bleu, vert, violet', 'Rouge, bleu, vert', 'Jaune, bleu, violet'], expl: "Les couleurs chaudes évoquent le feu et le soleil : rouge, orange, jaune." },
+        { cat: 'Couleur', prompt: "Pourquoi placer deux complémentaires côte à côte ?", answer: 'Pour créer un contraste fort', faux: ['Pour obtenir du gris', 'Pour rendre l\'image calme', 'Pour effacer le dessin'], expl: "Côte à côte, les complémentaires se renforcent : le contraste est maximal." },
+        { cat: 'Couleur', prompt: "Comment appelle-t-on des couleurs voisines sur le cercle (bleu, bleu-vert, vert) ?", answer: 'Des couleurs analogues', faux: ['Des complémentaires', 'Des primaires', 'Des neutres'], expl: "Les couleurs analogues créent une impression d'harmonie." },
+        { cat: 'Couleur', prompt: "Une peinture faite uniquement de bleus clairs et foncés est…", answer: 'Monochrome', faux: ['Complémentaire', 'Polychrome', 'Primaire'], expl: "Monochrome : une seule couleur, avec ses teintes claires et foncées." },
+        { cat: 'Couleur', prompt: "Dans un paysage, les couleurs froides placées au loin donnent l'impression que…", answer: 'Les choses reculent', faux: ['Les choses avancent', 'Il fait plus chaud', 'Le tableau est plat'], expl: "Les couleurs froides semblent reculer : elles aident à créer la profondeur." }
+      ]); } },
+
+    { id: 'art-dessin', emoji: '📐', title: 'Le dessin : observer et représenter', explanation: "Crayons, ombres, perspective : le dessin est l'outil principal du programme.", levels: ['singapour'],
+      cours: [
+        "Le programme fait du <strong>dessin</strong> l'outil principal : on dessine pour <strong>observer</strong>, chercher des idées et les communiquer. On dessine <strong>d'après nature</strong> (en regardant le vrai objet) autant que de mémoire.",
+        "Les crayons <strong>H</strong> sont durs et clairs, les <strong>B</strong> sont tendres et foncés (un 6B est plus foncé qu'un 2B ; HB est au milieu). Pour ombrer : <strong>hachures</strong> (traits parallèles), <strong>hachures croisées</strong>, <strong>pointillé</strong> (<em>stippling</em>) et <strong>estompe</strong> (<em>blending</em>).",
+        "La <strong>perspective à un point de fuite</strong> : toutes les lignes qui s'éloignent se rejoignent en un <strong>point de fuite</strong> placé sur la <strong>ligne d'horizon</strong> (à hauteur des yeux). Au loin, les objets paraissent plus <strong>petits</strong>, plus <strong>hauts</strong> dans l'image et plus <strong>pâles</strong> (perspective atmosphérique)."
+      ],
+      reperes: [['H / B', 'H = dur et clair, B = tendre et foncé'], ['Ombrer', 'Hachures, hachures croisées, pointillé, estompe'], ['Point de fuite', "Sur la ligne d'horizon"], ['Au loin', 'Plus petit, plus haut, plus pâle']],
+      question() { return questionDeBanque([
+        { cat: 'Dessin', prompt: "Quel crayon donne le trait le plus foncé ?", answer: '6B', faux: ['2H', 'HB', '2B'], expl: "Plus le chiffre devant B est grand, plus la mine est tendre et foncée." },
+        { cat: 'Dessin', prompt: "Que signifie la lettre H sur un crayon ?", answer: 'Mine dure, trait clair', faux: ['Mine tendre, trait foncé', 'Crayon de couleur', 'Crayon effaçable'], expl: "H (hard) : mine dure, trait fin et clair. B (black) : mine tendre et foncée." },
+        { cat: 'Dessin', prompt: "Comment appelle-t-on la technique qui ombre avec des petits points ?", answer: 'Le pointillé (stippling)', faux: ['Les hachures croisées', "L'estompe", 'Le contour'], expl: "Plus les points sont serrés, plus la zone paraît foncée." },
+        { cat: 'Dessin', prompt: "Dans la perspective à un point de fuite, où se trouve le point de fuite ?", answer: "Sur la ligne d'horizon", faux: ['Au bas de la feuille', 'Au centre de chaque objet', 'En dehors de la feuille, toujours'], expl: "La ligne d'horizon est à hauteur des yeux ; le point de fuite s'y trouve." },
+        { cat: 'Dessin', prompt: "Pourquoi les rails d'une voie ferrée semblent-ils se rejoindre au loin ?", answer: 'À cause de la perspective', faux: ['Parce qu\'ils se touchent vraiment', 'À cause de la couleur', 'À cause de la texture'], expl: "Les lignes parallèles qui s'éloignent semblent converger vers un point de fuite." },
+        { cat: 'Dessin', prompt: "Comment appelle-t-on un dessin rapide qui capte le mouvement d'un modèle en quelques secondes ?", answer: 'Un croquis gestuel', faux: ['Une nature morte', 'Une gravure', 'Un monotype'], expl: "Le dessin gestuel (gesture drawing) saisit l'élan et la posture, pas les détails." },
+        { cat: 'Dessin', prompt: "Dessiner un objet en le regardant vraiment, devant soi, c'est dessiner…", answer: "D'après nature (observation)", faux: ['De mémoire', "D'imagination seulement", 'En décalquant'], expl: "Le dessin d'observation entraîne à percevoir formes, proportions et valeurs." },
+        { cat: 'Dessin', prompt: "Dans un paysage, une montagne lointaine est généralement dessinée…", answer: 'Plus petite et plus pâle', faux: ['Plus grande et plus foncée', 'Avec plus de détails', 'Tout en bas de la feuille'], expl: "La perspective atmosphérique rend le lointain plus clair et moins détaillé." },
+        { cat: 'Dessin', prompt: "Des traits parallèles superposés dans deux directions forment…", answer: 'Des hachures croisées', faux: ['Un pointillé', 'Une estompe', 'Un contour'], expl: "Les hachures croisées (cross-hatching) foncent une zone en superposant des traits." },
+        { cat: 'Dessin', prompt: "Pourquoi le programme fait-il du dessin l'outil principal ?", answer: 'Pour rendre sa pensée visible', faux: ['Parce que c\'est le plus rapide à noter', 'Parce que la peinture est interdite', 'Pour remplacer l\'écriture'], expl: "On dessine pour enregistrer, visualiser, développer et communiquer ses idées." }
+      ]); } },
+
+    { id: 'art-medias', emoji: '🖌️', title: 'Médias et techniques', explanation: "Peinture, gravure, sculpture, numérique : choisir le bon média pour exprimer une idée.", levels: ['singapour'],
+      cours: [
+        "Un <strong>média</strong> est l'ensemble des matériaux, outils et techniques utilisés. Le programme demande le <strong>dessin</strong> et le <strong>numérique</strong> comme médias essentiels, et <strong>au moins un autre</strong> média en 2D ou en 3D.",
+        "<strong>Peinture</strong> : aquarelle (transparente, diluée à l'eau), gouache et acrylique (couvrantes). <strong>Gravure</strong> (<em>printmaking</em>) : en <strong>relief</strong> (linogravure, gravure sur bois), on creuse ce qui restera <strong>blanc</strong>, et l'image imprimée est <strong>inversée</strong> ; le <strong>monotype</strong> ne donne qu'un seul tirage. <strong>Batik</strong> : la cire protège le tissu de la teinture (technique « en réserve »).",
+        "<strong>Sculpture</strong> : <strong>additive</strong> (on ajoute de la matière, comme le modelage de l'argile) ou <strong>soustractive</strong> (on enlève de la matière, comme la taille du bois ou de la pierre). Un <strong>bas-relief</strong> sort d'un fond ; une <strong>ronde-bosse</strong> se voit de tous les côtés ; l'<strong>armature</strong> est le squelette qui la soutient. <strong>Numérique</strong> : photographie, calques, animation <strong>image par image</strong> (<em>stop-motion</em>), vidéo."
+      ],
+      reperes: [['Essentiels', 'Dessin + numérique + un autre média'], ['Gravure en relief', 'On creuse le blanc, image inversée'], ['Sculpture', 'Additive (ajouter) ou soustractive (enlever)'], ['Batik', 'Cire en réserve, puis teinture']],
+      question() { return questionDeBanque([
+        { cat: 'Médias', prompt: "Quels médias le programme considère-t-il comme essentiels ?", answer: 'Le dessin et le numérique', faux: ['La peinture à l\'huile et le marbre', 'La photo et la poterie', 'Le collage et la broderie'], expl: "Dessin et médias numériques sont essentiels, plus au moins un autre média 2D ou 3D." },
+        { cat: 'Médias', prompt: "En linogravure, que creuse-t-on dans la plaque ?", answer: 'Les parties qui resteront blanches', faux: ['Les parties qui seront encrées', 'Rien, on peint dessus', 'Uniquement le contour'], expl: "Les parties en relief reçoivent l'encre ; les creux restent blancs à l'impression." },
+        { cat: 'Médias', prompt: "Pourquoi faut-il graver les lettres à l'envers en linogravure ?", answer: "Parce que l'image imprimée est inversée", faux: ['Pour faire joli', "Parce que l'encre coule", 'Ce n\'est pas nécessaire'], expl: "L'impression fonctionne comme un tampon : l'image sort en miroir." },
+        { cat: 'Médias', prompt: "Modeler une figurine en ajoutant des boules d'argile, c'est une sculpture…", answer: 'Additive', faux: ['Soustractive', 'Numérique', 'Gravée'], expl: "On ajoute de la matière : technique additive (modelage)." },
+        { cat: 'Médias', prompt: "Tailler une statue dans un bloc de pierre, c'est une sculpture…", answer: 'Soustractive', faux: ['Additive', 'En relief imprimé', 'Monotype'], expl: "On enlève de la matière jusqu'à faire apparaître la forme." },
+        { cat: 'Médias', prompt: "Comment appelle-t-on le squelette (fil de fer, bois) qui soutient une sculpture ?", answer: "L'armature", faux: ['La maquette', 'Le socle', 'La patine'], expl: "L'armature empêche la matière molle (argile, papier mâché) de s'effondrer." },
+        { cat: 'Médias', prompt: "Dans le batik, à quoi sert la cire ?", answer: 'À empêcher la teinture de pénétrer', faux: ['À coller le tissu', 'À faire briller', 'À sécher plus vite'], expl: "Les zones cirées restent de la couleur d'origine : c'est la technique en réserve." },
+        { cat: 'Médias', prompt: "Combien d'exemplaires donne un monotype ?", answer: 'Un seul', faux: ['Deux', 'Dix', 'Autant qu\'on veut'], expl: "Mono = un : le monotype est un tirage unique." },
+        { cat: 'Médias', prompt: "Une animation faite de nombreuses photos d'objets déplacés un peu à chaque fois s'appelle…", answer: 'Le stop-motion (image par image)', faux: ['Le batik', 'La gravure', 'Le pointillé'], expl: "Chaque photo est une image ; enchaînées, elles donnent l'illusion du mouvement." },
+        { cat: 'Médias', prompt: "Quelle peinture est transparente et se dilue à l'eau ?", answer: "L'aquarelle", faux: ["L'acrylique couvrante", 'La peinture à l\'huile', 'La gouache épaisse'], expl: "L'aquarelle laisse voir le papier : on travaille du clair vers le foncé." },
+        { cat: 'Médias', prompt: "Une sculpture qui sort d'un fond, comme sur une pièce de monnaie, est…", answer: 'Un bas-relief', faux: ['Une ronde-bosse', 'Une installation', 'Un collage'], expl: "Le relief reste attaché à un fond ; la ronde-bosse se voit de tous les côtés." }
+      ]); } },
+
+    { id: 'art-processus', emoji: '📓', title: 'Le processus artistique et le carnet', explanation: "De l'idée à l'œuvre : enquêter, explorer, développer, affiner, présenter, réfléchir.", levels: ['singapour'],
+      cours: [
+        "Les <strong>processus artistiques</strong> (<em>Artistic Processes</em>) sont les méthodes que suivent artistes et designers pour <strong>trouver, développer et choisir</strong> leurs idées.",
+        "Les étapes : <strong>enquêter</strong> (observer, se documenter, photographier) ; <strong>générer des idées</strong> (carte mentale, remue-méninges, planche d'inspiration ou <em>moodboard</em>) ; <strong>explorer</strong> les matériaux ; <strong>développer</strong> (petits croquis de composition ou <em>thumbnails</em>, études, maquette) ; <strong>affiner</strong> ; <strong>présenter</strong> ; <strong>réfléchir</strong> sur son travail.",
+        "Le <strong>carnet de recherche</strong> (<em>visual journal</em> ou <em>sketchbook</em>) garde la trace de tout ce chemin : croquis, essais, notes, images collées. Il montre comment l'idée a grandi, même les essais ratés, qui font partie de l'apprentissage."
+      ],
+      reperes: [['Enquêter', 'Observer, se documenter'], ['Générer', 'Carte mentale, moodboard'], ['Développer', 'Thumbnails, études, maquette'], ['Carnet', 'Trace de tout le chemin, même les essais']],
+      question() { return questionDeBanque([
+        { cat: 'Processus', prompt: "À quoi sert le carnet de recherche (visual journal) ?", answer: 'À garder la trace de ses idées, essais et recherches', faux: ['À ne montrer que l\'œuvre finale', 'À recopier le cours', 'À noter ses notes de maths'], expl: "Il montre tout le chemin parcouru, y compris les essais et les erreurs." },
+        { cat: 'Processus', prompt: "Comment appelle-t-on les tout petits croquis rapides pour essayer plusieurs compositions ?", answer: 'Des thumbnails (vignettes)', faux: ['Des monotypes', 'Des armatures', 'Des batiks'], expl: "Les thumbnails permettent de comparer vite plusieurs mises en page." },
+        { cat: 'Processus', prompt: "Comment appelle-t-on un petit modèle en 3D réalisé avant la sculpture finale ?", answer: 'Une maquette', faux: ['Un moodboard', 'Une estampe', 'Un contour'], expl: "La maquette teste les volumes et les proportions à petite échelle." },
+        { cat: 'Processus', prompt: "Une planche qui rassemble images, couleurs et matières pour inspirer un projet est…", answer: 'Un moodboard (planche d\'inspiration)', faux: ['Une armature', 'Un point de fuite', 'Un monotype'], expl: "Le moodboard fixe l'ambiance et les pistes visuelles d'un projet." },
+        { cat: 'Processus', prompt: "Quelle est en général la première étape d'un projet artistique ?", answer: 'Enquêter et observer', faux: ['Encadrer l\'œuvre', 'Vernir', 'Présenter au public'], expl: "On commence par observer et se documenter avant de générer des idées." },
+        { cat: 'Processus', prompt: "Un essai raté dans le carnet de recherche, il faut…", answer: 'Le garder : il fait partie du processus', faux: ['L\'arracher tout de suite', 'Le cacher au professeur', 'Recommencer le carnet'], expl: "Les essais montrent ce qu'on a appris et pourquoi on a fait d'autres choix." },
+        { cat: 'Processus', prompt: "Une carte mentale (mind map) sert surtout à…", answer: 'Générer et relier des idées', faux: ['Mesurer une œuvre', 'Mélanger des couleurs', 'Encadrer un dessin'], expl: "Autour d'un thème central, on note des idées et leurs liens." },
+        { cat: 'Processus', prompt: "Après avoir présenté son œuvre, quelle étape reste-t-il ?", answer: 'Réfléchir sur son travail', faux: ['Rien du tout', 'Effacer son carnet', 'Changer de sujet sans retour'], expl: "La réflexion : qu'est-ce qui a marché, que changerais-je ? Elle prépare le projet suivant." },
+        { cat: 'Processus', prompt: "Essayer plusieurs matériaux pour voir lequel exprime le mieux son idée, c'est…", answer: 'Explorer et expérimenter', faux: ['Copier', 'Décalquer', 'Présenter'], expl: "Le programme encourage à explorer et expérimenter matériaux et techniques." }
+      ]); } },
+
+    { id: 'art-discussion', emoji: '💬', title: 'Parler d\'une œuvre', explanation: "Décrire, analyser, interpréter, évaluer, et replacer l'œuvre dans son contexte.", levels: ['singapour'],
+      cours: [
+        "Pour discuter d'une œuvre (<em>art discussion</em>), le programme s'appuie sur la méthode de <strong>Feldman</strong>, en quatre étapes, dans cet ordre :",
+        "1) <strong>Décrire</strong> (<em>describe</em>) : ce que je vois, sans juger (personnages, objets, couleurs, matériaux). 2) <strong>Analyser</strong> (<em>analyse</em>) : comment les éléments et les principes sont organisés. 3) <strong>Interpréter</strong> (<em>interpret</em>) : ce que l'œuvre exprime, son atmosphère, son sens. 4) <strong>Évaluer</strong> (<em>evaluate</em>) : mon avis argumenté, avec des raisons.",
+        "On replace aussi l'œuvre dans son <strong>contexte</strong> : <strong>personnel</strong> (la vie de l'artiste), <strong>social</strong> et <strong>culturel</strong> (la société, les traditions), <strong>historique</strong> (l'époque). Un avis est valable s'il s'appuie sur ce qu'on <strong>voit</strong> : on peut ne pas être d'accord, en le justifiant."
+      ],
+      reperes: [['1. Décrire', 'Ce que je vois, sans juger'], ['2. Analyser', 'Éléments et principes'], ['3. Interpréter', 'Le sens, l\'atmosphère'], ['4. Évaluer', 'Mon avis, avec des raisons']],
+      question() { return questionDeBanque([
+        { cat: 'Discussion', prompt: "Quel est l'ordre des quatre étapes de Feldman ?", answer: 'Décrire, analyser, interpréter, évaluer', faux: ['Évaluer, décrire, analyser, interpréter', 'Interpréter, décrire, évaluer, analyser', 'Analyser, évaluer, décrire, interpréter'], expl: "On commence par observer (décrire) et on finit par l'avis argumenté (évaluer)." },
+        { cat: 'Discussion', prompt: "« Il y a trois pêcheurs et un bateau rouge. » Quelle étape est-ce ?", answer: 'Décrire', faux: ['Analyser', 'Interpréter', 'Évaluer'], expl: "On dit simplement ce qu'on voit, sans juger ni chercher le sens." },
+        { cat: 'Discussion', prompt: "« Les lignes diagonales conduisent l'œil vers le bateau rouge, qui est le point focal. » Quelle étape est-ce ?", answer: 'Analyser', faux: ['Décrire', 'Interpréter', 'Évaluer'], expl: "On explique comment les éléments et les principes sont organisés." },
+        { cat: 'Discussion', prompt: "« L'œuvre semble montrer la dureté du travail des pêcheurs. » Quelle étape est-ce ?", answer: 'Interpréter', faux: ['Décrire', 'Analyser', 'Évaluer'], expl: "On propose un sens, une atmosphère, à partir de ce qu'on a observé." },
+        { cat: 'Discussion', prompt: "« Je trouve l'œuvre réussie, car le contraste rend la scène vivante. » Quelle étape est-ce ?", answer: 'Évaluer', faux: ['Décrire', 'Analyser', 'Interpréter'], expl: "C'est un jugement personnel, justifié par une raison." },
+        { cat: 'Discussion', prompt: "Qu'est-ce qui rend un avis sur une œuvre valable ?", answer: "Des raisons tirées de ce qu'on voit", faux: ['Le prix de l\'œuvre', 'La célébrité de l\'artiste seulement', 'Le nombre de « j\'aime » en ligne'], expl: "Un avis argumenté s'appuie sur des observations précises." },
+        { cat: 'Discussion', prompt: "Savoir que l'artiste a peint son village natal relève du contexte…", answer: 'Personnel', faux: ['Historique mondial', 'Technique', 'Numérique'], expl: "Le contexte personnel concerne la vie et l'expérience de l'artiste." },
+        { cat: 'Discussion', prompt: "Savoir qu'une œuvre a été peinte juste après l'indépendance d'un pays relève du contexte…", answer: 'Historique', faux: ['Personnel', 'Technique', 'Chromatique'], expl: "Le contexte historique, c'est l'époque et ses événements." },
+        { cat: 'Discussion', prompt: "À la première étape (décrire), il faut éviter…", answer: 'De donner son avis', faux: ['De nommer les couleurs', 'De citer les personnages', 'De parler des matériaux'], expl: "Décrire, c'est observer objectivement ; l'avis vient à la fin." },
+        { cat: 'Discussion', prompt: "Deux élèves interprètent différemment la même œuvre. Que faut-il en penser ?", answer: 'Les deux peuvent être valables s\'ils sont justifiés', faux: ['L\'un des deux a forcément tort', 'Il faut voter', 'Seul le professeur peut interpréter'], expl: "Une œuvre peut avoir plusieurs lectures : ce qui compte, ce sont les arguments." }
+      ]); } },
+
+    { id: 'art-singapour', emoji: '🇸🇬', title: "L'art à Singapour", explanation: "Le style Nanyang, les artistes pionniers et l'art contemporain singapourien.", levels: ['singapour'],
+      cours: [
+        "La <strong>Nanyang Academy of Fine Arts</strong> (NAFA) est fondée en <strong>1938</strong> par <strong>Lim Hak Tai</strong>. Ses artistes développent le <strong>style Nanyang</strong> : ils mêlent les techniques de la peinture occidentale (École de Paris), la tradition de l'encre chinoise et des sujets d'<strong>Asie du Sud-Est</strong> (villages, marchés, scènes de vie locale).",
+        "En <strong>1952</strong>, quatre pionniers partent dessiner à <strong>Bali</strong> et à Java : <strong>Liu Kang</strong>, <strong>Chen Wen Hsi</strong>, <strong>Cheong Soo Pieng</strong> et <strong>Chen Chong Swee</strong>. Leur exposition de 1953 marque l'art du pays. <strong>Georgette Chen</strong>, formée à Paris, peint natures mortes et portraits. <strong>Chen Wen Hsi</strong> est célèbre pour ses gibbons et ses hérons ; <strong>Cheong Soo Pieng</strong> pour ses personnages aux corps allongés. <strong>Chua Mia Tee</strong> peint <em>National Language Class</em> (1959), un exemple de réalisme social.",
+        "L'art contemporain explore d'autres formes : <strong>Tang Da Wu</strong> fonde <strong>The Artists Village</strong> (1988) ; <strong>Amanda Heng</strong> crée la performance <em>Let's Chat</em> (1996) ; <strong>Ng Eng Teng</strong> et <strong>Han Sai Por</strong> marquent la sculpture. La <strong>National Gallery Singapore</strong> ouvre en <strong>2015</strong> dans l'ancienne Cour suprême et l'ancien City Hall."
+      ],
+      reperes: [['1938', 'Fondation de la NAFA par Lim Hak Tai'], ['1952', 'Voyage à Bali des quatre pionniers'], ['Style Nanyang', 'Occident + encre chinoise + sujets d\'Asie du Sud-Est'], ['2015', 'Ouverture de la National Gallery Singapore']],
+      question() { return questionDeBanque([
+        { cat: 'Singapour', prompt: "Qu'est-ce que le style Nanyang ?", answer: "Un mélange de techniques occidentales, d'encre chinoise et de sujets d'Asie du Sud-Est", faux: ['Un style de calligraphie arabe', 'Un mouvement d\'art numérique', 'Une école de sculpture grecque'], expl: "Les artistes Nanyang ont inventé une manière de peindre propre à la région." },
+        { cat: 'Singapour', prompt: "En quelle année la Nanyang Academy of Fine Arts (NAFA) a-t-elle été fondée ?", answer: '1938', faux: ['1819', '1965', '2015'], expl: "Fondée en 1938 par Lim Hak Tai, elle a formé de nombreux artistes pionniers." },
+        { cat: 'Singapour', prompt: "En 1952, quatre artistes pionniers sont partis dessiner ensemble. Où ?", answer: 'À Bali (et à Java)', faux: ['À Paris', 'À Pékin', 'À Londres'], expl: "Liu Kang, Chen Wen Hsi, Cheong Soo Pieng et Chen Chong Swee y cherchaient une identité d'Asie du Sud-Est." },
+        { cat: 'Singapour', prompt: "Lequel de ces artistes ne faisait PAS partie du voyage de 1952 à Bali ?", answer: 'Georgette Chen', faux: ['Liu Kang', 'Cheong Soo Pieng', 'Chen Wen Hsi'], expl: "Georgette Chen, pionnière formée à Paris, n'a pas participé à ce voyage." },
+        { cat: 'Singapour', prompt: "Quels animaux ont rendu Chen Wen Hsi célèbre ?", answer: 'Les gibbons et les hérons', faux: ['Les lions et les tigres', 'Les chevaux', 'Les poissons rouges'], expl: "Il les peignait à l'encre, en mêlant tradition chinoise et idées modernes." },
+        { cat: 'Singapour', prompt: "Qui a peint National Language Class (1959) ?", answer: 'Chua Mia Tee', faux: ['Liu Kang', 'Georgette Chen', 'Tang Da Wu'], expl: "Un tableau de réalisme social, montrant une classe apprenant la langue nationale." },
+        { cat: 'Singapour', prompt: "Quel artiste a fondé The Artists Village en 1988 ?", answer: 'Tang Da Wu', faux: ['Lim Hak Tai', 'Chen Chong Swee', 'Georgette Chen'], expl: "Ce collectif a ouvert la voie à l'art contemporain expérimental à Singapour." },
+        { cat: 'Singapour', prompt: "Let's Chat (1996) d'Amanda Heng est…", answer: 'Une performance', faux: ['Une peinture à l\'huile', 'Une gravure sur bois', 'Une statue en bronze'], expl: "L'artiste invitait le public à partager un thé et une conversation." },
+        { cat: 'Singapour', prompt: "En quelle année la National Gallery Singapore a-t-elle ouvert ?", answer: '2015', faux: ['1965', '1938', '1996'], expl: "Elle occupe l'ancienne Cour suprême et l'ancien City Hall." },
+        { cat: 'Singapour', prompt: "Quel artiste est connu pour ses personnages aux corps allongés et stylisés ?", answer: 'Cheong Soo Pieng', faux: ['Chua Mia Tee', 'Amanda Heng', 'Lim Hak Tai'], expl: "Ses figures élancées sont devenues une signature du style Nanyang." },
+        { cat: 'Singapour', prompt: "Ng Eng Teng et Han Sai Por sont surtout connus comme…", answer: 'Sculpteurs', faux: ['Photographes', 'Architectes', 'Calligraphes'], expl: "Ng Eng Teng pour ses figures expressives, Han Sai Por pour ses sculptures en pierre inspirées de la nature." }
+      ]); } },
+
+    { id: 'art-monde', emoji: '🌏', title: "L'Asie du Sud-Est et le monde", explanation: "Relier l'art de Singapour à celui de la région et du monde.", levels: ['singapour'],
+      cours: [
+        "Le programme invite à comprendre les cultures <strong>au-delà de Singapour</strong>. En <strong>Asie du Sud-Est</strong> : le <strong>batik</strong> (Indonésie, Malaisie), dont <strong>Chuah Thean Teng</strong> a fait un art de la peinture ; <strong>Affandi</strong> (Indonésie), peintre expressionniste qui appliquait la peinture directement du tube ; <strong>Latiff Mohidin</strong> (Malaisie), auteur de la série <em>Pago-Pago</em> inspirée des formes de la région.",
+        "Dans le <strong>monde</strong> : les <strong>impressionnistes</strong> (Monet, <em>Impression, soleil levant</em>, 1872) peignent la lumière ; <strong>Van Gogh</strong> peint <em>La Nuit étoilée</em> (1889) ; <strong>Picasso</strong> et Braque inventent le <strong>cubisme</strong> (plusieurs points de vue à la fois) ; <strong>Hokusai</strong> grave <em>La Grande Vague de Kanagawa</em>, une estampe japonaise sur bois (<em>ukiyo-e</em>) ; <strong>Andy Warhol</strong> incarne le <strong>pop art</strong> ; <strong>Yayoi Kusama</strong> est célèbre pour ses pois.",
+        "Ces influences circulent : les artistes du style Nanyang ont étudié l'École de Paris, et l'estampe japonaise a inspiré Van Gogh. <strong>Relier</strong> les œuvres entre elles, c'est la compétence <strong>relier-réagir</strong> (<em>connect-respond</em>)."
+      ],
+      reperes: [['Batik', 'Cire et teinture, Asie du Sud-Est'], ['Impressionnisme', 'Monet, la lumière'], ['Cubisme', 'Picasso, plusieurs points de vue'], ['Ukiyo-e', 'Hokusai, estampe japonaise']],
+      question() { return questionDeBanque([
+        { cat: 'Monde', prompt: "Quel artiste a fait du batik un véritable art de la peinture ?", answer: 'Chuah Thean Teng', faux: ['Claude Monet', 'Andy Warhol', 'Hokusai'], expl: "Cet artiste de Penang (Malaisie) est considéré comme le père de la peinture sur batik." },
+        { cat: 'Monde', prompt: "Quel peintre indonésien appliquait souvent la peinture directement depuis le tube ?", answer: 'Affandi', faux: ['Picasso', 'Georgette Chen', 'Monet'], expl: "Affandi est un grand peintre expressionniste d'Asie du Sud-Est." },
+        { cat: 'Monde', prompt: "Latiff Mohidin, auteur de la série Pago-Pago, est un artiste…", answer: 'Malaisien', faux: ['Français', 'Japonais', 'Américain'], expl: "Sa série Pago-Pago s'inspire des formes et de la nature d'Asie du Sud-Est." },
+        { cat: 'Monde', prompt: "Quel mouvement doit son nom au tableau de Monet Impression, soleil levant ?", answer: "L'impressionnisme", faux: ['Le cubisme', 'Le pop art', 'Le style Nanyang'], expl: "Les impressionnistes cherchaient à saisir la lumière et l'instant." },
+        { cat: 'Monde', prompt: "Qui a peint La Nuit étoilée (1889) ?", answer: 'Vincent van Gogh', faux: ['Pablo Picasso', 'Claude Monet', 'Andy Warhol'], expl: "Ses touches tourbillonnantes donnent un ciel plein de mouvement." },
+        { cat: 'Monde', prompt: "Qu'est-ce qui caractérise le cubisme ?", answer: 'Montrer un objet sous plusieurs points de vue à la fois', faux: ['Ne peindre que des cubes', 'Copier une photo exactement', 'N\'utiliser que des pois'], expl: "Picasso et Braque décomposent les formes et les points de vue." },
+        { cat: 'Monde', prompt: "La Grande Vague de Kanagawa d'Hokusai est…", answer: 'Une estampe japonaise gravée sur bois', faux: ['Une peinture à l\'huile française', 'Une sculpture en bronze', 'Une photographie'], expl: "C'est un ukiyo-e, une estampe imprimée à partir de planches de bois gravées." },
+        { cat: 'Monde', prompt: "Quel artiste est associé au pop art et aux boîtes de soupe Campbell ?", answer: 'Andy Warhol', faux: ['Hokusai', 'Van Gogh', 'Affandi'], expl: "Le pop art reprend les images de la publicité et de la consommation." },
+        { cat: 'Monde', prompt: "Yayoi Kusama, artiste japonaise, est célèbre pour…", answer: 'Ses pois (polka dots)', faux: ['Ses gibbons', 'Ses batiks', 'Ses cubes'], expl: "Elle couvre ses œuvres et ses installations de pois répétés à l'infini." },
+        { cat: 'Monde', prompt: "Quelle influence les artistes du style Nanyang ont-ils reçue d'Europe ?", answer: "L'École de Paris", faux: ['Le pop art américain', "L'art numérique", 'Aucune'], expl: "Plusieurs pionniers, comme Liu Kang et Georgette Chen, ont étudié ou vécu à Paris." }
+      ]); } }
+  ] },
+
+  /* ========== Anglais : Cambridge English A2 Flyers ========== */
+  { id: 'anglais', emoji: '🇬🇧', title: 'Anglais · A2 Flyers', skills: [
+    { id: 'en-methode', emoji: '🎯', title: "L'examen A2 Flyers et la méthode", explanation: "Comment se passe l'examen Cambridge, et comment apprendre l'anglais efficacement.", levels: EN_NIVEAUX,
+      cours: [
+        "<strong>A2 Flyers</strong> est le plus haut des trois examens Cambridge English pour les 9-12 ans (après Pre A1 Starters et A1 Movers). Il correspond au niveau <strong>A2</strong> du Cadre européen : on se débrouille dans les situations simples de la vie quotidienne. On y connaît environ <strong>1 200 mots</strong>.",
+        "Trois épreuves : <strong>Listening</strong> (environ 25 min, 5 parties ; chaque enregistrement passe <strong>deux fois</strong>), <strong>Reading & Writing</strong> (40 min, 7 parties : définitions, dialogues, histoires à compléter, écrire une petite histoire à partir d'images) et <strong>Speaking</strong> (7 à 9 min, 4 parties : différences entre deux images, échange d'informations, raconter une histoire, questions sur soi). Pas de réussite ni d'échec : on obtient jusqu'à <strong>5 boucliers</strong> (<em>shields</em>) par épreuve.",
+        "La méthode, comme au British Council : apprendre les mots <strong>par thèmes et en contexte</strong> (dans une phrase), <strong>écouter et répéter à voix haute</strong> (bouton 🔊), travailler <strong>un peu chaque jour</strong> plutôt que beaucoup une fois, <strong>lire de petites histoires</strong>, et oser parler même avec des fautes. Attention aux <strong>faux amis</strong> : library = bibliothèque, pas librairie !"
+      ],
+      reperes: [['3 épreuves', 'Listening · Reading & Writing · Speaking'], ['Boucliers', "Jusqu'à 5 par épreuve"], ['Chaque jour', 'Un peu, souvent, à voix haute'], ['Faux amis', 'library = bibliothèque']],
+      exemplesEn: ["In my picture, the cat is black. In your picture, it's white.", "Can you spell your name, please?", "I don't understand. Can you say that again, please?"],
+      question() { return enBanque(EN_METHODE); } },
+    { id: 'en-vocab-metiers', emoji: '🧑‍🚒', title: 'Vocabulaire : métiers et lieux', explanation: "Les métiers et les lieux de la ville de la liste A2 Flyers.", levels: EN_NIVEAUX,
+      cours: [
+        "Les <strong>métiers</strong> (<em>jobs</em>) : a dentist, an engineer, a journalist, a mechanic, a pilot, a firefighter, a photographer, a waiter, a farmer, a nurse, an astronaut, a police officer. On dit toujours <strong>a / an</strong> devant un métier : <em>She's a pilot.</em> (et non « She's pilot »).",
+        "Les <strong>lieux</strong> (<em>places</em>) : an airport, a bank, a castle, a museum, a library, a post office, a factory, a hotel, a stadium, a university, a theatre.",
+        "À l'examen (Reading & Writing, partie 1), on lit une <strong>définition</strong> et on trouve le mot : « <em>This person flies a plane.</em> » → <strong>a pilot</strong>. Entraîne-toi à faire l'inverse : décris un métier en anglais avec <em>This person…</em>"
+      ],
+      reperes: [['a / an', "Toujours devant un métier : He's an engineer."], ['This person…', 'Définir un métier'], ['You go here to…', 'Définir un lieu'], ['library', 'bibliothèque (faux ami)']],
+      exemplesEn: ['She is a pilot. She flies planes.', 'My uncle is an engineer.', 'You can borrow books at the library.'],
+      question() { return questionVocab(['metiers', 'lieux']); } },
+    { id: 'en-vocab-monde', emoji: '🌍', title: 'Vocabulaire : le monde, la météo, la santé', explanation: "La nature, l'espace, les saisons, la météo, et dire qu'on ne se sent pas bien.", levels: EN_NIVEAUX,
+      cours: [
+        "<strong>The world around us</strong> : a desert, an island, a forest, a river, a planet, a rocket, the moon. Les saisons : <strong>spring</strong>, <strong>summer</strong>, <strong>autumn</strong>, <strong>winter</strong>. La météo : a storm, fog (<em>foggy</em>), ice, snow, wind (<em>windy</em>).",
+        "<strong>Health</strong> : pour dire où l'on a mal, on ajoute <strong>-ache</strong> : a headache, a toothache, an earache, a stomach-ache. On dit aussi : <em>I've got a cold / a cough / a temperature.</em> Pour demander : <strong>What's the matter?</strong> (Qu'est-ce qui ne va pas ?)",
+        "Astuce : on dit <strong>I've got a headache</strong> (j'ai mal à la tête), avec <em>a</em>, comme un objet qu'on « possède »."
+      ],
+      reperes: [['Saisons', 'spring, summer, autumn, winter'], ['-ache', 'headache, toothache, earache'], ["What's the matter?", "Qu'est-ce qui ne va pas ?"], ["I've got…", 'a cold, a cough, a temperature']],
+      exemplesEn: ["What's the matter? — I've got a headache.", 'In autumn, the leaves fall from the trees.', "It's foggy today. I can't see the island."],
+      question() { return questionVocab(['monde', 'sante']); } },
+    { id: 'en-vocab-matieres', emoji: '🧳', title: 'Vocabulaire : matières et objets', explanation: "De quoi les choses sont faites, et les objets du voyage et du courrier.", levels: EN_NIVEAUX,
+      cours: [
+        "Les <strong>matières</strong> (<em>materials</em>) : gold, silver, wood, glass, paper, plastic, metal. Pour dire de quoi un objet est fait : <strong>It's made of</strong> wood. Pour demander : <strong>What's it made of?</strong>",
+        "Les <strong>objets</strong> du voyage et du courrier : a passport, a suitcase, an envelope, a stamp, a torch. Ces mots reviennent souvent dans les histoires de l'examen.",
+        "Faux ami : <strong>silver</strong> = l'argent, le métal ; l'argent qu'on dépense se dit <strong>money</strong>."
+      ],
+      reperes: [['made of', "It's made of glass."], ['silver', "l'argent (métal) ≠ money"], ['Voyage', 'passport, suitcase'], ['Courrier', 'envelope, stamp']],
+      exemplesEn: ["What's it made of? — It's made of wood.", 'Put a stamp on the envelope.', "Don't forget your passport!"],
+      question() { return questionVocab(['matieres']); } },
+    { id: 'en-passe', emoji: '⏪', title: 'Past simple et past continuous', explanation: "Raconter au passé : ce qui s'est passé, et ce qui était en train de se passer.", levels: EN_NIVEAUX,
+      cours: [
+        "Le <strong>past simple</strong> raconte une action <strong>terminée</strong> : <em>Yesterday, I visited the castle.</em> Verbes réguliers : <strong>+ ed</strong> (play → played ; study → studied ; stop → stopped ; travel → travelled). Les <strong>irréguliers</strong> s'apprennent par cœur : go → went, see → saw, buy → bought, eat → ate, take → took, fly → flew…",
+        "Le <strong>past continuous</strong> (<strong>was / were + verbe-ing</strong>) décrit une action <strong>en cours</strong> dans le passé : <em>I was walking down the road…</em> On l'utilise souvent avec une action courte au past simple : <em>…when I saw her.</em>",
+        "Mots-repères : <strong>yesterday, last week, two days ago</strong> → past simple ; <strong>when</strong> (une action courte qui interrompt) et <strong>while</strong> (pendant que) → souvent avec le past continuous. I / he / she / it → <strong>was</strong> ; we / you / they → <strong>were</strong>."
+      ],
+      reperes: [['Past simple', 'Action terminée : went, saw, played'], ['Past continuous', 'was/were + -ing : action en cours'], ['when', 'I was reading when the phone rang.'], ['was / were', 'I, he, she → was ; we, they → were']],
+      exemplesEn: ['Last summer, we went to Scotland.', 'I was walking down the road when I saw her.', 'It was a very cold day and snow was falling.'],
+      question() { return Math.random() < 0.55 ? questionPreterit() : questionPastContinuous(); } },
+    { id: 'en-present-perfect', emoji: '✅', title: 'Present perfect', explanation: "Parler de ses expériences et de ce qui vient de se passer : ever, never, just, already, yet, for, since.", levels: EN_NIVEAUX,
+      cours: [
+        "Le <strong>present perfect</strong> se forme avec <strong>have / has + participe passé</strong> : <em>I have (I've) seen</em>, <em>she has (she's) eaten</em>. Il relie le passé au présent.",
+        "On l'utilise pour les <strong>expériences</strong> : <em>Have you <strong>ever</strong> been to the circus?</em> (As-tu déjà… ?) — <em>I've <strong>never</strong> eaten sushi.</em> ; pour ce qui <strong>vient</strong> de se passer : <em>He's <strong>just</strong> eaten his dinner.</em> ; avec <strong>already</strong> (déjà) et <strong>yet</strong> (en fin de question ou de négation).",
+        "Durée : <strong>for</strong> + une durée (<em>for three years</em>), <strong>since</strong> + un point de départ (<em>since 2020</em>). Participes irréguliers à connaître : seen, eaten, been, done, written, ridden, flown, taken, broken, worn, sung, drawn."
+      ],
+      reperes: [['have/has + participe', "I've seen, she's eaten"], ['ever / never', 'Expériences'], ['just / already / yet', 'Vient de / déjà / pas encore'], ['for / since', 'for + durée, since + départ']],
+      exemplesEn: ['Have you ever been to the circus?', "He's just eaten his dinner.", "I've lived here since twenty twenty."],
+      question() { return Math.random() < 0.5 ? questionPresentPerfect() : enBanque(EN_PHRASES.filter(x => x.cat === 'Present perfect')); } },
+    { id: 'en-futur', emoji: '🔮', title: 'Le futur et les modaux', explanation: "will, be going to, might, et les verbes pour conseiller, proposer, obliger : should, shall, must, have to, could.", levels: EN_NIVEAUX,
+      cours: [
+        "<strong>be going to</strong> : un projet déjà décidé, ou ce qu'on voit venir (<em>Look at the clouds! It's going to rain.</em>). <strong>will</strong> : une prévision, ou une décision prise sur le moment (<em>I'll help you!</em>). <strong>might / may</strong> : peut-être (<em>Vicky might come to the party.</em>).",
+        "Conseiller : <strong>should / shouldn't</strong> (<em>You should go to the dentist.</em>). Proposer : <strong>Shall we…? / Shall I…?</strong> Obligation : <strong>must</strong> ou <strong>have to</strong> ; interdiction : <strong>mustn't</strong> ; pas obligatoire : <strong>don't have to</strong>. Capacité dans le passé : <strong>could / couldn't</strong>.",
+        "Après ces modaux (will, might, should, must, could, shall), le verbe est à la forme de base, <strong>sans to</strong> : <em>You should go</em> (pas « should to go »)."
+      ],
+      reperes: [['going to', 'Projet, ou signe visible'], ['will', 'Prévision, décision immédiate'], ['might', 'Peut-être'], ['should / shall / must', 'Conseil / proposition / obligation']],
+      exemplesEn: ["Look at those clouds! It's going to rain.", 'Shall we have a picnic in the park?', 'You should go to the dentist.'],
+      question() { return enBanque(EN_FUTUR_MODAUX); } },
+    { id: 'en-comparer', emoji: '📏', title: 'Comparatifs et superlatifs', explanation: "Comparer deux choses, ou dire laquelle est « la plus… ».", levels: EN_NIVEAUX,
+      cours: [
+        "<strong>Comparatif</strong> (entre deux) : adjectif court + <strong>-er … than</strong> (<em>taller than</em>) ; adjectif long : <strong>more … than</strong> (<em>more beautiful than</em>).",
+        "<strong>Superlatif</strong> (le plus… de tous) : <strong>the …-est</strong> (<em>the tallest</em>) ou <strong>the most …</strong> (<em>the most beautiful</em>).",
+        "Orthographe : big → bigger → biggest (on double la consonne) ; happy → happier → happiest (y devient i). Irréguliers : <strong>good → better → best</strong>, <strong>bad → worse → worst</strong>."
+      ],
+      reperes: [['Court', 'tall → taller → the tallest'], ['Long', 'more / the most beautiful'], ['Orthographe', 'big → bigger, happy → happier'], ['Irréguliers', 'good/better/best, bad/worse/worst']],
+      exemplesEn: ['An elephant is bigger than a mouse.', 'The cheetah is the fastest animal on land.', 'This is the best film I have ever seen.'],
+      question() { return questionComparatif(); } },
+    { id: 'en-questions', emoji: '❓', title: 'Questions et question tags', explanation: "Whose, how often, how long, what time, what… like, et les « n'est-ce pas ? » anglais.", levels: EN_NIVEAUX,
+      cours: [
+        "Les mots interrogatifs du niveau : <strong>Whose</strong> (à qui ?), <strong>How often</strong> (à quelle fréquence ?), <strong>How long</strong> (combien de temps ?), <strong>What time</strong> (à quelle heure ?), <strong>What … like?</strong> (comment est… ?), <strong>What else?</strong> (quoi d'autre ?).",
+        "Les <strong>question tags</strong> = « n'est-ce pas ? ». On reprend l'auxiliaire de la phrase, à la forme <strong>inverse</strong> : phrase affirmative → tag négatif (<em>It's cold, <strong>isn't it</strong>?</em>) ; phrase négative → tag affirmatif (<em>He didn't come, <strong>did he</strong>?</em>).",
+        "Sans auxiliaire visible (présent ou passé simple), on utilise <strong>do / does / did</strong> : <em>You like pizza, <strong>don't you</strong>?</em>"
+      ],
+      reperes: [['Whose', 'À qui ?'], ['How often / How long', 'Fréquence / durée'], ['Tag', 'Auxiliaire inversé : isn\'t it? did he?'], ['Pas d\'auxiliaire', "do/does/did : don't you?"]],
+      exemplesEn: ["It's cold today, isn't it?", 'How often do you go swimming?', "What's your teacher like?"],
+      question() { return enBanque(EN_QUESTIONS); } },
+    { id: 'en-relier', emoji: '🔗', title: 'Relier les idées', explanation: "because, so, while, until, before, if, who, which, where, et les expressions avec like et make.", levels: EN_NIVEAUX,
+      cours: [
+        "Les <strong>connecteurs</strong> : <strong>because</strong> (parce que), <strong>so</strong> (donc), <strong>but</strong> (mais), <strong>while</strong> (pendant que), <strong>until</strong> (jusqu'à ce que), <strong>before / after</strong> (avant / après). <strong>if</strong> + présent : <em>If it rains, we'll stay at home.</em>",
+        "Les <strong>relatifs</strong> : <strong>who</strong> pour une personne, <strong>which</strong> pour une chose, <strong>where</strong> pour un lieu : <em>the woman who lives next door</em>, <em>the book which you gave me</em>, <em>the museum where we saw the dinosaur</em>.",
+        "Expressions du niveau : <strong>look like / sound like / taste like</strong> (ressembler à, on dirait, avoir le goût de), <strong>make somebody + verbe</strong> (<em>It made me laugh</em>), <strong>made of</strong> + matière."
+      ],
+      reperes: [['because / so', 'Cause / conséquence'], ['if + présent', "If it rains, we'll…"], ['who / which / where', 'Personne / chose / lieu'], ['make me laugh', 'make + verbe sans to']],
+      exemplesEn: ["If it rains tomorrow, we'll stay at home.", 'The woman who lives next door is a journalist.', 'The funny film made me laugh.'],
+      question() { return enBanque(EN_PHRASES.filter(x => x.cat !== 'Present perfect')); } },
+    { id: 'en-ecoute', emoji: '🎧', title: 'Listening', explanation: "Comprendre les nombres, l'heure, les prénoms épelés et des phrases, à l'oral.", levels: EN_NIVEAUX,
+      cours: [
+        "Au <strong>Listening</strong>, on entend chaque enregistrement <strong>deux fois</strong>. La première fois, on comprend l'idée ; la seconde, on vérifie. Ici, appuie sur <strong>🔊</strong> autant de fois que tu veux, et essaie <strong>🐢</strong> pour écouter plus lentement.",
+        "Pièges fréquents : les <strong>nombres</strong> (<em>three hundred and forty-five</em> = 345 ; attention à thirteen / thirty), l'<strong>heure</strong> (<em>quarter past</em> = et quart, <em>quarter to</em> = moins le quart, <em>half past</em> = et demie) et les <strong>prénoms épelés</strong> (Listening, partie 2) : connais bien l'alphabet anglais, surtout <strong>A</strong> (« ei »), <strong>E</strong> (« i »), <strong>I</strong> (« aï »), <strong>G</strong> et <strong>J</strong>.",
+        "L'écoute utilise la voix anglaise de ton téléphone. Si tu n'entends rien ou si l'accent est français, installe une voix anglaise (Paramètres → Synthèse vocale → langue anglaise)."
+      ],
+      reperes: [['Deux écoutes', 'Comprendre, puis vérifier'], ['past / to', 'quarter past 3 = 3:15 ; quarter to 4 = 3:45'], ['Nombres', '… hundred AND …'], ['Alphabet', 'A « ei », E « i », I « aï »']],
+      exemplesEn: ["It's quarter to nine.", 'Three hundred and forty-five.', 'My name is Katy. K, A, T, Y.'],
+      question() { return questionEcoute(); } },
+    { id: 'en-lecture', emoji: '📖', title: 'Reading', explanation: "Lire une petite histoire et répondre aux questions, comme dans Reading & Writing.", levels: EN_NIVEAUX,
+      cours: [
+        "Dans <strong>Reading & Writing</strong>, plusieurs parties demandent de lire une histoire et de répondre : choisir le bon mot, compléter des phrases, ou répondre à des questions.",
+        "La méthode : 1) lis d'abord <strong>la question</strong> ; 2) repère ses <strong>mots-clés</strong> (who, where, why, how many…) ; 3) retrouve dans le texte <strong>la phrase</strong> qui en parle ; 4) vérifie que ta réponse répond exactement à la question (<em>Why…?</em> → <em>because…</em>).",
+        "Si un mot est inconnu, devine son sens grâce au reste de la phrase. Et lis le texte à voix haute avec 🔊 pour travailler aussi la prononciation."
+      ],
+      reperes: [['1. La question', "Lis-la avant le texte"], ['2. Mots-clés', 'who, where, why, how many'], ['3. La phrase', 'Retrouve-la dans le texte'], ['4. Vérifier', 'Ma réponse répond-elle à la question ?']],
+      exemplesEn: ['Last summer, Holly went to Scotland with her grandparents.', 'They travelled by train because Grandpa doesn\'t like planes.'],
+      question() { return questionLecture(); } }
   ] },
 
   /* ========== Histoire ========== */
@@ -2450,7 +3101,12 @@ function startQuiz(kind, builderFn, bestKey, extra) {
   state.quiz = { kind, rebuild: builderFn, bestKey, extra: x, sprint: !!x.sprint, trickId: x.trickId, niveau: x.niveau, index: 0, score: 0, questions, answered: false, lastChosen: null,
     timeLeft: x.sprint ? DUREE_SPRINT : questions[0].limit, timerHandle: null, times: [], catStats: {}, pause: false, gain: null, erreurs: [], attenteCorrection: false,
     saisie: '', debutQuestion: Date.now(), pauseDebut: null };
-  state.screen = 'quiz'; render(); runTimer();
+  state.screen = 'quiz'; render(); runTimer(); jouerSiEcoute();
+}
+/* une question d'écoute se lit toute seule dès qu'elle apparaît */
+function jouerSiEcoute() {
+  const qz = state.quiz, c = qz && qz.questions[qz.index];
+  if (c && c.ecouteSeule) setTimeout(() => { if (state.quiz === qz && qz.questions[qz.index] === c) direAnglais(c.audio); }, 350);
 }
 function runTimer() {
   clearTimer();
@@ -2478,7 +3134,7 @@ function questionSuivante() {
   if (qz.index < qz.questions.length - 1) {
     qz.index++; qz.answered = false; qz.lastChosen = null; qz.saisie = ''; qz.debutQuestion = Date.now();
     if (!qz.sprint) { qz.timeLeft = qz.questions[qz.index].limit; runTimer(); }
-    render(); return;
+    render(); jouerSiEcoute(); return;
   }
   finirQuiz();
 }
@@ -2989,6 +3645,7 @@ function renderCours(s, d) {
     <div class="lesson-hero"><div class="lesson-emoji">${s.emoji || d.emoji}</div><div class="lesson-title">${s.title}</div><div class="lesson-explanation">${s.explanation}</div></div>
     <div class="section-label">${d.id === 'olympiades' ? 'La technique' : 'La leçon'}</div>
     <div class="cours-card">${s.cours.map(par => `<p>${par}</p>`).join('')}${reperes}</div>
+    ${s.exemplesEn ? `<div class="section-label">🔊 Écoute et répète</div><div class="cours-card">${s.exemplesEn.map((t, i) => `<button class="ligne-en" data-action="dire-exemple-en" data-i="${i}">🔊 ${t}</button>`).join('')}</div>` : ''}
     <div class="btn-stack" style="margin-top:0.5rem;"><button class="btn btn-primary" data-action="start-skill-quiz">${d.id === 'olympiades' ? `✨ S'entraîner (${nbQuestions(d.id, s.id)} problèmes · niveau ${olyLabel()})` : '✨ Pratiquer (8 questions, chrono)'}</button></div>
   </div>`;
 }
@@ -3033,6 +3690,7 @@ function renderQuiz() {
     ? `<div class="pause-panel"><div class="pause-emoji">⏸️</div><div class="pause-title">Pause</div><div class="pause-note">Le chrono est arrêté. La question réapparaîtra quand tu reprendras.</div></div>`
     : `<div class="question-card">
       ${cur.formula ? `<div class="question-label">${cur.prompt}</div><div class="question-formula">${cur.formula}</div>` : `<div class="question-label">${cur.prompt}</div>${cur.svg ? `<div class="question-shape">${cur.svg}</div>` : ''}${cur.unit ? `<div style="font-size:0.78rem;color:var(--text-secondary);">Réponse en ${cur.unit}</div>` : ''}`}
+      ${cur.audio ? `<div class="ecoute-btns"><button class="btn-ecoute" data-action="ecouter-en">🔊 ${cur.ecouteSeule ? 'Écouter' : 'Listen'}</button><button class="btn-ecoute" data-action="ecouter-en-lent" title="Plus lentement">🐢</button></div>` : ''}
     </div>`;
   return `<div class="screen screen-quiz">
     <div class="quiz-topbar"><div class="quiz-progress">${qz.sprint ? `⚡ Sprint · ${qz.times.length} réponse${qz.times.length > 1 ? 's' : ''}` : `${cur.category} · ${qz.index + 1}/${total}`}</div><button class="btn-pause" data-action="toggle-pause">${qz.pause ? '▶ Reprendre' : '⏸ Pause'}</button><div class="quiz-score">⭐ ${qz.score}</div></div>
@@ -3156,6 +3814,9 @@ function onAction(e) {
   else if (a === 'answer-quiz') { state.quiz.lastChosen = e.currentTarget.dataset.value; answerQuiz(e.currentTarget.dataset.value); }
   else if (a === 'retry-quiz') { const etape = state.quiz.etapeSeance; startQuiz(state.quiz.kind, state.quiz.rebuild, state.quiz.bestKey, state.quiz.extra); state.quiz.etapeSeance = etape; }
   else if (a === 'continuer-quiz') questionSuivante();
+  else if (a === 'ecouter-en') direAnglais(state.quiz.questions[state.quiz.index].audio);
+  else if (a === 'ecouter-en-lent') direAnglais(state.quiz.questions[state.quiz.index].audio, 0.6);
+  else if (a === 'dire-exemple-en') direAnglais(getSkill(state.currentDomain, state.currentSkill).exemplesEn[Number(e.currentTarget.dataset.i)]);
   else if (a === 'toggle-pause') basculerPause();
 }
 
