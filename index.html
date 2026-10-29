@@ -1623,6 +1623,58 @@ const EN_METHODE = [
   { cat: 'Méthode', prompt: "Que veut dire « library » ?", answer: 'Une bibliothèque', faux: ['Une librairie', 'Une liberté', 'Un livre'], expl: "Faux ami ! library = bibliothèque ; une librairie = a bookshop." }
 ];
 
+/* ---------- Comparer plusieurs fractions ---------- */
+function ppcm(a, b) { return a / gcd(a, b) * b; }
+/* k fractions de valeurs toutes différentes. En CM2, des dénominateurs d'une
+   même famille (2, 4, 8 ou 3, 6, 12 ou 5, 10) pour que le dénominateur commun
+   soit facile ; en 6ème et à Singapour, des familles mélangées, et parfois
+   des fractions plus grandes que 1. */
+function fractionsDistinctes(level, k) {
+  const familles = [[2, 4, 8], [3, 6, 12], [5, 10], [2, 3, 6], [2, 5, 10], [4, 8]];
+  const pool = [2, 3, 4, 5, 6, 8, 9, 10, 12];
+  for (;;) {
+    const fam = unDe(familles), ds = Array.from({ length: k }, () => unDe(level === 'cm2' ? fam : pool));
+    const L = ds.reduce(ppcm); if (L > 72) continue;
+    const grand = level !== 'cm2' && Math.random() < 0.3;
+    const fr = ds.map(d => { const n = rnd(1, grand ? 2 * d - 1 : d - 1); return { n, d, v: n * L / d }; });
+    if (new Set(fr.map(f => f.v)).size === k && new Set(fr.map(f => f.n + '/' + f.d)).size === k) return { fr, L };
+  }
+}
+const txtFrac = (f) => `${f.n}/${f.d}`;
+/* l'explication commune : tout au même dénominateur, puis on compare les numérateurs */
+function explMemeDenominateur({ fr, L }) {
+  const conv = [...fr].sort((x, y) => x.v - y.v).map(f => f.d === L ? `${txtFrac(f)}` : `${txtFrac(f)} = ${f.v}/${L}`).join(' ; ');
+  return `Dénominateur commun : ${L}. ${conv}. On compare ensuite les numérateurs : ${[...fr].sort((x, y) => x.v - y.v).map(f => f.v).join(' < ')}.`;
+}
+function questionDeuxFractions() {
+  const denoms = [2, 3, 4, 5, 6, 8, 10]; let a, b, c, d, guard = 0;
+  do { b = denoms[rnd(0, denoms.length - 1)]; d = denoms[rnd(0, denoms.length - 1)]; a = rnd(1, b - 1); c = rnd(1, d - 1); guard++; } while (a * d === c * b && guard < 20);
+  if (a * d === c * b) { c = c === 1 ? 2 : c - 1; }
+  const fa = `${a}/${b}`, fc = `${c}/${d}`, correct = (a * d > c * b) ? fa : fc;
+  return q({ category: 'Comparer deux fractions', prompt: `Quelle est la fraction la plus grande : ${fa} ou ${fc} ?`, answer: correct, options: [fa, fc], limit: 22,
+    expl: `Produits en croix : ${a} × ${d} = ${a * d} et ${c} × ${b} = ${c * b}. ${a * d > c * b ? `${a * d} > ${c * b}, donc ${fa} est la plus grande.` : `${c * b} > ${a * d}, donc ${fc} est la plus grande.`}` });
+}
+function questionExtremeFractions(jeu, plusGrande) {
+  const tri = [...jeu.fr].sort((x, y) => x.v - y.v), cible = plusGrande ? tri[tri.length - 1] : tri[0];
+  const opts = shuffle(jeu.fr.map(txtFrac));
+  return q({ category: 'Comparer plusieurs fractions', prompt: `Quelle est la fraction la plus ${plusGrande ? 'grande' : 'petite'} : ${opts.join(' ; ')} ?`, answer: txtFrac(cible), options: opts, limit: 35,
+    expl: `${explMemeDenominateur(jeu)} La plus ${plusGrande ? 'grande' : 'petite'} est donc <strong>${txtFrac(cible)}</strong>.` });
+}
+function questionOrdreFractions(jeu, croissant) {
+  const signe = croissant ? ' < ' : ' > ';
+  const bon = [...jeu.fr].sort((x, y) => croissant ? x.v - y.v : y.v - x.v).map(txtFrac);
+  const answer = bon.join(signe), faux = new Set();
+  /* pièges : l'ordre inverse, et des ordres où deux fractions voisines sont échangées */
+  faux.add([...bon].reverse().join(signe));
+  for (let i = 0; i < bon.length - 1; i++) { const t = [...bon]; [t[i], t[i + 1]] = [t[i + 1], t[i]]; faux.add(t.join(signe)); }
+  /* et l'erreur classique : ranger selon les numérateurs, sans regarder les dénominateurs */
+  faux.add([...jeu.fr].sort((x, y) => croissant ? x.n - y.n || x.d - y.d : y.n - x.n || y.d - x.d).map(txtFrac).join(signe));
+  faux.delete(answer);
+  const options = shuffle([answer, ...shuffle([...faux]).slice(0, 3)]);
+  return q({ category: 'Ranger des fractions', prompt: `Range ces fractions dans l'ordre ${croissant ? 'croissant (de la plus petite à la plus grande)' : 'décroissant (de la plus grande à la plus petite)'} : ${shuffle(jeu.fr.map(txtFrac)).join(' ; ')}`, answer, options, limit: 50,
+    expl: `${explMemeDenominateur(jeu)} Dans l'ordre ${croissant ? 'croissant' : 'décroissant'} : <strong>${answer}</strong>.` });
+}
+
 /* ================= Domaines et compétences ================= */
 function q(obj) { return Object.assign({ unit: '', svg: null, limit: 18 }, obj); }
 
@@ -1676,8 +1728,15 @@ const DOMAINS = [
   { id: 'fractions', emoji: '🍰', title: 'Fractions', skills: [
     { id: 'lire-fraction', title: 'Lire une fraction', explanation: "Compte les parts coloriées sur le nombre total de parts.", levels: ['cm2', 'sixieme', 'singapour'],
       question() { const n = rnd(3, 8), m = rnd(1, n - 1); const correct = `${m}/${n}`; const distract = [`${Math.min(n - 1, m + 1)}/${n}`, `${n - m}/${n}`, `${m}/${n + 1}`]; return q({ category: 'Lire une fraction', prompt: 'Quelle fraction est représentée ?', svg: svgFractionBar(n, m), answer: correct, options: mkOptions(correct, distract), limit: 18 }); } },
-    { id: 'comparer-fractions', title: 'Comparer des fractions', explanation: "Compare en multipliant en croix : a/b et c/d, compare a×d et c×b.", levels: ['cm2', 'sixieme', 'singapour'],
-      question() { const denoms = [2, 3, 4, 5, 6, 8, 10]; let a, b, c, d, guard = 0; do { b = denoms[rnd(0, denoms.length - 1)]; d = denoms[rnd(0, denoms.length - 1)]; a = rnd(1, b - 1); c = rnd(1, d - 1); guard++; } while (a * d === c * b && guard < 20); if (a * d === c * b) { c = c === 1 ? 2 : c - 1; } const fa = `${a}/${b}`, fc = `${c}/${d}`; const correct = (a * d > c * b) ? fa : fc; return q({ category: 'Comparer fractions', prompt: `Quelle est la fraction la plus grande : ${fa} ou ${fc} ?`, answer: correct, options: [fa, fc], limit: 22 }); } },
+    { id: 'comparer-fractions', title: 'Comparer des fractions', explanation: "Pour comparer deux fractions ou plus, mets-les au même dénominateur, puis compare les numérateurs. Avec le même dénominateur, la plus grande a le plus grand numérateur.", levels: ['cm2', 'sixieme', 'singapour'],
+      question(level) {
+        const r = Math.random();
+        if (r < 0.25) return questionDeuxFractions();
+        const k = level === 'cm2' ? 3 : rnd(3, 4), fr = fractionsDistinctes(level, k);
+        if (r < 0.5) return questionExtremeFractions(fr, true);
+        if (r < 0.7) return questionExtremeFractions(fr, false);
+        return questionOrdreFractions(fr, Math.random() < 0.7);
+      } },
     { id: 'simplifier-fraction', title: 'Simplifier une fraction', explanation: "Divise le numérateur et le dénominateur par un même nombre.", levels: ['sixieme', 'singapour'],
       question() { const denomsReduits = [2, 3, 4, 5]; const qd = denomsReduits[rnd(0, denomsReduits.length - 1)]; const p = rnd(1, qd - 1); const f = rnd(2, 5); const m = p * f, n = qd * f; const correct = `${p}/${qd}`; return q({ category: 'Simplifier', prompt: `Simplifie la fraction ${m}/${n}`, answer: correct, options: mkOptions(correct, [`${m}/${qd}`, `${p}/${n}`, `${p + 1}/${qd}`]), limit: 25 }); } },
     { id: 'fractions-equiv', title: 'Fractions équivalentes', explanation: "Multiplie le numérateur et le dénominateur par le même nombre.", levels: ['cm2', 'sixieme', 'singapour'],
